@@ -34,6 +34,7 @@ class TasksTestCase(MockerTestCase):
         return output
 
     def test_upload_bundle(self):
+        """Archive and upload a bundle."""
         self.capture_logging("boto")
 
         # add some random files and directories
