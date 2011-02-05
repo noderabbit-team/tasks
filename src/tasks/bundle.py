@@ -1,7 +1,8 @@
 import os
 import datetime
-import utils
 import ConfigParser
+
+import utils
 
 
 def parse_zoombuild(buildcfg):
@@ -35,6 +36,13 @@ def parse_zoombuild(buildcfg):
     return result
 
 def bundle_app(custdir, app_id):
+    """
+    Task: Bundle an app with ``app_id`` found in ``custdir``
+
+    :param custdir: Absolute path to the base customer directory
+    :param app_id: A path such that ``os.path.join(custdir, app_id)`` is a
+        valid directory.
+    """
     appdir = os.path.join(custdir, app_id)
     appsrcdir = os.path.join(appdir, "src")
     buildconfig = os.path.join(appdir, "zoombuild.cfg")
