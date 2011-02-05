@@ -66,13 +66,14 @@ def add_to_pth(paths, vpath, relative=False):
     :param paths: absolute paths to add to pth file
     :param vpath: absolute path to virtualenv root
     :param relative: if True, entries in ``paths`` should be relative to
-        supplied ``vpath`` 
+        supplied ``vpath``. If another value, relative to that value.
     """
-    if relative:
+    if relative is True:
         paths = [os.path.join(vpath, p) for p in paths]
+    elif relative is not False:
+        paths = [os.path.join(relative, p) for p in paths]
 
     major, minor = sys.version_info[0:2]
-    print vpath
     pthfname = os.path.join(get_site_packages(vpath), taskconfig.NR_PTH_FILENAME)
     pthfile = open(pthfname, 'a')
     pthfile.writelines(paths)
