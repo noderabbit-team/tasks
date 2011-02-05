@@ -9,7 +9,10 @@ NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 version = '0.1'
 
 install_requires = [
-    'celery==2.2'
+    'celery==2.2',
+    'jinja2',
+    'nose',
+    'fabric==0.9.3'
 ]
 
 
