@@ -2,6 +2,7 @@
 *.swo
 *.swp
 
+.coverage
 .installed.cfg
 bin
 develop-eggs
