@@ -40,6 +40,9 @@ class TasksTestCase(unittest.TestCase):
         pth_file = path.join(utils.get_site_packages(bundle_dir),
                              taskconfig.NR_PTH_FILENAME)
         pth_content = open(pth_file, 'r').read()
+        # Copied static files
+        self.assertTrue(path.isdir(path.join(bundle_dir, 'static')))
+        self.assertTrue(path.isdir(path.join(bundle_dir, 'foo')))
         # Moved the user's src directory
         self.assertEqual(pth_content, path.join(bundle_dir, 'user-src',
                                                 'mysite_pth_add'))

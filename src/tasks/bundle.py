@@ -1,4 +1,5 @@
 import os
+import shutil
 import datetime
 import ConfigParser
 
@@ -82,6 +83,13 @@ def bundle_app(custdir, app_id):
     utils.local('cp --archive %s %s' % (from_src, to_src))
     utils.add_to_pth(buildconfig_info["additional_python_path_dirs"].splitlines(),
                      bundle_dir, relative=to_src)
+
+    # Copy static directories to a better location
+    for line in buildconfig_info["site_media_map"].splitlines():
+        static, _ = line.strip().split()
+        from_static = os.path.join(appsrcdir, static)
+        to_static = os.path.join(bundle_dir, static)
+        shutil.copytree(from_static, to_static)
 
     # Add settings file
     utils.render_tpl_to_file('bundle/settings.py.tmpl',
