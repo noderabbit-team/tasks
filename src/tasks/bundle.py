@@ -11,7 +11,7 @@ def parse_zoombuild(buildcfg):
     """
     Parse and validate a :file:`zoombuild.cfg`.
 
-    A example can be found in ``tests/fixtures/app/zoomconfig.cfg``.
+    A example can be found in ``tests/fixtures/app/zoombuild.cfg``.
 
     :param buildcfg: Absolute path to config file
     """

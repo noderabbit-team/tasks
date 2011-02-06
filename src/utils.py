@@ -34,7 +34,6 @@ def get_site_packages(vpath):
     return os.path.join(vpath, 'lib', 'python%d.%d' % (major, minor),
                         'site-packages')
 
-
 def make_virtualenv(path):
     """
     Generate a virtual env
