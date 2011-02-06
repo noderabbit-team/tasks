@@ -16,12 +16,26 @@ from dz.tasklib import taskconfig
 from dz.tasklib import utils
 from dz.tasklib import bundle
 
+_missing = object()
+
 
 class TasksTestCase(MockerTestCase):
     def setUp(self):
         self.customer_directory = self.makeDir()
         self.app_dir = self.makeDir(dirname=self.customer_directory)
         self.dir = self.makeDir(dirname=self.app_dir)
+
+    def patch(self, ob, attr, value):
+        old_value = getattr(ob, attr, _missing)
+        setattr(ob, attr, value)
+
+        def restore():
+            if old_value is _missing:
+                delattr(ob, attr)
+            else:
+                setattr(ob, attr, old_value)
+
+        self.addCleanup(restore)
 
     def capture_logging(self, log_name, level=logging.ERROR):
         output = StringIO()
@@ -36,6 +50,7 @@ class TasksTestCase(MockerTestCase):
     def test_upload_bundle(self):
         """Archive and upload a bundle."""
         self.capture_logging("boto")
+        self.patch(taskconfig, "NR_CUSTOMER_DIR", self.customer_directory)
 
         # add some random files and directories
         for i in range(5):
@@ -49,7 +64,6 @@ class TasksTestCase(MockerTestCase):
                 dirname=dirname)
 
         key_name = bundle.zip_and_upload_bundle(
-            self.customer_directory,
             os.path.basename(self.app_dir),
             os.path.basename(self.dir))
 
@@ -80,6 +94,7 @@ class TasksTestCase(MockerTestCase):
         """
         Build a bundle!
         """
+        self.patch(taskconfig, "NR_CUSTOMER_DIR", self.dir)
 
         install_requirements = self.mocker.replace(
             "dz.tasklib.utils.install_requirements")
@@ -91,7 +106,7 @@ class TasksTestCase(MockerTestCase):
         dest = path.join(self.dir, 'app')
         shutil.copytree(src, dest)
 
-        bundle_name = bundle.bundle_app(self.dir, 'app')
+        bundle_name = bundle.bundle_app('app')
         bundle_dir = path.join(self.dir, 'app', bundle_name)
         now = datetime.utcnow()
         # Made a datestamp'd bundle app directory
