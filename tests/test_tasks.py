@@ -8,7 +8,7 @@ from datetime import datetime
 
 import taskconfig
 import utils
-from tasks import bundle
+from tasklib import bundle
 
 
 class TasksTestCase(unittest.TestCase):
