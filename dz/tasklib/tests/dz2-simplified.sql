@@ -1,6 +1,6 @@
 CREATE TABLE "dz2_project" (
     "id" INTEGER NOT NULL PRIMARY KEY,
-    "owner_id" integer NOT NULL, -- REFERENCES "djangozoom_team" ("id") DEFERRABLE INITIALLY DEFERRED,
+    "owner_id" integer NOT NULL,
     "source_code_url" varchar(1000),
     "title" varchar(120) NOT NULL,
     "django_version" varchar(32) NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE "dz2_project" (
 ;
 CREATE TABLE "dz2_virtualhostname" (
     "id" INTEGER NOT NULL PRIMARY KEY,
-    "project_id" integer NOT NULL, -- REFERENCES "dz2_project" ("id") DEFERRABLE INITIALLY DEFERRED,
+    "project_id" integer NOT NULL,
     "hostname" varchar(253) NOT NULL UNIQUE
 )
 ;
@@ -30,20 +30,7 @@ CREATE TABLE "dz2_appbundle" (
     "creation_date" timestamp with time zone NOT NULL
 )
 ;
-CREATE TABLE "dz2_projectreqfile" (
-    "id" INTEGER NOT NULL PRIMARY KEY,
-    "project_id" integer NOT NULL, -- REFERENCES "dz2_project" ("id") DEFERRABLE INITIALLY DEFERRED,
-    "path_in_repo" varchar(255) NOT NULL
-)
-;
-CREATE TABLE "dz2_projectrequirement" (
-    "id" INTEGER NOT NULL PRIMARY KEY,
-    "project_id" integer NOT NULL, -- REFERENCES "dz2_project" ("id") DEFERRABLE INITIALLY DEFERRED,
-    "pip_line" varchar(255) NOT NULL,
-    "priority" integer NOT NULL,
-    "from_reqfile_id" integer, -- REFERENCES "dz2_projectreqfile" ("id") DEFERRABLE INITIALLY DEFERRED
-)
-;
+
 CREATE TABLE "dz2_job" (
     "id" INTEGER NOT NULL PRIMARY KEY,
     "task_id" varchar(32),
@@ -62,15 +49,7 @@ CREATE TABLE "dz2_log" (
     "logtype" varchar(2) NOT NULL
 )
 ;
-CREATE TABLE "dz2_configguess" (
-    "id" INTEGER NOT NULL PRIMARY KEY,
-    "project_id" integer NOT NULL, -- REFERENCES "dz2_project" ("id") DEFERRABLE INITIALLY DEFERRED,
-    "field" varchar(100) NOT NULL,
-    "value" varchar(1000) NOT NULL,
-    "is_primary" boolean NOT NULL,
-    "basis" varchar(50)
-)
-;
+
 CREATE TABLE "dz2_appserverdeployment" (
     "id" INTEGER NOT NULL PRIMARY KEY,
     "project_id" integer NOT NULL, -- REFERENCES "dz2_project" ("id") DEFERRABLE INITIALLY DEFERRED,
@@ -82,4 +61,4 @@ CREATE TABLE "dz2_appserverdeployment" (
     "deactivation_date" timestamp with time zone
 )
 ;
-COMMIT;
+

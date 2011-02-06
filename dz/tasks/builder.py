@@ -8,9 +8,7 @@ Builds out app server bundle
 """
 
 from celery.task import task
-from tasklib import bundle
-from sqlalchemy.ext.sqlsoup import SqlSoup
-
+from tasklib import bundle, db
 
 @task(queue="build", serializer="json")
 def check_repo():
@@ -32,6 +30,6 @@ def build_bundle(app_id):
     Build bundle, and upload to s3.
     """
     session = build_bundle.backend.ResultSession()
-    soup = SqlSoup(session=session)
-    bundle_name = bundle.bundle_app(customer_dir, app_id)
-    bundle.zip_and_upload_bundle(customer_dir, app_id, bundle_name)
+    zoom_db = db.ZoomDatabase(session, build_bundle.request.id)
+    bundle_name = bundle.bundle_app(zoom_db, app_id)
+    bundle.zip_and_upload_bundle(zoom_db, app_id, bundle_name)
