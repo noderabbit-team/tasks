@@ -90,7 +90,8 @@ def bundle_app(custdir, app_id):
         static, _ = line.strip().split()
         from_static = os.path.join(appsrcdir, static)
         to_static = os.path.join(bundle_dir, static)
-        shutil.copytree(from_static, to_static)
+        if os.path.isdir(from_static):
+            shutil.copytree(from_static, to_static)
 
     # Add settings file
     utils.render_tpl_to_file('bundle/settings.py.tmpl',
@@ -99,3 +100,15 @@ def bundle_app(custdir, app_id):
 
     return bundle_name
 
+def zip_and_upload_bundle(cust_dir, app_id):
+    """
+    Task: Zip up the bundle and upload it to S3
+    :param custdir: Absolute path to the base customer directory
+    :param app_id: A path such that ``os.path.join(custdir, app_id)`` is a
+                   valid directory.
+    """
+    from boto.s3 import Connection
+    connection = Connection(is_secure=False)
+    
+
+        
