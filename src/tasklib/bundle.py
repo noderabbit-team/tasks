@@ -6,6 +6,11 @@ import ConfigParser
 import taskconfig
 import utils
 
+import tempfile
+import subprocess
+
+from boto.s3.connection import S3Connection
+
 
 def parse_zoombuild(buildcfg):
     """
@@ -36,6 +41,7 @@ def parse_zoombuild(buildcfg):
         raise ValueError("Sorry, couldn't find %r in 'project'." % buildcfg)
 
     return result
+
 
 def bundle_app(custdir, app_id):
     """
@@ -100,15 +106,39 @@ def bundle_app(custdir, app_id):
 
     return bundle_name
 
-def zip_and_upload_bundle(cust_dir, app_id):
+
+def zip_and_upload_bundle(cust_dir, app_id, bundle_name):
     """
     Task: Zip up the bundle and upload it to S3
     :param custdir: Absolute path to the base customer directory
     :param app_id: A path such that ``os.path.join(custdir, app_id)`` is a
                    valid directory.
     """
-    from boto.s3 import Connection
-    connection = Connection(is_secure=False)
-    
+    connection = S3Connection()
+    archive_file_path = tempfile.mktemp(suffix=".tgz")
 
-        
+    app_dir = os.path.join(cust_dir, app_id)
+    bundle_path = os.path.join(app_dir, bundle_name)
+
+    try:
+        current_dir = os.getcwd()
+        os.chdir(app_dir)
+
+        try:
+            p = subprocess.Popen(
+                ["tar", "czf", archive_file_path, bundle_name],
+                env=dict(PWD=app_dir),
+                close_fds=True)
+            os.waitpid(p.pid, 0)
+        finally:
+            os.chdir(current_dir)
+
+        bucket = connection.get_bucket(taskconfig.NR_BUNDLE_BUCKET)
+        key = bucket.new_key(bundle_name + ".tgz")
+        key.set_contents_from_file(
+            open(archive_file_path), policy="private")
+
+    finally:
+        os.remove(archive_file_path)
+
+    return bundle_name + ".tgz"
