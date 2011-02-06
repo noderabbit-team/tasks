@@ -3,6 +3,7 @@ import shutil
 import datetime
 import ConfigParser
 
+import taskconfig
 import utils
 
 
@@ -72,15 +73,15 @@ def bundle_app(custdir, app_id):
     utils.make_virtualenv(bundle_dir)
 
     # archive a copy of the build parameters
-    os.system("cp %s %s" % (buildconfig, bundle_dir))
+    shutil.copyfile(buildconfig, os.path.join(bundle_dir,
+                                              taskconfig.NR_PIP_REQUIREMENTS_FILENAME))
 
     # Write install requirements
     utils.install_requirements(buildconfig_info["pip_reqs"], bundle_dir)
 
     # Copy in user code and add to pth
-    from_src = os.path.join(bundle_dir, '../src')
     to_src = os.path.join(bundle_dir, 'user-src')
-    utils.local('cp --archive %s %s' % (from_src, to_src))
+    shutil.copytree(appsrcdir, to_src)
     utils.add_to_pth(buildconfig_info["additional_python_path_dirs"].splitlines(),
                      bundle_dir, relative=to_src)
 
