@@ -6,15 +6,15 @@ import tarfile
 import logging
 from StringIO import StringIO
 
-from mocker import MockerTestCase
+from mocker import MockerTestCase, ANY, MATCH
 
 from boto.s3.connection import S3Connection
 from os import path
 from datetime import datetime
 
-import taskconfig
-import utils
-from tasklib import bundle
+from dz.tasklib import taskconfig
+from dz.tasklib import utils
+from dz.tasklib import bundle
 
 
 class TasksTestCase(MockerTestCase):
@@ -80,6 +80,12 @@ class TasksTestCase(MockerTestCase):
         """
         Build a bundle!
         """
+
+        install_requirements = self.mocker.replace(
+            "dz.tasklib.utils.install_requirements")
+        install_requirements(ANY, MATCH(os.path.isdir))
+        self.mocker.replay()
+
         here = path.abspath(path.split(__file__)[0])
         src = path.join(here, 'fixtures', 'app')
         dest = path.join(self.dir, 'app')

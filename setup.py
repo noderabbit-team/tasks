@@ -16,7 +16,7 @@ install_requires = [
 ]
 
 
-setup(name='.',
+setup(name='dz_tasks',
     version=version,
     description="NodeRabbit tasks for RabbitMQ!",
     long_description=README + '\n\n' + NEWS,
