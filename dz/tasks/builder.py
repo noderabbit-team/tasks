@@ -8,28 +8,32 @@ Builds out app server bundle
 """
 
 from celery.task import task
-from tasklib import bundle, db
+from dz.tasklib import bundle, db
 
-@task(queue="build", serializer="json")
+import time
+
+
+@task(name="check_repo", queue="build", serializer="json")
 def check_repo():
     """
     Checkout an app and inspect settings for use by the database.
     """
+    time.sleep(60)
 
 
-@task(queue="build", serializer="json")
+@task(name="build_app", queue="build", serializer="json")
 def build_app():
     """
     Checkout an app, and then generates a zoombuild info config file.
     """
 
 
-@task(queue="build", serializer="json")
+@task(name="build_bundle", queue="build", serializer="json")
 def build_bundle(app_id):
     """
     Build bundle, and upload to s3.
     """
     session = build_bundle.backend.ResultSession()
-    zoom_db = db.ZoomDatabase(session, build_bundle.request.id)
-    bundle_name = bundle.bundle_app(zoom_db, app_id)
-    bundle.zip_and_upload_bundle(zoom_db, app_id, bundle_name)
+    zoom_db = db.ZoomDatabase(session.bind, build_bundle.request.id)
+    #bundle_name = bundle.bundle_app(zoom_db, app_id)
+    #bundle.zip_and_upload_bundle(zoom_db, app_id, bundle_name)
