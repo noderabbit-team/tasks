@@ -4,4 +4,4 @@ BROKER_USER = "nrweb"
 BROKER_PASSWORD = "MiXNYPwsKbRkQCEU"
 
 CELERY_RESULT_BACKEND = "amqp"
-CELERY_IMPORTS = ("tasks", )
+CELERY_IMPORTS = ("dz.tasks", )
