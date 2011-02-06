@@ -4,8 +4,8 @@ import tempfile
 import unittest
 from os import path
 
-import taskconfig
-import utils
+from dz.tasklib import taskconfig
+from dz.tasklib import utils
 
 
 class UtilsTestCase(unittest.TestCase):

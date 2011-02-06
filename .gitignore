@@ -12,3 +12,6 @@ develop-eggs
 tmp
 build
 dist
+
+/include/
+/lib/

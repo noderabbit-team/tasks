@@ -6,6 +6,11 @@ import ConfigParser
 import taskconfig
 import utils
 
+import tempfile
+import subprocess
+
+from boto.s3.connection import S3Connection
+
 
 def parse_zoombuild(buildcfg):
     """
@@ -37,6 +42,7 @@ def parse_zoombuild(buildcfg):
 
     return result
 
+
 def bundle_app(custdir, app_id):
     """
     Task: Bundle an app with ``app_id`` found in ``custdir``
@@ -52,8 +58,9 @@ def bundle_app(custdir, app_id):
     assert os.path.isdir(custdir),\
            "Expected custdir %r to be a directory, but it isn't." % custdir
 
-    assert os.path.isdir(appdir),\
-           "Expected to find customer source in directory %r, but that isn't a directory." % appsrcdir
+    err_msg = ("Expected to find customer source in directory %r," % appsrcdir,
+               "but that isn't a directory.")
+    assert os.path.isdir(appdir), err_msg
 
     assert os.path.isfile(buildconfig),\
            "Expected zoombuild.cfg file in %r, but no dice." % buildconfig
@@ -61,20 +68,23 @@ def bundle_app(custdir, app_id):
     # parse the zoombuild.cfg file
     buildconfig_info = parse_zoombuild(buildconfig)
 
-    assert buildconfig_info,\
-           "File %r doesn't look like a valid zoombuild.cfg format file." % buildconfig
+    err_msg = ("File %r doesn't look like a valid" % buildconfig,
+               "zoombuild.cfg format file.")
+    assert buildconfig_info, err_msg
 
     # generate a bundle name and directory
-    bundle_name = "bundle_%s_%s" % (app_id,
-                                    datetime.datetime.utcnow().strftime("%Y-%m-%d-%H.%M.%S"))
+    bundle_name = "bundle_%s_%s" % (
+        app_id,
+        datetime.datetime.utcnow().strftime("%Y-%m-%d-%H.%M.%S"))
     bundle_dir = os.path.join(appdir, bundle_name)
 
     # make virtualenv
     utils.make_virtualenv(bundle_dir)
 
     # archive a copy of the build parameters
-    shutil.copyfile(buildconfig, os.path.join(bundle_dir,
-                                              taskconfig.NR_PIP_REQUIREMENTS_FILENAME))
+    shutil.copyfile(buildconfig,
+                    os.path.join(bundle_dir,
+                                 taskconfig.NR_PIP_REQUIREMENTS_FILENAME))
 
     # Write install requirements
     utils.install_requirements(buildconfig_info["pip_reqs"], bundle_dir)
@@ -82,8 +92,9 @@ def bundle_app(custdir, app_id):
     # Copy in user code and add to pth
     to_src = os.path.join(bundle_dir, 'user-src')
     shutil.copytree(appsrcdir, to_src)
-    utils.add_to_pth(buildconfig_info["additional_python_path_dirs"].splitlines(),
-                     bundle_dir, relative=to_src)
+    utils.add_to_pth(
+        buildconfig_info["additional_python_path_dirs"].splitlines(),
+        bundle_dir, relative=to_src)
 
     # Copy static directories to a better location
     for line in buildconfig_info["site_media_map"].splitlines():
@@ -94,21 +105,46 @@ def bundle_app(custdir, app_id):
             shutil.copytree(from_static, to_static)
 
     # Add settings file
-    utils.render_tpl_to_file('bundle/settings.py.tmpl',
-                             os.path.join(bundle_dir, 'dz_settings.py'),
-                             dz_settings=buildconfig_info["django_settings_module"])
+    utils.render_tpl_to_file(
+        'bundle/settings.py.tmpl',
+        os.path.join(bundle_dir, 'dz_settings.py'),
+        dz_settings=buildconfig_info["django_settings_module"])
 
     return bundle_name
 
-def zip_and_upload_bundle(cust_dir, app_id):
+
+def zip_and_upload_bundle(cust_dir, app_id, bundle_name):
     """
     Task: Zip up the bundle and upload it to S3
     :param custdir: Absolute path to the base customer directory
     :param app_id: A path such that ``os.path.join(custdir, app_id)`` is a
                    valid directory.
     """
-    from boto.s3 import Connection
-    connection = Connection(is_secure=False)
-    
+    connection = S3Connection()
+    archive_file_path = tempfile.mktemp(suffix=".tgz")
 
-        
+    app_dir = os.path.join(cust_dir, app_id)
+
+    try:
+        current_dir = os.getcwd()
+        os.chdir(app_dir)
+
+        try:
+            p = subprocess.Popen(
+                ["tar", "czf", archive_file_path, bundle_name],
+                env=dict(PWD=app_dir),
+                close_fds=True)
+            os.waitpid(p.pid, 0)
+        finally:
+            os.chdir(current_dir)
+
+        bucket = connection.get_bucket(taskconfig.NR_BUNDLE_BUCKET)
+        key = bucket.new_key(bundle_name + ".tgz")
+        key.set_contents_from_file(
+            open(archive_file_path), policy="private")
+
+    finally:
+        if os.path.exists(archive_file_path):
+            os.remove(archive_file_path)
+
+    return bundle_name + ".tgz"

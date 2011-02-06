@@ -16,7 +16,7 @@ install_requires = [
 ]
 
 
-setup(name='.',
+setup(name='dz_tasks',
     version=version,
     description="NodeRabbit tasks for RabbitMQ!",
     long_description=README + '\n\n' + NEWS,
@@ -28,8 +28,8 @@ setup(name='.',
     author_email='all@noderabbit.com',
     url='http://noderabbit.com',
     license='Proprietary',
-    packages=find_packages('src'),
-    package_dir = {'': 'src'},
+    namespace_packages=["dz"],
+    packages=find_packages('.'),
     include_package_data=True,
     zip_safe=False,
     install_requires=install_requires,

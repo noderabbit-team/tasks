@@ -1,0 +1,12 @@
+
+
+Ideas for future tasks.
+
+
+Track Project Database Size
+===========================
+ - cron task
+ - for each project check database size and update project db model.
+ -
+
+
