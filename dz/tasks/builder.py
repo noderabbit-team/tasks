@@ -27,14 +27,11 @@ def build_app():
 
 
 @task(queue="build", serializer="json")
-def build_bundle(message):
+def build_bundle(app_id):
     """
     Build bundle, and upload to s3.
     """
     session = build_bundle.backend.ResultSession()
     soup = SqlSoup(session=session)
-
-    customer_dir = message.get("customer_dir")
-    app_id = message.get("app_id")
     bundle_name = bundle.bundle_app(customer_dir, app_id)
     bundle.zip_and_upload_bundle(customer_dir, app_id, bundle_name)

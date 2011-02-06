@@ -43,7 +43,7 @@ def parse_zoombuild(buildcfg):
     return result
 
 
-def bundle_app(custdir, app_id):
+def bundle_app(app_id):
     """
     Task: Bundle an app with ``app_id`` found in ``custdir``
 
@@ -51,12 +51,14 @@ def bundle_app(custdir, app_id):
     :param app_id: A path such that ``os.path.join(custdir, app_id)`` is a
         valid directory.
     """
-    appdir = os.path.join(custdir, app_id)
+
+    appdir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
     appsrcdir = os.path.join(appdir, "src")
     buildconfig = os.path.join(appdir, "zoombuild.cfg")
 
-    assert os.path.isdir(custdir),\
-           "Expected custdir %r to be a directory, but it isn't." % custdir
+    assert os.path.isdir(taskconfig.NR_CUSTOMER_DIR),\
+           "Expected custdir %r to be a directory, but it isn't." % (
+        taskconfig.NR_CUSTOMER_DIR)
 
     err_msg = ("Expected to find customer source in directory %r," % appsrcdir,
                "but that isn't a directory.")
@@ -113,7 +115,7 @@ def bundle_app(custdir, app_id):
     return bundle_name
 
 
-def zip_and_upload_bundle(cust_dir, app_id, bundle_name):
+def zip_and_upload_bundle(app_id, bundle_name):
     """
     Task: Zip up the bundle and upload it to S3
     :param custdir: Absolute path to the base customer directory
@@ -123,7 +125,7 @@ def zip_and_upload_bundle(cust_dir, app_id, bundle_name):
     connection = S3Connection()
     archive_file_path = tempfile.mktemp(suffix=".tgz")
 
-    app_dir = os.path.join(cust_dir, app_id)
+    app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
 
     try:
         current_dir = os.getcwd()
