@@ -6,7 +6,7 @@ from jinja2 import Template, PackageLoader, Environment
 import taskconfig
 
 
-tpl_env = Environment(loader=PackageLoader('tasklib'))
+tpl_env = Environment(loader=PackageLoader('dz.tasklib'))
 
 
 def local(command, capture=True):

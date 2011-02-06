@@ -75,6 +75,7 @@ class ZoomDatabase(object):
         self._soup.dz2_appserverdeployment.insert(
             project_id=app_db_id,
             bundle_id=bundle_id,
+            server_instance_id=instance_id,
             server_ip=server_ip,
             server_port=server_port,
             creation_date=datetime.utcnow())
