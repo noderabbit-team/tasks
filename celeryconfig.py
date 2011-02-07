@@ -5,5 +5,5 @@ BROKER_USER = "nrweb"
 BROKER_PASSWORD = "MiXNYPwsKbRkQCEU"
 
 CELERY_RESULT_BACKEND = "database"
-CELERY_RESULT_DBURI = "postgresql://nrweb:nrweb@/nrweb"
+CELERY_RESULT_DBURI = "postgresql+psycopg2://nrweb:nrweb@/nrweb"
 CELERY_IMPORTS = ("dz.tasks", )
