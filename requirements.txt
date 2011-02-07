@@ -1,0 +1,5 @@
+nose
+fabric
+mocker
+sqlalchemy
+Celery
