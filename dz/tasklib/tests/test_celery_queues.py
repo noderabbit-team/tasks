@@ -26,25 +26,29 @@ class CeleryQueuesTestCase(unittest.TestCase):
 
         print "Starting celeryd..."
         cls.celeryd_hosts = {
-            "test1": dict(queues=["build", "all_servers"]),
-            "test2": dict(queues=["all_servers"]),
+            "test1": dict(queues=["foo", "build"]),
+            "test2": dict(queues=["appserver", "bar"]),
             }
 
         for hostname, hostinfo in cls.celeryd_hosts.items():
+            args = ['celeryd',
+                    '-l', 'info',
+                    '--hostname', hostname,
+                    '-Q', ",".join(hostinfo["queues"]),
+                    ]
+            env = dict(os.environ)
+            env.update({"TEST_CELERYD_NAME": hostname})
             hostinfo["Popen"] = subprocess.Popen(
-                ['celeryd',
-                 '-l', 'info',
-                 '--hostname', hostname,
-                 '-Q', ",".join(hostinfo["queues"]),
-                 ],
+                args,
                 stdout=file('/dev/null'),
                 # Note: don't use subprocess.PIPE above, or when we wait()
                 # for celeryd to exit later, it will block because nobody
                 # has read stdout. (Or use subprocess.communicate() to
                 # actually read that.
-                stderr=subprocess.STDOUT)
+                stderr=subprocess.STDOUT,
+                env=env)
             print "celeryd [%s] started; pid=%d" % (
-                hostname, hostinfo["Popen"].pid)
+                " ".join(args), hostinfo["Popen"].pid)
 
     @classmethod
     def tearDownClass(cls):
@@ -91,12 +95,12 @@ class CeleryQueuesTestCase(unittest.TestCase):
         """
         tasks_for_testing.task_a.delay()
 
-    def test_waiting_result(self):
+    def test_sync_result(self):
         """
         Ensure I get a proper result from a task when waiting for it.
         """
         r = tasks_for_testing.task_a.apply()
-        self.assertEqual(r.result, "a")
+        self.assertEqual(r.result["result"], "a")
 
     def test_async_result(self):
         """
@@ -110,8 +114,39 @@ class CeleryQueuesTestCase(unittest.TestCase):
             time.sleep(1)
             self.assertTrue(i < 10)  # this better not take too long
 
-        self.assertEqual(delayed_result.result, "a")
+        self.assertEqual(delayed_result.result["result"], "a")
         self.assertTrue(i > 0)
 
-    # def test_enqueue_task_into_queue(self):
-    #     t = _maketask(queue=
+    def test_wait_result(self):
+        """
+        Ensure I get a proper result from an async task when wait()ing for it.
+        """
+        r = tasks_for_testing.task_a.delay()
+        res = r.wait()
+        self.assertEqual(res["result"], "a")
+
+    def test_queue_routing(self):
+        """
+        Test that tasks are routed properly by queue.
+        """
+        build_queue_result = tasks_for_testing.task_a.delay()
+        build_outcome = build_queue_result.wait()
+
+        appserver_queue_result = tasks_for_testing.task_b.delay()
+        appserver_outcome = appserver_queue_result.wait()
+
+        self.assertEqual(build_outcome["result"], "a")
+
+        def _get_hostnames_for_queue(queue):
+            return [hostname
+                    for (hostname, hostinfo)
+                    in CeleryQueuesTestCase.celeryd_hosts.items()
+                    if queue in hostinfo["queues"]]
+
+        build_hostnames = _get_hostnames_for_queue("build")
+        appserver_hostnames = _get_hostnames_for_queue("appserver")
+
+        self.assertEqual([build_outcome["TEST_CELERYD_NAME"]],
+                         build_hostnames)
+        self.assertEqual([appserver_outcome["TEST_CELERYD_NAME"]],
+                         appserver_hostnames)
