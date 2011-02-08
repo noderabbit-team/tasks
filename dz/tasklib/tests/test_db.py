@@ -103,6 +103,7 @@ class ZoomDatabaseTest(MockerTestCase):
             self.soup.dz2_appserverdeployment.all())[0]
         self.assertEqual(worker_deployment_record.project_id, app_db_id)
         self.assertEqual(worker_deployment_record.bundle_id, bundle_id)
-        self.assertEqual(worker_deployment_record.server_instance_id, instance_id)
+        self.assertEqual(worker_deployment_record.server_instance_id,
+                         instance_id)
         self.assertEqual(worker_deployment_record.server_ip, server_ip)
         self.assertEqual(worker_deployment_record.server_port, server_port)
