@@ -1,14 +1,12 @@
 """
-Test enqueuing tasks in celery and routing them to the right celeryd.
-
-To run a celeryd for testing:
-CELERY_CONFIG_MODULE=celeryconfig_testing celeryd -l info
+Test enqueuing tasks in celery and routing them to the right celeryd. These
+tests will bring up multiple celeryd processes; you shouldn't have any
+others talking to the same AMQP backend if you want these to pass.
 """
 
 import unittest
 import os
 import subprocess
-import sys
 import time
 
 os.environ["CELERY_CONFIG_MODULE"] = "celeryconfig_testing"
@@ -17,19 +15,28 @@ import tasks_for_testing
 
 from celery.task import control
 
+
 class CeleryQueuesTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        """
+        Bring up celeryd processes as required to run tests.
+        """
+
         print "Starting celeryd..."
         cls.celeryd_hosts = {
-            "test1": dict(),
-            "test2": dict(),
+            "test1": dict(queues=["build", "all_servers"]),
+            "test2": dict(queues=["all_servers"]),
             }
 
         for hostname, hostinfo in cls.celeryd_hosts.items():
             hostinfo["Popen"] = subprocess.Popen(
-                ['celeryd', '-l', 'info', '--hostname', hostname],
+                ['celeryd',
+                 '-l', 'info',
+                 '--hostname', hostname,
+                 '-Q', ",".join(hostinfo["queues"]),
+                 ],
                 stdout=file('/dev/null'),
                 # Note: don't use subprocess.PIPE above, or when we wait()
                 # for celeryd to exit later, it will block because nobody
@@ -41,7 +48,9 @@ class CeleryQueuesTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-
+        """
+        Shut down the celeryd processes we created earlier.
+        """
         for hostname, hostinfo in cls.celeryd_hosts.items():
             print "Requesting shutdown of celeryd [%s]..." % hostname
             control.broadcast("shutdown", destination=[hostname])
