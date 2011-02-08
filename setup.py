@@ -12,7 +12,8 @@ install_requires = [
     'celery==2.2',
     'jinja2',
     'nose',
-    'fabric==0.9.3'
+    'fabric==0.9.3',
+    'sqlalchemy',
 ]
 
 
