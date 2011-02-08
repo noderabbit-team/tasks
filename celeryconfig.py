@@ -7,3 +7,4 @@ BROKER_PASSWORD = "MiXNYPwsKbRkQCEU"
 CELERY_RESULT_BACKEND = "database"
 CELERY_RESULT_DBURI = "postgresql+psycopg2://nrweb:nrweb@/nrweb"
 CELERY_IMPORTS = ("dz.tasks", )
+CELERY_TASK_SERIALIZER = "json"
