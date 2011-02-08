@@ -8,21 +8,18 @@ Builds out app server bundle
 """
 
 from celery.task import task
-from dz.tasklib import bundle, db
-from dz.tasklib.db import ZoomDatabase
-
-import time
+from dz.tasks.decorators import task_inject_zoomdb
+from dz.tasklib import bundle
 
 
-@task(name="check_repo", queue="build", serializer="json")
-def check_repo(job_id):
+@task_inject_zoomdb(name="check_repo", queue="build", serializer="json")
+def check_repo(job_id, zoomdb):
     """
     Checkout an app and inspect settings for use by the database.
     """
-    session = check_repo.backend.ResultSession()
-    zoom_db = db.ZoomDatabase(session.bind, job_id)
-
-    zoom_db.log("Hello, check_repo world!")
+    zoomdb.log("Hello, check_repo world!!!!", zoomdb.LOG_STEP_BEGIN)
+    zoomdb.log("OK, this should work.")
+    zoomdb.log("Hello, check_repo world!!!!", zoomdb.LOG_STEP_END)
 
 
 @task(name="build_app", queue="build", serializer="json")
