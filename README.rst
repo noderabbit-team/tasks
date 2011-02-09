@@ -52,9 +52,11 @@ run on the appserver.
 
 Sequence:
  * [usercontrol] user requests new build
- * [usercontrol] build_bundle task issued (in queue "build")
-    * zoombuild.cfg attached (as string???)
- * [build] build_bundle task executed
+ * [usercontrol] build_and_launch task issued (in queue "build")
+    * zoombuild.cfg attached (as string???) (or change so can get this
+      information via zoomdb???)
+ * [build] build_bundle task enqueued and executed (as subtask of 
+   build_and_launch)
     * check out code
     * create virtualenv
     * install dependencies
