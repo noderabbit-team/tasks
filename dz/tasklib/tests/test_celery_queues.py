@@ -8,6 +8,7 @@ import unittest
 import os
 import subprocess
 import time
+import sys
 
 os.environ["CELERY_CONFIG_MODULE"] = "celeryconfig_testing"
 
@@ -23,6 +24,17 @@ class CeleryQueuesTestCase(unittest.TestCase):
         """
         Bring up celeryd processes as required to run tests.
         """
+
+        p = subprocess.Popen(['pgrep', 'celeryd'],
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        output, errors = p.communicate()
+        if len(output):
+            print "It looks like an instance of celeryd is already running",
+            print "locally. You should kill it before attempting to run",
+            print "the celery queues test suite, which assumes no other",
+            print "concurrent celeryd processes."
+            sys.exit()
 
         print "Starting celeryd..."
         cls.celeryd_hosts = {
