@@ -17,6 +17,18 @@ import tasks_for_testing
 from celery.task import control
 
 
+def _does_taskmeta_include_date_done():
+    """
+    Create a celery task, run it and wait for the result, and then indicate
+    whether a query for taskmeta includes a "date_done" attribute.
+    """
+    r = tasks_for_testing.task_a.delay()
+    r.wait()  # ignore result
+    from celery.backends import default_backend
+    taskmeta = default_backend.get_task_meta(r.task_id)
+    return "date_done" in taskmeta
+
+
 class CeleryQueuesTestCase(unittest.TestCase):
 
     @classmethod
@@ -162,3 +174,29 @@ class CeleryQueuesTestCase(unittest.TestCase):
                          build_hostnames)
         self.assertEqual([appserver_outcome["TEST_CELERYD_NAME"]],
                          appserver_hostnames)
+
+
+    def test_celery_taskmeta_provides_no_date_done(self):
+        """
+        Ensure celery does not provide a date_done entry in taskmeta when
+        used with the database results backend. This seems to be a bug; see
+        https://github.com/ask/celery/issues/issue/325
+        """
+        self.assertTrue(not _does_taskmeta_include_date_done())
+
+    def test_celery_taskmeta_monkeypatch(self):
+        """
+        Test our monkeypatch for getting date_done from celery database
+        backend.
+        """
+
+        self.assertTrue(not _does_taskmeta_include_date_done())
+
+        import dz.tasks
+        dz.tasks.monkey_patch_celery_db_models_Task()
+
+        self.assertTrue(_does_taskmeta_include_date_done())
+
+        dz.tasks.undo_monkey_patch_celery_db_models_Task()
+
+        self.assertTrue(not _does_taskmeta_include_date_done())
