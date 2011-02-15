@@ -24,6 +24,7 @@ def local(command, capture=True):
 
     return out
 
+
 def get_site_packages(vpath):
     """
     Get the path to ``site-packages`` directory for the given virtualenv
@@ -34,6 +35,7 @@ def get_site_packages(vpath):
     return os.path.join(vpath, 'lib', 'python%d.%d' % (major, minor),
                         'site-packages')
 
+
 def make_virtualenv(path):
     """
     Generate a virtual env
@@ -43,6 +45,7 @@ def make_virtualenv(path):
     # specifying the system python means it's OK if we're running inside a
     # virtualenv ourselves.
     local("virtualenv  --python=/usr/bin/python %s" % path)
+
 
 def install_requirements(reqs, path):
     """
@@ -58,9 +61,11 @@ def install_requirements(reqs, path):
     pip = os.path.join(path, 'bin', 'pip')
     local("%s install -q -r %s" % (pip, fname))
 
+
 def add_to_pth(paths, vpath, relative=False):
     """
-    Add a list of ``paths`` to our ``pth`` file for virtualenv found at ``venv``.
+    Add a list of ``paths`` to our ``pth`` file for virtualenv found at
+    ``venv``.
 
     :param paths: absolute paths to add to pth file
     :param vpath: absolute path to virtualenv root
@@ -73,9 +78,11 @@ def add_to_pth(paths, vpath, relative=False):
         paths = [os.path.join(relative, p) for p in paths]
 
     major, minor = sys.version_info[0:2]
-    pthfname = os.path.join(get_site_packages(vpath), taskconfig.NR_PTH_FILENAME)
+    pthfname = os.path.join(get_site_packages(vpath),
+                            taskconfig.NR_PTH_FILENAME)
     pthfile = open(pthfname, 'a')
     pthfile.writelines(paths)
+
 
 def render_tpl_to_file(template, path, **kwargs):
     """
@@ -90,3 +97,12 @@ def render_tpl_to_file(template, path, **kwargs):
     f.write(content)
     return content
 
+
+def run_steps(zoomdb, opts, steps):
+    for i, stepfn in enumerate(steps):
+        nicename = " ".join(stepfn.__name__.split("_")).title()
+
+        zoomdb.log(nicename, zoomdb.LOG_STEP_BEGIN)
+        # skip this for now # os.chdir(taskconfig.NR_CUSTOMER_DIR)
+        stepfn(zoomdb, opts)
+        zoomdb.log(nicename, zoomdb.LOG_STEP_END)
