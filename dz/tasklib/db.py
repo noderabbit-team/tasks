@@ -80,3 +80,9 @@ class ZoomDatabase(object):
             server_port=server_port,
             creation_date=datetime.utcnow())
         self._soup.session.commit()
+
+    def get_job(self):
+        if not hasattr(self, "_job"):
+            self._job = self._soup.dz2_job.filter(
+                self._soup.dz2_job.id == self._job_id).one()
+        return self._job

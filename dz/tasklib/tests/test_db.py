@@ -27,6 +27,11 @@ class ZoomDatabaseTest(MockerTestCase):
         # For verifying results
         self.soup = SqlSoup(self.db)
 
+        # create a stub job
+        self.soup.dz2_job.insert(id=1, task_id=1, jobcode="deploy",
+                                 owner_id=1, issued_by_id=1,
+                                 issued_at=datetime.datetime.utcnow())
+
     def test_log(self):
         """Verify that jobs can log to the database."""
         self.zoom_db.log("message")
@@ -107,3 +112,7 @@ class ZoomDatabaseTest(MockerTestCase):
                          instance_id)
         self.assertEqual(worker_deployment_record.server_ip, server_ip)
         self.assertEqual(worker_deployment_record.server_port, server_port)
+
+    def test_get_job(self):
+        j = self.zoom_db.get_job()
+        self.assertEqual(j.id, self.zoom_db._job_id)
