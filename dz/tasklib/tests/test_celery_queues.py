@@ -64,11 +64,13 @@ class CeleryQueuesTestCase(unittest.TestCase):
             env.update({"TEST_CELERYD_NAME": hostname})
             hostinfo["Popen"] = subprocess.Popen(
                 args,
+                # NOTE: if you need to further debug an error, comment out this line
                 stdout=file('/dev/null'),
                 # Note: don't use subprocess.PIPE above, or when we wait()
                 # for celeryd to exit later, it will block because nobody
                 # has read stdout. (Or use subprocess.communicate() to
                 # actually read that.
+                # NOTE: if you need to further debug an error, comment out this line
                 stderr=subprocess.STDOUT,
                 env=env)
             print "celeryd [%s] started; pid=%d" % (
