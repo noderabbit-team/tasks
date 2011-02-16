@@ -62,3 +62,12 @@ CREATE TABLE "dz2_appserverdeployment" (
 )
 ;
 
+CREATE TABLE "dz2_configguess" (
+    "id" integer NOT NULL PRIMARY KEY,
+    "project_id" integer NOT NULL REFERENCES "dz2_project" ("id"),
+    "field" varchar(100) NOT NULL,
+    "value" varchar(1000) NOT NULL,
+    "is_primary" bool NOT NULL,
+    "basis" varchar(50)
+)
+;

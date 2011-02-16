@@ -19,7 +19,7 @@ class UtilsTestCase(unittest.TestCase):
         cmd = 'echo "foo"'
         out = utils.local(cmd, capture=True)
         self.assertEqual(out, 'foo')
-    
+
     def test_make_virtualenv(self):
         """
         Creating a virtualenv

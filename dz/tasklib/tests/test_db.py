@@ -29,6 +29,7 @@ class ZoomDatabaseTest(MockerTestCase):
 
         # create a stub job
         self.soup.dz2_job.insert(id=1, task_id=1, jobcode="deploy",
+                                 project_id=777,
                                  owner_id=1, issued_by_id=1,
                                  issued_at=datetime.datetime.utcnow())
 
@@ -116,3 +117,11 @@ class ZoomDatabaseTest(MockerTestCase):
     def test_get_job(self):
         j = self.zoom_db.get_job()
         self.assertEqual(j.id, self.zoom_db._job_id)
+
+    def test_add_config_guess(self):
+        self.assertEqual(self.soup.dz2_configguess.count(), 0)
+        self.zoom_db.add_config_guess(field="f",
+                                      value="v",
+                                      is_primary=True,
+                                      basis="testing")
+        self.assertEqual(self.soup.dz2_configguess.count(), 1)

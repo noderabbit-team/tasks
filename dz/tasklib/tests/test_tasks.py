@@ -15,11 +15,13 @@ from datetime import datetime
 from dz.tasklib import taskconfig
 from dz.tasklib import utils
 from dz.tasklib import bundle
+from dz.tasklib import check_repo
 
 _missing = object()
 
 
 class TasksTestCase(MockerTestCase):
+
     def setUp(self):
         self.customer_directory = self.makeDir()
         self.app_dir = self.makeDir(dirname=self.customer_directory)
@@ -136,3 +138,48 @@ class TasksTestCase(MockerTestCase):
         self.assertTrue(path.isfile(settings))
         line = open(settings, 'r').readline()
         self.assertTrue('mysite.settings' in line)
+
+    def test_check_repo(self):
+        """
+        Check repo and make guesses!
+        """
+        self.patch(taskconfig, "NR_CUSTOMER_DIR", self.dir)
+
+        from dz.tasklib.db import ZoomDatabase
+
+        class StubZoomDB(ZoomDatabase):
+            def __init__(self):
+                self.logs = []
+                self.config_guesses = []
+
+            def log(self, msg, logtype="i"):
+                self.logs.append((msg, logtype))
+
+            def add_config_guess(self, field, value, is_primary, basis):
+                self.config_guesses.append(dict(
+                        field=field, value=value, is_primary=is_primary,
+                        basis=basis))
+
+        zoomdb = StubZoomDB()
+        app_id = "p001"
+        src_url = "test://voo2do"
+
+        check_repo.check_repo(zoomdb, app_id, src_url)
+
+        src_dir = path.join(self.dir, app_id, "src")
+
+        self.assertTrue(path.isdir(src_dir),
+                        "src dir does not exist")
+
+        self.assertTrue(path.isdir(path.join(src_dir,
+                                             ".git")),
+                        "no .git dir inside src dir")
+
+        self.assertEqual(len(zoomdb.config_guesses), 4)
+
+        def is_one_expected_guess(g):
+            return (g["field"] == "additional_python_path_dirs"
+                    and g["value"] == "version2\nversion2/voo2do")
+
+        self.assertEqual(len(filter(is_one_expected_guess,
+                                    zoomdb.config_guesses)), 1)

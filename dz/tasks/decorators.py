@@ -23,10 +23,10 @@ def task_inject_zoomdb(**celery_kwargs):
                                      " or else celery will get confused.")
 
     def decorator(taskfunc):
-        def db_constructor(job_id):
+        def db_constructor(job_id, *args, **kwargs):
             session = db_constructor.backend.ResultSession()
             zoomdb = ZoomDatabase(session.bind, job_id)
-            return taskfunc(job_id, zoomdb)
+            return taskfunc(job_id, zoomdb, *args, **kwargs)
 
         db_constructor = task(**celery_kwargs)(db_constructor)
 

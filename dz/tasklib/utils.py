@@ -99,10 +99,16 @@ def render_tpl_to_file(template, path, **kwargs):
 
 
 def run_steps(zoomdb, opts, steps):
+    cur_dir = os.getcwd()
+
     for i, stepfn in enumerate(steps):
         nicename = " ".join(stepfn.__name__.split("_")).title()
 
         zoomdb.log(nicename, zoomdb.LOG_STEP_BEGIN)
-        # skip this for now # os.chdir(taskconfig.NR_CUSTOMER_DIR)
-        stepfn(zoomdb, opts)
+
+        try:
+            stepfn(zoomdb, opts)
+        finally:
+            os.chdir(cur_dir)
+
         zoomdb.log(nicename, zoomdb.LOG_STEP_END)

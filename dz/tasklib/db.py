@@ -1,6 +1,8 @@
 from datetime import datetime
 from sqlalchemy.ext.sqlsoup import SqlSoup
-
+from dz.tasklib import utils
+import subprocess
+import traceback
 
 class ZoomDatabase(object):
     """
@@ -37,6 +39,44 @@ class ZoomDatabase(object):
             message=message,
             timestamp=datetime.utcnow())
         self._soup.session.commit()
+
+    def logsys(self, cmd, null_stdin=True):
+        """Run the provided command (using subprocess.Popen) and log the
+        results. Intended for use from tasks only.
+
+        If cmd is a string, it will be run through a shell. Otherwise,
+        it is assumed to be a list and not run in shell mode.
+
+        If null_stdin is true (the default), pass in a pre-closed FH as the
+        subprocess' stdin. That'll mean that when the subprocess tries to
+        read from stdin, it will get an EOF and possibly fail. That sounds
+        bad, but is actually what we want because we can't be there to type
+        a password or answer some prompt, and it's better to fail rapidly
+        with logging than to get hung waiting for a nonpresent user to type
+        something.
+        """
+
+        print "* logsys running command: %r" % cmd
+
+        p_args = dict(shell=isinstance(cmd, basestring),
+                      stdout=subprocess.PIPE,
+                      stderr=subprocess.PIPE)
+
+        if null_stdin:
+            p_args["stdin"] = open("/dev/null")
+
+        p = subprocess.Popen(cmd, **p_args)
+        (stdout, stderr) = p.communicate()
+
+        print "* logsys completed command: %r" % cmd
+        print "* logsys STDOUT: %r" % stdout
+        print "* logsys STDERR: %r" % stderr
+        print "* logsys return code: %r" % p.returncode
+        print "* logsys closed file handles."
+
+        msg = "Executed: %r\n== STDOUT ==\n%r== STDERR ==\n%r\n== end ==" % (
+            cmd, stdout, stderr)
+        self.log(msg)
 
     def add_bundle(
         self, app_db_id, bundle_name, bundle_location, code_revision=None):
@@ -82,7 +122,18 @@ class ZoomDatabase(object):
         self._soup.session.commit()
 
     def get_job(self):
+        """Get the Job row."""
         if not hasattr(self, "_job"):
             self._job = self._soup.dz2_job.filter(
                 self._soup.dz2_job.id == self._job_id).one()
         return self._job
+
+    def add_config_guess(self, field, value, is_primary, basis):
+        """Add a config guess for the user to review/confirm."""
+        self._soup.dz2_configguess.insert(
+            project_id=self.get_job().project_id,
+            field=field,
+            value=value,
+            is_primary=is_primary,
+            basis=basis)
+        self._soup.session.commit()
