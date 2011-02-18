@@ -40,8 +40,8 @@ Sequence:
     * write ConfigGuesses to DB via zoomdb
  * [usercontrol] on task completion, forward user to verification form
 
-Job: build_bundle
-=================
+Job: build_and_deploy
+=====================
 
 This job creates a bundle corresponding to a newly built version of the
 project code and all known dependencies. The bundle is then uploaded to S3
@@ -52,9 +52,8 @@ run on the appserver.
 
 Sequence:
  * [usercontrol] user requests new build
- * [usercontrol] build_and_launch task issued (in queue "build")
-    * zoombuild.cfg attached (as string???) (or change so can get this
-      information via zoomdb???)
+ * [usercontrol] build_and_deploy task issued (in queue "build")
+    * zoombuild.cfg attached (as job_params)
  * [build] build_bundle task enqueued and executed (as subtask of 
    build_and_launch)
     * check out code
@@ -65,28 +64,30 @@ Sequence:
     * enqueue create_database task (in parallel with bundle_upload below)
        * [db] create_database task executed (in parallel)
           * create database for app if needed
-          * return db name, user, password
+          * return db name, hostname, user (=sysid), password (random)
     * enqueue bundle_upload task (in parallel with create_database)
        * [build] upload bundle to S3
     * wait for create_database and bundle_upload to finish
-    * enqueue placement task
+    * enqueue and wait for placement task
        * [build] execute placement task
-          * select appserver using ping to all_appservers queue
+          * select appserver
+             * initially choose from the list of length 1
+             * later select based on continuously-updated load/health stats
           * return selected appserver ID
-    * enqueue deploy task to selected appserver's queue
+    * enqueue and wait for deploy task to selected appserver's queue
        * [appserver-<ID>] execute deploy task
           * download bundle from S3
           * create project user if needed
           * extract bundle
           * run bundle under cherrypy/gunicorn/whatevs
+          * update DB with bundle deployment location
           * return hostname, port, and instance id where worker is running
-    * update DB with bundle deployment location
-    * process post-build hooks
+    * process post-build hooks (maybe initially do this as part of deploy)
        * syncdb, migrate
     * enqueue proxy_update task to proxy queue
        * [proxy] execute proxy_update task
-          * given app ID, virtual hostnames, appserver IP & port, create
-            nginx config entry for app
+          * given app ID, virtual hostnames, appserver IP & port, 
+            (re)create nginx config entry for app
     * (later) execute rollback (or at least vhost rename) of other (old)
       bundle versions 
     * w00t, report success & url to user!
