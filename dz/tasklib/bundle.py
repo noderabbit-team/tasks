@@ -24,7 +24,7 @@ def parse_zoombuild(buildcfg):
     config.read(buildcfg)
 
     required_settings = [
-        #'base_python_package',
+        'base_python_package',
         'django_settings_module',
         'site_media_map',
         'additional_python_path_dirs',
@@ -93,6 +93,13 @@ def bundle_app(app_id):
 
     # Copy in user code and add to pth
     to_src = os.path.join(bundle_dir, 'user-src')
+
+    # if there is a base python package, copy user's code under there.
+    if buildconfig_info["base_python_package"]:
+        bpp_as_path = buildconfig_info["base_python_package"].replace(
+            ".","/")
+        to_src = os.path.join(to_src, bpp_as_path)
+
     shutil.copytree(appsrcdir, to_src)
     utils.add_to_pth(
         buildconfig_info["additional_python_path_dirs"].splitlines(),
