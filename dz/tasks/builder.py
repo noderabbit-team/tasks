@@ -13,7 +13,7 @@ import dz.tasklib.check_repo
 import dz.tasklib.bundle
 
 
-@task_inject_zoomdb(name="check_repo", queue="build", serializer="json")
+@task_inject_zoomdb(name="check_repo", queue="build")
 def check_repo(job_id, zoomdb, job_params):
     """
     Checkout an app and inspect settings for use by the database.
@@ -22,19 +22,15 @@ def check_repo(job_id, zoomdb, job_params):
                                      job_params["app_id"],
                                      job_params["src_url"])
 
-@task(name="build_app", queue="build", serializer="json")
-def build_app():
-    """
-    Checkout an app, and then generates a zoombuild info config file.
-    """
 
-
-@task(name="build_bundle", queue="build", serializer="json")
-def build_bundle(app_id):
+@task_inject_zoomdb(name="build_and_deploy", queue="build")
+def build_and_deploy(job_id, zoomdb, job_params):
     """
-    Build bundle, and upload to s3.
+    Checkout an app and inspect settings for use by the database.
     """
-    session = dz.tasklib.build_bundle.backend.ResultSession()
-    zoom_db = db.ZoomDatabase(session.bind, build_bundle.request.id)
-    #bundle_name = bundle.bundle_app(zoom_db, app_id)
-    #bundle.zip_and_upload_bundle(zoom_db, app_id, bundle_name)
+    dz.tasklib.build_and_deploy.build_and_deploy(
+        zoomdb,
+        job_params["app_id"],
+        job_params["src_url"],
+        job_params["zoombuild_cfg_content"],
+        )

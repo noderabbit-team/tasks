@@ -1,4 +1,4 @@
-from builder import check_repo, build_app, build_bundle
+from builder import check_repo, build_and_deploy
 
 def monkey_patch_celery_db_models_Task():
     """
