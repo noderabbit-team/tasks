@@ -4,32 +4,7 @@ import re
 
 import taskconfig
 from dz.tasklib import utils
-
-def checkout_code(zoomdb, opts):
-    d = opts["CO_DIR"]
-    source_code_url = opts["SRC_URL"]
-
-    if not os.path.exists(d):
-        os.makedirs(d)
-
-    os.chdir(d)
-
-    if source_code_url.startswith(taskconfig.TEST_REPO_URL_PREFIX):
-        repourl = os.path.join(taskconfig.TEST_REPO_DIR,
-                               source_code_url[len(
-                    taskconfig.TEST_REPO_URL_PREFIX):])
-    else:
-        repourl = source_code_url
-
-    if os.path.exists(".git"):
-        zoomdb.log("Updating code from repository.")
-        cmd = ["git","pull"]
-    else:
-        zoomdb.log("Cloning your repository.")
-        cmd = ["git","clone",repourl, "."]
-
-    zoomdb.logsys(cmd)
-
+from dz.tasklib.common_steps import checkout_code
 
 def get_settings_files(zoomdb, repodir):
     settings_files = []
@@ -253,7 +228,7 @@ def inspect_code_settings(zoomdb, opts):
 def check_repo(zoomdb, app_id, src_url):
 
     opts = {"CO_DIR":
-            os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id, "src"),
+                os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id, "src"),
             "SRC_URL": src_url,
             "APP_ID": app_id,
             }

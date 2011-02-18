@@ -6,7 +6,7 @@ import tarfile
 import logging
 from StringIO import StringIO
 
-from mocker import MockerTestCase, ANY, MATCH
+from mocker import ANY, MATCH
 
 from boto.s3.connection import S3Connection
 from os import path
@@ -16,28 +16,16 @@ from dz.tasklib import taskconfig
 from dz.tasklib import utils
 from dz.tasklib import bundle
 from dz.tasklib import check_repo
+from dz.tasklib.tests.stub_zoomdb import StubZoomDB
+from dz.tasklib.tests.dztestcase import DZTestCase
 
-_missing = object()
 
-
-class TasksTestCase(MockerTestCase):
+class TasksTestCase(DZTestCase):
 
     def setUp(self):
         self.customer_directory = self.makeDir()
         self.app_dir = self.makeDir(dirname=self.customer_directory)
         self.dir = self.makeDir(dirname=self.app_dir)
-
-    def patch(self, ob, attr, value):
-        old_value = getattr(ob, attr, _missing)
-        setattr(ob, attr, value)
-
-        def restore():
-            if old_value is _missing:
-                delattr(ob, attr)
-            else:
-                setattr(ob, attr, old_value)
-
-        self.addCleanup(restore)
 
     def capture_logging(self, log_name, level=logging.ERROR):
         output = StringIO()
@@ -114,9 +102,14 @@ class TasksTestCase(MockerTestCase):
         # Made a datestamp'd bundle app directory
         self.assertTrue(bundle_name.startswith('bundle_app_%d' % now.year))
         self.assertTrue(path.isdir(bundle_dir))
-        # Moved the app src/ directory into user-src
+        # Moved the app src/ directory into user-src, respecting base package
         listdir_fixture = os.listdir(path.join(src, 'src'))
-        listdir_usersrc = os.listdir(path.join(bundle_dir, 'user-src'))
+        base_package_as_path = "mysite"
+        user_src_base_dir = path.join(bundle_dir, 'user-src',
+                                      base_package_as_path)
+        # ensure base_python_path is represented
+        self.assertTrue(path.isdir(user_src_base_dir))
+        listdir_usersrc = os.listdir(user_src_base_dir)
 
         listdir_fixture.sort()
         listdir_usersrc.sort()
@@ -125,11 +118,11 @@ class TasksTestCase(MockerTestCase):
         pth_file = path.join(utils.get_site_packages(bundle_dir),
                              taskconfig.NR_PTH_FILENAME)
         pth_content = open(pth_file, 'r').read()
-        # Copied static files
-        self.assertTrue(path.isdir(path.join(bundle_dir, 'static')))
-        self.assertTrue(path.isdir(path.join(bundle_dir, 'foo')))
-        # Moved the user's src directory
-        self.assertEqual(pth_content, path.join(bundle_dir, 'user-src',
+        # Copied dirs
+        self.assertTrue(path.isdir(path.join(user_src_base_dir, 'polls')))
+        self.assertTrue(path.isdir(path.join(user_src_base_dir, 'templates')))
+        # Ensure .pth file content looks right
+        self.assertEqual(pth_content, path.join(user_src_base_dir,
                                                 'mysite_pth_add'))
 
         # Added our settings file
@@ -144,21 +137,6 @@ class TasksTestCase(MockerTestCase):
         Check repo and make guesses!
         """
         self.patch(taskconfig, "NR_CUSTOMER_DIR", self.dir)
-
-        from dz.tasklib.db import ZoomDatabase
-
-        class StubZoomDB(ZoomDatabase):
-            def __init__(self):
-                self.logs = []
-                self.config_guesses = []
-
-            def log(self, msg, logtype="i"):
-                self.logs.append((msg, logtype))
-
-            def add_config_guess(self, field, value, is_primary, basis):
-                self.config_guesses.append(dict(
-                        field=field, value=value, is_primary=is_primary,
-                        basis=basis))
 
         zoomdb = StubZoomDB()
         app_id = "p001"
