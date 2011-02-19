@@ -11,6 +11,7 @@ from celery.task import task
 from dz.tasks.decorators import task_inject_zoomdb
 import dz.tasklib.check_repo
 import dz.tasklib.bundle
+import dz.tasklib.build_and_deploy
 
 
 @task_inject_zoomdb(name="check_repo", queue="build")
