@@ -100,7 +100,28 @@ def bundle_app(app_id):
             ".","/")
         to_src = os.path.join(to_src, bpp_as_path)
 
-    shutil.copytree(appsrcdir, to_src)
+    # Do the shutil.copytree inside a try/except block so that we can
+    # identify bad symlinks. According to http://bugs.python.org/issue6547,
+    # bad symlinks will cause an shutil.Error to be raised only at the
+    # end of the copy process, so other files are copied correctly.
+    # Therefore it is OK to simply warn about any bad links but otherwise
+    # assume that things were copied over OK.
+    try:
+        shutil.copytree(appsrcdir, to_src)
+    except shutil.Error, e:
+        for src, dst, error in e.args[0]:
+            if not os.path.islink(src):
+                raise
+            else:
+                linkto = os.readlink(src)
+                if os.path.exists(linkto):
+                    raise
+                else:
+                    ### TODO: communicate this warning to end-user via
+                    ### zoomdb.log
+                    print "*** Warning: invalid symlink found in project: %s -> %s, but %s doesn't exist." % (src, linkto, linkto)
+
+
     utils.add_to_pth(
         buildconfig_info["additional_python_path_dirs"].splitlines(),
         bundle_dir, relative=to_src)
