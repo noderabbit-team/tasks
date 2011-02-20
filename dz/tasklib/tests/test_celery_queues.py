@@ -183,6 +183,11 @@ class CeleryQueuesTestCase(unittest.TestCase):
         Ensure celery does not provide a date_done entry in taskmeta when
         used with the database results backend. This seems to be a bug; see
         https://github.com/ask/celery/issues/issue/325
+
+        UPDATE 2/19/2011: Ask says it was accidentally removed, and has
+        committed a fix. Look for this test to fail and the monkeypatch
+        become unneccessary in the next Celery release.
+        https://github.com/ask/celery/issues/325#comment_789370
         """
         self.assertTrue(not _does_taskmeta_include_date_done())
 
