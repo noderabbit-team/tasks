@@ -3,7 +3,7 @@ Decorators to make task creation easier.
 """
 
 from celery.task import task
-from dz.tasklib.db import ZoomDatabase
+from dz.tasklib.zoomdb import ZoomDatabase
 
 
 def task_inject_zoomdb(**celery_kwargs):
