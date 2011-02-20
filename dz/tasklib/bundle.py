@@ -97,7 +97,7 @@ def bundle_app(app_id):
     # if there is a base python package, copy user's code under there.
     if buildconfig_info["base_python_package"]:
         bpp_as_path = buildconfig_info["base_python_package"].replace(
-            ".","/")
+            ".", "/")
         to_src = os.path.join(to_src, bpp_as_path)
 
     # Do the shutil.copytree inside a try/except block so that we can
@@ -119,8 +119,9 @@ def bundle_app(app_id):
                 else:
                     ### TODO: communicate this warning to end-user via
                     ### zoomdb.log
-                    print "*** Warning: invalid symlink found in project: %s -> %s, but %s doesn't exist." % (src, linkto, linkto)
-
+                    print("*** Warning: invalid symlink found in " +
+                          "project: %s -> %s, but %s doesn't exist." % (
+                            src, linkto, linkto))
 
     utils.add_to_pth(
         buildconfig_info["additional_python_path_dirs"].splitlines(),
