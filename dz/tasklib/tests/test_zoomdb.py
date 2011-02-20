@@ -6,7 +6,7 @@ from mocker import MockerTestCase
 from sqlalchemy.ext.sqlsoup import SqlSoup
 from sqlalchemy import create_engine
 
-from dz.tasklib.db import ZoomDatabase
+from dz.tasklib.zoomdb import ZoomDatabase
 
 
 class ZoomDatabaseTest(MockerTestCase):

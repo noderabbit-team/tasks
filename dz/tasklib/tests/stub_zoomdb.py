@@ -1,4 +1,4 @@
-from dz.tasklib.db import ZoomDatabase
+from dz.tasklib.zoomdb import ZoomDatabase
 
 class StubZoomDB(ZoomDatabase):
     def __init__(self):
