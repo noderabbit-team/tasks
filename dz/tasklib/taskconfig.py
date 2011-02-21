@@ -7,3 +7,8 @@ NR_CUSTOMER_DIR = "/cust"
 
 TEST_REPO_DIR = "/usr/local/noderabbit/test-repos"
 TEST_REPO_URL_PREFIX = "test://"
+
+DATABASE_SUPERUSER = {
+    "username": "nrweb",
+    "initial_db": "template1",
+}
