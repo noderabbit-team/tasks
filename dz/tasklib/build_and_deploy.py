@@ -7,6 +7,7 @@ from dz.tasklib import (utils,
                         placement)
 from dz.tasks import database
 
+
 def write_build_configuration(zoomdb, opts):
     zcfg = file(os.path.join(opts["APP_DIR"], "zoombuild.cfg"), "w")
     zcfg.write(opts["ZOOMBUILD_CFG_CONTENT"])
