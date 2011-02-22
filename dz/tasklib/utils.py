@@ -2,11 +2,19 @@ import os
 import sys
 from fabric.api import local as fab_local
 from fabric.state import connections
-from jinja2 import Template, PackageLoader, Environment
+from jinja2 import PackageLoader, Environment
 import taskconfig
 
 
 tpl_env = Environment(loader=PackageLoader('dz.tasklib'))
+
+
+class InfrastructureException(Exception):
+    """
+    Exception indicating a problem in DjangoZoom's infrastructure, probably
+    preventing the user from completing a successful deployment. :(
+    """
+    pass
 
 
 def local(command, capture=True):
