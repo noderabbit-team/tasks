@@ -12,3 +12,5 @@ DATABASE_SUPERUSER = {
     "username": "nrweb",
     "initial_db": "template1",
 }
+
+APPSERVERS = [ 'localhost' ]
