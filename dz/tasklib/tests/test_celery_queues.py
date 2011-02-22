@@ -51,7 +51,7 @@ class CeleryQueuesTestCase(unittest.TestCase):
         print "Starting celeryd..."
         cls.celeryd_hosts = {
             "test1": dict(queues=["foo", "build"]),
-            "test2": dict(queues=["appserver", "bar"]),
+            "test2": dict(queues=["appserver", "bar", "appserver:bar"]),
             }
 
         for hostname, hostinfo in cls.celeryd_hosts.items():
@@ -155,28 +155,39 @@ class CeleryQueuesTestCase(unittest.TestCase):
         """
         Test that tasks are routed properly by queue.
         """
-        build_queue_result = tasks_for_testing.task_a.delay()
-        build_outcome = build_queue_result.wait()
-
-        appserver_queue_result = tasks_for_testing.task_b.delay()
-        appserver_outcome = appserver_queue_result.wait()
-
-        self.assertEqual(build_outcome["result"], "a")
-
         def _get_hostnames_for_queue(queue):
             return [hostname
                     for (hostname, hostinfo)
                     in CeleryQueuesTestCase.celeryd_hosts.items()
                     if queue in hostinfo["queues"]]
 
-        build_hostnames = _get_hostnames_for_queue("build")
-        appserver_hostnames = _get_hostnames_for_queue("appserver")
+        TASKS_AND_QUEUES = {
+            "task_a": dict(func=tasks_for_testing.task_a,
+                           queue="build",
+                           expected_outcome="a"),
+            "task_b": dict(func=tasks_for_testing.task_b,
+                           queue="appserver",
+                           expected_outcome="b"),
+            "task_b_custom": dict(func=tasks_for_testing.task_b,
+                                  queue="appserver:bar",
+                                  force_queue=True,
+                                  expected_outcome="b"),
+            }
 
-        self.assertEqual([build_outcome["TEST_CELERYD_NAME"]],
-                         build_hostnames)
-        self.assertEqual([appserver_outcome["TEST_CELERYD_NAME"]],
-                         appserver_hostnames)
+        for task in TASKS_AND_QUEUES.values():
+            if task.get("force_queue", False):
+                # force the task to run in a specific queue
+                task["result"] = task["func"].apply_async(
+                    queue=task["queue"])
+            else:
+                task["result"] = task["func"].delay()
 
+        for task in TASKS_AND_QUEUES.values():
+            task["outcome"] = task["result"].wait()
+            self.assertEqual(task["outcome"]["result"],
+                             task["expected_outcome"])
+            self.assertEqual([task["outcome"]["TEST_CELERYD_NAME"]],
+                             _get_hostnames_for_queue(task["queue"]))
 
     def test_celery_taskmeta_provides_no_date_done(self):
         """
