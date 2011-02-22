@@ -2,14 +2,13 @@ import os
 import shutil
 import datetime
 import ConfigParser
-
-import taskconfig
-import utils
-
 import tempfile
 import subprocess
 
 from boto.s3.connection import S3Connection
+
+from dz.tasklib import (taskconfig,
+                        utils)
 
 
 def parse_zoombuild(buildcfg):
