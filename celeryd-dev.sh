@@ -1,3 +1,3 @@
 #!/bin/sh
 export CELERY_CONFIG_MODULE=celeryconfig_debug
-exec celeryd -Q build,appserver,database,celery -l info
+exec celeryd --concurrency=2 -Q build,appserver,database,celery -l info
