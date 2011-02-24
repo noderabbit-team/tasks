@@ -1,6 +1,7 @@
 from dz.tasklib.tests.dztestcase import DZTestCase
 from dz.tasklib import (deploy,
-                        taskconfig)
+                        taskconfig,
+                        utils)
 
 import os
 
@@ -15,6 +16,7 @@ class DeployTestCase(DZTestCase):
         self.patch(taskconfig, "NR_CUSTOMER_DIR", self.customer_directory)
 
         self.app_id = "my_app_id"
+        self.appserver_name = "localhost"
         self.bundle_name = "bundle_my_app_id_20110222-01"
         self.db_host = "db-host-001"
         self.db_name = "my_app_id"
@@ -34,7 +36,23 @@ class DeployTestCase(DZTestCase):
 
         r = deploy.deploy_app_bundle(self.app_id,
                                      self.bundle_name,
+                                     self.appserver_name,
                                      self.db_host, self.db_name,
                                      self.db_username, self.db_password)
         self.assertTrue(isinstance(r, str))
         #self.assertTrue(os.path.isdir(bundle_dir))
+
+    def test_deploy_to_wrong_server_fails(self):
+        """
+        Ensure that all hell breaks loose if a deploy gets routed to the
+        wrong server.
+        """
+
+        def bogus_deploy():
+            deploy.deploy_app_bundle(self.app_id,
+                                     self.bundle_name,
+                                     "BOGUS" + self.appserver_name,
+                                     self.db_host, self.db_name,
+                                     self.db_username, self.db_password)
+
+        self.assertRaises(utils.InfrastructureException, bogus_deploy)

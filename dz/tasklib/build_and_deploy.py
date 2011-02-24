@@ -80,7 +80,10 @@ def deploy_project_to_appserver(zoomdb, opts):
             zoomdb.log("Deploying to %s..." % appserver)
 
             async_result = deploy.deploy_to_appserver.apply_async(
-                args=[opts["APP_ID"], opts["BUNDLE_NAME"]] + opts["DB"],
+                args=[opts["APP_ID"],
+                      opts["BUNDLE_NAME"],
+                      appserver,
+                      ] + opts["DB"],
                 queue="appserver:" + appserver)
             deployment_tasks.append(async_result)
 
@@ -93,6 +96,7 @@ def deploy_project_to_appserver(zoomdb, opts):
             logmsg = deploy.deploy_to_appserver(
                 opts["APP_ID"],
                 opts["BUNDLE_NAME"],
+                appserver,
                 *opts["DB"])
             zoomdb.log(logmsg)
 
