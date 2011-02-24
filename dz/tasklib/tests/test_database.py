@@ -46,7 +46,10 @@ class DatabaseTasksTestCase(DZTestCase):
             database.get_or_create_database(app_id)
 
         for resultpart in (created, db_host, db_name, db_username):
-            self.assertTrue(resultpart)
+            self.assertTrue(created)
+            self.assertTrue(db_host)
+            self.assertTrue(db_name)
+            self.assertTrue(db_username)
 
         self.assertTrue(_can_access_db(db_name, db_username, db_password),
                         "Ensure new database can be accessed.")

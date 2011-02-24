@@ -3,3 +3,4 @@ fabric
 mocker
 sqlalchemy
 Celery
+boto
