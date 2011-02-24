@@ -5,7 +5,7 @@ from dz.tasklib import (utils,
                         common_steps,
                         bundle,
                         placement)
-from dz.tasks import database
+from dz.tasks import database, deploy
 
 
 def write_build_configuration(zoomdb, opts):
@@ -45,14 +45,31 @@ def wait_for_database_setup_to_complete(zoomdb, opts):
 
     zoomdb.log("Database info: user=%s password=%s dbname=%s host=%s" % (
             db_username, db_password, db_name, db_host))
+    opts["DB"] = [db_username, db_password, db_name, db_host]
 
 
 def select_app_server_for_deployment(zoomdb, opts):
     opts["PLACEMENT"] = placement.placement(opts["APP_ID"])
+    if not len(opts["PLACEMENT"]):
+        raise utils.InfrastructureException(
+            "Could not find any available appservers for hosting " +
+            "your project.")
 
 
 def deploy_project_to_appserver(zoomdb, opts):
-    pass
+    deployment_tasks = []
+
+    # send concurrent deploy commands to all placed servers.
+    for appserver in opts["PLACEMENT"]:
+        zoomdb.log("Deploying to %s..." % appserver)
+        async_result = deploy.deploy_to_appserver.apply_async(
+            args=[opts["APP_ID"], opts["BUNDLE_NAME"]] + opts["DB"],
+            queue="appserver:" + appserver)
+        deployment_tasks.append(async_result)
+
+    for dt in deployment_tasks:
+        logmsg = dt.wait()
+        zoomdb.log(logmsg)
 
 
 def run_post_build_hooks(zoomdb, opts):
