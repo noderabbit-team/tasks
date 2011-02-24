@@ -117,13 +117,17 @@ class TasksTestCase(DZTestCase):
         # Added something to the path
         pth_file = path.join(utils.get_site_packages(bundle_dir),
                              taskconfig.NR_PTH_FILENAME)
-        pth_content = open(pth_file, 'r').read()
+        pth_contents = [pthline.strip() for pthline in \
+                            open(pth_file, 'r').readlines()]
         # Copied dirs
         self.assertTrue(path.isdir(path.join(user_src_base_dir, 'polls')))
         self.assertTrue(path.isdir(path.join(user_src_base_dir, 'templates')))
         # Ensure .pth file content looks right
-        self.assertEqual(pth_content, path.join(user_src_base_dir,
-                                                'mysite_pth_add'))
+        self.assertTrue(path.join(user_src_base_dir, 'mysite_pth_add') in \
+                            pth_contents)
+        self.assertTrue(path.join(bundle_dir, 'user-src') in pth_contents)
+        self.assertTrue(user_src_base_dir in pth_contents)
+        self.assertEqual(len(pth_contents), 3)
 
         # Added our settings file
         settings = path.join(bundle_dir, 'dz_settings.py')

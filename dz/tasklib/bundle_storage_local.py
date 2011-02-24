@@ -8,15 +8,15 @@ import shutil
 import tempfile
 from dz.tasklib import taskconfig
 
-BUNDLE_STORAGE_DIR = os.path.join(taskconfig.NR_CUSTOMER_DIR,
-                                  "bundle_storage_local")
-
-if not os.path.isdir(BUNDLE_STORAGE_DIR):
-    os.makedirs(BUNDLE_STORAGE_DIR)
-
 
 def _get_bundle_file(bundle_name):
-    return os.path.join(BUNDLE_STORAGE_DIR,
+    bundle_storage_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR,
+                                      "bundle_storage_local")
+
+    if not os.path.isdir(bundle_storage_dir):
+        os.makedirs(bundle_storage_dir)
+
+    return os.path.join(bundle_storage_dir,
                         bundle_name)
 
 
@@ -27,9 +27,11 @@ def put(bundle_name, filename):
 def get(bundle_name):
     bf = _get_bundle_file(bundle_name)
     if not os.path.isfile(bf):
-        raise KeyError("Bundle not found: %s" % bundle_name)
+        raise KeyError("Bundle not found: %s (expected it in %s)" % (
+                bundle_name,
+                bf))
     tmpfilename = tempfile.mktemp(prefix="tmpbundle")
-    os.link(bf, tmpfilename)
+    shutil.copy(bf, tmpfilename)
     return tmpfilename
 
 

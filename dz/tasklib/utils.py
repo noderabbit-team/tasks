@@ -89,7 +89,7 @@ def add_to_pth(paths, vpath, relative=False):
     pthfname = os.path.join(get_site_packages(vpath),
                             taskconfig.NR_PTH_FILENAME)
     pthfile = open(pthfname, 'a')
-    pthfile.writelines(paths)
+    pthfile.writelines([p.rstrip("\n") + "\n" for p in paths])
 
 
 def render_tpl_to_file(template, path, **kwargs):

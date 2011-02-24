@@ -43,13 +43,15 @@ def parse_zoombuild(buildcfg):
     return result
 
 
-def bundle_app(app_id):
+def bundle_app(app_id, force_bundle_name=None):
     """
     Task: Bundle an app with ``app_id`` found in ``custdir``
 
     :param custdir: Absolute path to the base customer directory
     :param app_id: A path such that ``os.path.join(custdir, app_id)`` is a
         valid directory.
+    :param force_bundle_name: Optional name for the bundle. If absent, name
+        will be auto-generated based on the app name and current date/time.
     """
 
     appdir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
@@ -75,9 +77,13 @@ def bundle_app(app_id):
     assert buildconfig_info, err_msg
 
     # generate a bundle name and directory
-    bundle_name = "bundle_%s_%s" % (
-        app_id,
-        datetime.datetime.utcnow().strftime("%Y-%m-%d-%H.%M.%S"))
+    if force_bundle_name:
+        bundle_name = force_bundle_name
+    else:
+        bundle_name = "bundle_%s_%s" % (
+            app_id,
+            datetime.datetime.utcnow().strftime("%Y-%m-%d-%H.%M.%S"))
+
     bundle_dir = os.path.join(appdir, bundle_name)
 
     # make virtualenv
@@ -99,6 +105,8 @@ def bundle_app(app_id):
         bpp_as_path = buildconfig_info["base_python_package"].replace(
             ".", "/")
         to_src = os.path.join(to_src, bpp_as_path)
+    else:
+        bpp_as_path = None
 
     # Do the shutil.copytree inside a try/except block so that we can
     # identify bad symlinks. According to http://bugs.python.org/issue6547,
@@ -126,6 +134,14 @@ def bundle_app(app_id):
     utils.add_to_pth(
         buildconfig_info["additional_python_path_dirs"].splitlines(),
         bundle_dir, relative=to_src)
+
+    # add the user-src directory itself to the path
+    utils.add_to_pth(['user-src'], bundle_dir, relative=True)
+
+    # if the app has a base python package, add that too
+    if bpp_as_path:
+        utils.add_to_pth([os.path.join('user-src', bpp_as_path)],
+                         bundle_dir, relative=True)
 
     # Copy static directories to a better location
     for line in buildconfig_info["site_media_map"].splitlines():

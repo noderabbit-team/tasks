@@ -46,7 +46,7 @@ class UtilsTestCase(unittest.TestCase):
         utils.add_to_pth(['/foo'], self.dir)
         pthfname = path.join(utils.get_site_packages(self.dir), taskconfig.NR_PTH_FILENAME)
         pthfile = open(pthfname, 'r')
-        self.assertEqual('/foo', pthfile.read())
+        self.assertEqual('/foo', pthfile.read().strip())
 
     def test_add_to_pth_relative(self):
         """
