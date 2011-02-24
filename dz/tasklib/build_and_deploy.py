@@ -4,6 +4,7 @@ import os
 from dz.tasklib import (utils,
                         common_steps,
                         bundle,
+                        bundle_storage,
                         placement)
 from dz.tasks import database, deploy
 
@@ -21,21 +22,35 @@ def build_project_bundle(zoomdb, opts):
 
 
 def request_database_setup(zoomdb, opts):
-    async_result = database.setup_database_for_app.delay(opts["APP_ID"])
-    zoomdb.log("Requested database setup for app %s." % opts["APP_ID"])
-    opts["database_setup_result"] = async_result
+    if opts["USE_SUBTASKS"]:
+        async_result = database.setup_database_for_app.delay(opts["APP_ID"])
+        zoomdb.log("Requested database setup for app %s." % opts["APP_ID"])
+        opts["database_setup_result"] = async_result
+    # if not USE_SUBTASKS, this just gets run synchronously in
+    # wait_for_database_setup_to_complete
 
 
 def upload_project_bundle(zoomdb, opts):
     zoomdb.log("Uploading application bundle %s." % opts["BUNDLE_NAME"])
-    bundle.zip_and_upload_bundle(opts["APP_ID"], opts["BUNDLE_NAME"])
+    bundle.zip_and_upload_bundle(
+        opts["APP_ID"], opts["BUNDLE_NAME"],
+        bundle_storage_engine=opts["BUNDLE_STORAGE"])
     zoomdb.log("Bundle %s uploaded OK." % opts["BUNDLE_NAME"])
 
 
 def wait_for_database_setup_to_complete(zoomdb, opts):
     zoomdb.log("Checking to see if database setup is complete...")
-    res = opts["database_setup_result"].wait()
-    (created, db_host, db_name, db_username, db_password) = res
+
+    if opts["USE_SUBTASKS"]:
+        res = opts["database_setup_result"].wait()
+        del opts["database_setup_result"]
+        (created, db_host, db_name, db_username, db_password) = res
+    else:
+        zoomdb.log("Warning: running database creation in synchronous mode.")
+        (created, db_host, db_name, db_username, db_password) = \
+            database.setup_database_for_app(opts["APP_ID"])
+
+
     if created:
         zoomdb.log("Database %s was created. Congratulations " % db_name +
                    "on your first deployment of this project!")
@@ -57,19 +72,29 @@ def select_app_server_for_deployment(zoomdb, opts):
 
 
 def deploy_project_to_appserver(zoomdb, opts):
-    deployment_tasks = []
+    if opts["USE_SUBTASKS"]:
+        # send concurrent deploy commands to all placed servers.
+        deployment_tasks = []
 
-    # send concurrent deploy commands to all placed servers.
-    for appserver in opts["PLACEMENT"]:
-        zoomdb.log("Deploying to %s..." % appserver)
-        async_result = deploy.deploy_to_appserver.apply_async(
-            args=[opts["APP_ID"], opts["BUNDLE_NAME"]] + opts["DB"],
-            queue="appserver:" + appserver)
-        deployment_tasks.append(async_result)
+        for appserver in opts["PLACEMENT"]:
+            zoomdb.log("Deploying to %s..." % appserver)
 
-    for dt in deployment_tasks:
-        logmsg = dt.wait()
-        zoomdb.log(logmsg)
+            async_result = deploy.deploy_to_appserver.apply_async(
+                args=[opts["APP_ID"], opts["BUNDLE_NAME"]] + opts["DB"],
+                queue="appserver:" + appserver)
+            deployment_tasks.append(async_result)
+
+        for dt in deployment_tasks:
+            logmsg = dt.wait()
+            zoomdb.log(logmsg)
+    else:
+        for appserver in opts["PLACEMENT"]:
+            zoomdb.log("Deploying to %s..." % appserver)
+            logmsg = deploy.deploy_to_appserver(
+                opts["APP_ID"],
+                opts["BUNDLE_NAME"],
+                *opts["DB"])
+            zoomdb.log(logmsg)
 
 
 def run_post_build_hooks(zoomdb, opts):
@@ -80,7 +105,9 @@ def update_front_end_proxy(zoomdb, opts):
     pass
 
 
-def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content):
+def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
+                     use_subtasks=True,
+                     bundle_storage_engine=bundle_storage):
     app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
 
     opts = {
@@ -89,6 +116,8 @@ def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content):
         "CO_DIR": os.path.join(app_dir, "src"),
         "SRC_URL": src_url,
         "ZOOMBUILD_CFG_CONTENT": zoombuild_cfg_content,
+        "USE_SUBTASKS": use_subtasks,
+        "BUNDLE_STORAGE": bundle_storage_engine,
         }
 
     utils.run_steps(zoomdb, opts, (

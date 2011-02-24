@@ -1,33 +1,23 @@
 from os import path
-from mocker import MockerTestCase
 
 from dz.tasklib import (taskconfig,
-                        build_and_deploy)
-from dz.tasks import database 
+                        build_and_deploy,
+                        bundle_storage_local)
+from dz.tasks import database
 from dz.tasklib.tests.stub_zoomdb import StubZoomDB
 from dz.tasklib.tests.dztestcase import DZTestCase
 
+
 class BuildAndDeployTestcase(DZTestCase):
+    """
+    Test the build and deploy job, which calls out to other subtasks.
+    """
 
     def setUp(self):
         self.dir = self.makeDir()
         self.patch(taskconfig, "NR_CUSTOMER_DIR", self.dir)
 
-        class MockDBResult(object):
-            def __call__(self, app_id):
-                self._app_id = app_id
-                return self
-
-            def wait(self):
-                return (True, "a_db_host", "a_db_name", "a_db_username",
-                        "a_db_password")
-
-        self.patch(database.setup_database_for_app, "delay", MockDBResult())
-
-    """
-    Test the build and deploy job, which calls out to other subtasks.
-    """
-    def __DISABLED__test_build_and_deploy(self):
+    def test_build_and_deploy(self):
         """Invoke the build and deploy task."""
         zoomdb = StubZoomDB()
 
@@ -49,8 +39,11 @@ class BuildAndDeployTestcase(DZTestCase):
                         "zoombuild.cfg for test speedup. Contents:\n" +
                         zoombuild_cfg_content)
 
-        build_and_deploy.build_and_deploy(zoomdb, app_id, src_url,
-                                          zoombuild_cfg_content)
+        build_and_deploy.build_and_deploy(
+            zoomdb, app_id, src_url,
+            zoombuild_cfg_content,
+            use_subtasks=False,
+            bundle_storage_engine=bundle_storage_local)
 
         zoombuild_cfg_output_filename = path.join(self.dir,
                                                   app_id,
