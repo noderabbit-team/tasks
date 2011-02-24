@@ -35,6 +35,9 @@ def _can_access_db(database, username, password=None):
 class DatabaseTasksTestCase(DZTestCase):
 
     def test_get_or_create_and_drop(self):
+        """
+        Create a new database, then drop it.
+        """
 
         database.lock_down_public_permissions()
 

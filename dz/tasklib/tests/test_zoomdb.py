@@ -115,10 +115,16 @@ class ZoomDatabaseTest(MockerTestCase):
         self.assertEqual(worker_deployment_record.server_port, server_port)
 
     def test_get_job(self):
+        """
+        Get the job associated with current zoomdb instance.
+        """
         j = self.zoom_db.get_job()
         self.assertEqual(j.id, self.zoom_db._job_id)
 
     def test_add_config_guess(self):
+        """
+        Add a project configuration guess to the DB.
+        """
         self.assertEqual(self.soup.dz2_configguess.count(), 0)
         self.zoom_db.add_config_guess(field="f",
                                       value="v",
