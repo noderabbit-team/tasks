@@ -1,12 +1,15 @@
 """
-
- Deploy task
-
-  - Given a bundle id, app id, as well as db info.
-  - Pull bundle from s3, extract
-  - Create app user if not exist
-  - Chown bundle
-  - Launch wsgi server, listen on a socket.
-  - Update app server locations (host, socket) in nr database.
-
+Frontend for deployment-related celery tasks.
 """
+
+from celery.task import task
+from dz.tasklib import deploy
+
+
+@task(name="deploy_to_appserver",
+      queue="__QUEUE_MUST_BE_SPECIFIED_DYNAMICALLY__")
+def deploy_to_appserver(app_id, bundle_name,
+                        db_host, db_name, db_username, db_password):
+    print "dz.tasks.deploy_to_appserver"
+    return deploy.deploy_app_bundle(app_id, bundle_name,
+                                    db_host, db_name, db_username, db_password)
