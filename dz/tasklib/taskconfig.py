@@ -13,4 +13,7 @@ DATABASE_SUPERUSER = {
     "initial_db": "template1",
 }
 
+# note: for each hostname below, make sure you have your celeryd listening
+# on a queue called appserver:<hostname>, e.g.
+# celeryd --concurrency=2 -Q appserver,appserver:localhost
 APPSERVERS = [ 'localhost' ]
