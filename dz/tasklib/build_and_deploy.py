@@ -102,10 +102,21 @@ def deploy_project_to_appserver(zoomdb, opts):
 
 
 def run_post_build_hooks(zoomdb, opts):
-    pass
+    """
+    Intended for post build application initialization/update commands.
+    """
 
 
 def update_front_end_proxy(zoomdb, opts):
+    """
+    Effectively have
+    Nginx config stored in /etc/nginx/sites-available
+
+    Generate config template for site, note location of app servers as proxy backend.
+    Reload nginx.
+
+    Nginx examples for this are in the chef nginx recipe.
+    """
     pass
 
 
