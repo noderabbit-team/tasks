@@ -45,6 +45,7 @@ def _write_deployment_config(outfilename,
         db_name=db_name,
         db_username=db_username,
         db_password=db_password)
+    os.chmod(outfilename, 0500)
 
 
 def deploy_app_bundle(app_id, bundle_name, appserver_name,

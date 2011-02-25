@@ -63,10 +63,29 @@ class DeployTestCase(DZTestCase):
                             "Couldn't find %s in extracted bundle dir %s." % (
                     build_file, bundle_dir))
 
-        print "---> RUNNABLE! %s <---" % os.path.join(
-            bundle_dir,
-            "deployment_%s.py" % self.appserver_name)
-        #import ipdb;ipdb.set_trace()
+        main_runner = os.path.join(bundle_dir,
+                                   "deployment_%s.py" % self.appserver_name)
+
+        print "---> RUNNABLE! %s <---" % main_runner
+
+        # supress fabric freakout for this test
+        import fabric.state
+        import fabric.operations
+        self.patch(fabric.operations, "warn", lambda msg: None)
+        self.patch(fabric.state.env, "warn_only", True)
+
+        def get_managepy_output(cmd):
+            # manage.py sends syntax to stdout; list of subcommands to stderr
+            return utils.local((cmd + " 2>&1") % (main_runner,))
+
+        #print "RUNNER HELP: %s" % runner_help
+        self.assertTrue("runserver" in get_managepy_output("%s help"))
+        try_installed_apps = get_managepy_output(
+            'echo "import settings; ' +
+            '[ __import__(a) for a in settings.INSTALLED_APPS ]" | ' +
+            '%s shell --plain')
+        self.assertTrue("<module 'polls' from " in try_installed_apps)
+        self.assertTrue("error" not in try_installed_apps.lower())
 
     def test_deploy_to_wrong_server_fails(self):
         """
