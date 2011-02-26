@@ -39,7 +39,7 @@ if __name__ == "__main__":
         sys.argv = [gunicorn,
                     "--name={{bundle_name}}",
                     "--workers=1",
-                    "--bind=0.0.0.0:8001",
+                    "--bind=0.0.0.0:8001",  # TODO port shouldn't be hard-coded
                     this_filename[:-len(".py")] + ":run_wsgi"]
 
         execfile(gunicorn, dict(__file__=gunicorn,
