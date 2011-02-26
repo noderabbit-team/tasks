@@ -36,11 +36,12 @@ def _get_and_extract_bundle(bundle_name, app_dir, bundle_storage_engine):
     os.remove(bundletgz)
 
 
-def _write_deployment_config(outfilename,
+def _write_deployment_config(outfilename, bundle_name,
                              db_host, db_name, db_username, db_password):
     utils.render_tpl_to_file(
         'deploy/deployment_config.py.tmpl',
         outfilename,
+        bundle_name=bundle_name,
         db_host=db_host,
         db_name=db_name,
         db_username=db_username,
@@ -71,6 +72,7 @@ def deploy_app_bundle(app_id, bundle_name, appserver_name,
 
     _write_deployment_config(os.path.join(bundle_dir,
                                           "deployment_%s.py" % appserver_name),
+                             bundle_name,
                              db_host, db_name, db_username, db_password)
 
     return "[%s] Deployed app %s, bundle %s. [NOT YET IMPLEMENTED]" % (
