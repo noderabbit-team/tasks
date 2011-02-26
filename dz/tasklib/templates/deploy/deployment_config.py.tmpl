@@ -1,5 +1,10 @@
 #!/usr/bin/python2.6
+{# This template can be used either to run a manage.py command passed as the  #}
+{# first arg, or when passed "_dz_wsgi", to run a gunicorn process serving    #}
+{# this application. #}
+
 import os
+import sys
 
 os.environ['CONFIG_WRITABLE_ROOT'] = "/tmp"
 os.environ['CONFIG_PG_DBNAME'] = "{{db_name}}"
@@ -10,7 +15,8 @@ os.environ['CONFIG_PG_HOST'] = "{{db_host}}"
 os.environ['DJANGO_SETTINGS_MODULE'] = 'dz_settings'
 
 ### load virtualenv ###
-bundle_dir = os.path.abspath(os.path.split(__file__)[0])
+rel_bundle_dir, this_filename = os.path.split(__file__)
+bundle_dir = os.path.abspath(rel_bundle_dir)
 os.chdir(bundle_dir)
 activate_this = os.path.join(bundle_dir,"bin","activate_this.py")
 execfile(activate_this, dict(__file__=activate_this))
@@ -19,7 +25,24 @@ execfile(activate_this, dict(__file__=activate_this))
 from django.core.handlers.wsgi import WSGIHandler
 run_wsgi = WSGIHandler()
 
-if __name__ == "__main__":
+def run_managepy():
     import dz_settings as settings
     from django.core import management
     management.execute_from_command_line()
+
+from django.core.handlers.wsgi import WSGIHandler
+run_wsgi = WSGIHandler()
+
+if __name__ == "__main__":
+    if sys.argv[-1] == "_dz_wsgi":
+        gunicorn = "/usr/bin/gunicorn"
+        sys.argv = [gunicorn,
+                    "--name={{bundle_name}}",
+                    "--workers=1",
+                    "--bind=0.0.0.0:8001",
+                    this_filename[:-len(".py")] + ":run_wsgi"]
+
+        execfile(gunicorn, dict(__file__=gunicorn,
+                                __name__="__main__"))
+    else:
+        run_managepy()
