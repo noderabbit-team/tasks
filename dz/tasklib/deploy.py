@@ -39,14 +39,20 @@ def _get_and_extract_bundle(bundle_name, app_dir, bundle_storage_engine):
 def _write_deployment_config(outfilename, bundle_name,
                              db_host, db_name, db_username, db_password):
     utils.render_tpl_to_file(
-        'deploy/deployment_config.py.tmpl',
+        'deploy/thisbundle.py.tmpl',
         outfilename,
         bundle_name=bundle_name,
         db_host=db_host,
         db_name=db_name,
         db_username=db_username,
         db_password=db_password)
-    os.chmod(outfilename, 0500)
+    os.chmod(outfilename, 0700)
+
+
+def _app_and_bundle_dirs(app_id, bundle_name):
+    app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
+    bundle_dir = os.path.join(app_dir, bundle_name)
+    return app_dir, bundle_dir
 
 
 def deploy_app_bundle(app_id, bundle_name, appserver_name,
@@ -62,18 +68,38 @@ def deploy_app_bundle(app_id, bundle_name, appserver_name,
             "Incorrect appserver received deploy_app_bundle task; " +
             "I am %s but the deploy is requesting %s." % (my_hostname,
                                                           appserver_name))
-    app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR,
-                           app_id)
-    bundle_dir = os.path.join(app_dir, bundle_name)
+
+    app_dir, bundle_dir = _app_and_bundle_dirs(app_id, bundle_name)
 
     if not os.path.exists(bundle_dir):
         _get_and_extract_bundle(bundle_name, app_dir,
                                 bundle_storage_engine)
 
-    _write_deployment_config(os.path.join(bundle_dir,
-                                          "deployment_%s.py" % appserver_name),
+    _write_deployment_config(os.path.join(bundle_dir, "thisbundle.py"),
                              bundle_name,
                              db_host, db_name, db_username, db_password)
 
     return "[%s] Deployed app %s, bundle %s. [NOT YET IMPLEMENTED]" % (
         my_hostname, app_id, bundle_name)
+
+
+def managepy_command(app_id, bundle_name, command):
+    app_dir, bundle_dir = _app_and_bundle_dirs(app_id, bundle_name)
+
+    if not os.path.isdir(bundle_dir):
+        raise utils.InfrastructureException(
+            "This server doesn't seem to have the requested app bundle " +
+            "currently deployed: app=%s, bundle=%s." % (app_id, bundle_name))
+
+    stdout, stderr, proc = utils.subproc(
+        [os.path.join(bundle_dir, "thisbundle.py"), command])
+
+    result = stdout + "\n" + stderr
+
+    if proc.returncode != 0:
+        raise RuntimeError(
+            ("Nonzero return code %d from manage.py %s:\n" % (proc.returncode,
+                                                              command)) +
+            result)
+
+    return result

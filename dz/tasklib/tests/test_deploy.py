@@ -56,15 +56,14 @@ class DeployTestCase(DZTestCase):
 
         for  build_file in ("noderabbit_requirements.txt",
                             "dz_settings.py",
-                            "deployment_%s.py" % self.appserver_name):
+                            "thisbundle.py"):
             self.assertTrue(os.path.isfile(os.path.join(
                         bundle_dir,
                         build_file)),
                             "Couldn't find %s in extracted bundle dir %s." % (
                     build_file, bundle_dir))
 
-        main_runner = os.path.join(bundle_dir,
-                                   "deployment_%s.py" % self.appserver_name)
+        main_runner = os.path.join(bundle_dir, "thisbundle.py")
 
         print "---> RUNNABLE! %s <---" % main_runner
 
@@ -99,3 +98,31 @@ class DeployTestCase(DZTestCase):
                                      "BOGUS" + self.appserver_name,
                                      self.db_host, self.db_name,
                                      self.db_username, self.db_password)
+
+    # COMING SOON:
+    # def test_generate_supervisor_conf_file(self):
+    # def test reload_supervisord(self):
+
+    def test_manage_cmd(self):
+        """Test running a non-interactive manage.py command on a bundle."""
+
+        # first ensure bundle has been deployed
+        deploy.deploy_app_bundle(
+            self.app_id,
+            self.bundle_name,
+            self.appserver_name,
+            self.db_host, self.db_name,
+            self.db_username, self.db_password,
+            bundle_storage_engine=bundle_storage_local)
+
+        # now check to see that we can run commands
+        try:
+            deploy.managepy_command(self.app_id, self.bundle_name, "help")
+        except RuntimeError, e:  # expect a RuntimeError as "manage.py help"
+                                 # should return nonzero exit status
+            self.assertTrue("runserver" in e.message)
+            self.assertTrue("Nonzero return code 1 from manage.py help"
+                            in e.message)
+        else:
+            self.fail("I expected a RuntimeError to be raised from " +
+                      "manage.py help, but didn't get one!")
