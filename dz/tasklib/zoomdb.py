@@ -1,7 +1,6 @@
 from datetime import datetime
 from sqlalchemy.ext.sqlsoup import SqlSoup
 from dz.tasklib import utils
-import subprocess
 import traceback
 
 class ZoomDatabase(object):
@@ -41,7 +40,7 @@ class ZoomDatabase(object):
         self._soup.session.commit()
 
     def logsys(self, cmd, null_stdin=True):
-        """Run the provided command (using subprocess.Popen) and log the
+        """Run the provided command (using utils.subproc) and log the
         results. Intended for use from tasks only.
 
         If cmd is a string, it will be run through a shell. Otherwise,
@@ -58,15 +57,7 @@ class ZoomDatabase(object):
 
         print "* logsys running command: %r" % cmd
 
-        p_args = dict(shell=isinstance(cmd, basestring),
-                      stdout=subprocess.PIPE,
-                      stderr=subprocess.PIPE)
-
-        if null_stdin:
-            p_args["stdin"] = open("/dev/null")
-
-        p = subprocess.Popen(cmd, **p_args)
-        (stdout, stderr) = p.communicate()
+        stdout, stderr, p = utils.subproc(cmd, null_stdin=null_stdin)
 
         print "* logsys completed command: %r" % cmd
         print "* logsys STDOUT: %r" % stdout

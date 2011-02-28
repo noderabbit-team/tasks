@@ -20,6 +20,26 @@ class UtilsTestCase(unittest.TestCase):
         out = utils.local(cmd, capture=True)
         self.assertEqual(out, 'foo')
 
+    def test_subproc(self):
+        """
+        Test our subproc() function, a convenience wrapper around
+        subprocess.Popen.
+        """
+        stdout, stderr, p = utils.subproc("echo foo && false")
+        self.assertEqual(stdout, "foo\n")
+        self.assertEqual(stderr, "")
+        self.assertEqual(p.returncode, 1)
+
+    def test_subproc_null_stdin(self):
+        """
+        Test our subproc() function's null_stdin functionality using the `cat`
+        command. Without a closed filehandle, this would wait indefinitely.
+        """
+        stdout, stderr, p = utils.subproc("cat")
+        self.assertEqual(stdout, "")
+        self.assertEqual(stderr, "")
+        self.assertEqual(p.returncode, 0)
+
     def test_make_virtualenv(self):
         """
         Creating a virtualenv

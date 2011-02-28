@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 from fabric.api import local as fab_local
 from fabric.state import connections
@@ -31,6 +32,31 @@ def local(command, capture=True):
         del connections[key]
 
     return out
+
+
+def subproc(command, null_stdin=True):
+    """
+    Run a command locally, using the subprocess module and optionally
+    providing a closed stdin filehandle.
+
+    Unlike the fabric-based `local` function also in this module, subproc()
+    will capture both stdout and stderr, and will not issue a warning or
+    error if the underlying command fails. Therefore, you probably want to
+    use check p.returncode to verify the command exited successfully.
+
+    :returns: stdout, stderr, p: output strings and Popen obj of the command.
+    """
+    p_args = dict(shell=isinstance(command, basestring),
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE)
+
+    if null_stdin:
+        p_args["stdin"] = open("/dev/null")
+
+    p = subprocess.Popen(command, **p_args)
+    (stdout, stderr) = p.communicate()
+
+    return stdout, stderr, p
 
 
 def get_site_packages(vpath):
