@@ -1,37 +1,39 @@
 #!/usr/bin/python2.6
-{# This template can be used either to run a manage.py command passed as the  #}
-{# first arg, or when passed "_dz_wsgi", to run a gunicorn process serving    #}
-{# this application. #}
+"""
+This program can be used either to run a manage.py command passed as the
+first arg, or when passed "_dz_wsgi", to run a gunicorn process serving
+this application.
+"""
 
 import os
 import sys
 
+# prepare project environment
 os.environ['CONFIG_WRITABLE_ROOT'] = "/tmp"
 os.environ['CONFIG_PG_DBNAME'] = "{{db_name}}"
 os.environ['CONFIG_PG_USER'] = "{{db_username}}"
 os.environ['CONFIG_PG_PASSWORD'] = "{{db_password}}"
 os.environ['CONFIG_PG_HOST'] = "{{db_host}}"
-
 os.environ['DJANGO_SETTINGS_MODULE'] = 'dz_settings'
 
-### load virtualenv ###
+# activate virtualenv
 rel_bundle_dir, this_filename = os.path.split(__file__)
 bundle_dir = os.path.abspath(rel_bundle_dir)
 os.chdir(bundle_dir)
 activate_this = os.path.join(bundle_dir,"bin","activate_this.py")
 execfile(activate_this, dict(__file__=activate_this))
-### end load virtualenv ###
 
+# instantiate a WSGI handler
 from django.core.handlers.wsgi import WSGIHandler
 run_wsgi = WSGIHandler()
 
 def run_managepy():
+    """
+    Run as if I were the manage.py script in the context of this bundle.
+    """
     import dz_settings as settings
     from django.core import management
     management.execute_from_command_line()
-
-from django.core.handlers.wsgi import WSGIHandler
-run_wsgi = WSGIHandler()
 
 if __name__ == "__main__":
     if sys.argv[-1] == "_dz_wsgi":
