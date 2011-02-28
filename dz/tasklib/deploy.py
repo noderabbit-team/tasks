@@ -1,5 +1,4 @@
 """
-
  Deploy task
 
   - Given a bundle id, app id, as well as db info.
@@ -67,6 +66,17 @@ def deploy_app_bundle(app_id, bundle_name, appserver_name,
             "I am %s but the deploy is requesting %s." % (my_hostname,
                                                           appserver_name))
 
+    install_app_bundle(app_id, bundle_name, appserver_name,
+                        db_host, db_name, db_username, db_password,
+                        bundle_storage_engine=bundle_storage)
+
+    port = start_serving_bundle(app_id, bundle_name)
+    return port
+
+
+def install_app_bundle(app_id, bundle_name, appserver_name,
+                        db_host, db_name, db_username, db_password,
+                        bundle_storage_engine=bundle_storage):
     app_dir, bundle_dir = _app_and_bundle_dirs(app_id, bundle_name)
 
     if not os.path.exists(bundle_dir):
@@ -77,10 +87,6 @@ def deploy_app_bundle(app_id, bundle_name, appserver_name,
                              bundle_name,
                              db_host, db_name, db_username, db_password)
 
-    # TODO: launch via supervisor and return the port onwhich the app is
-    # running.
-    return "[%s] Deployed app %s, bundle %s. [NOT YET IMPLEMENTED]" % (
-        my_hostname, app_id, bundle_name)
 
 
 def managepy_command(app_id, bundle_name, command):

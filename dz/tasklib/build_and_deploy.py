@@ -86,18 +86,18 @@ def deploy_project_to_appserver(zoomdb, opts):
                 queue="appserver:" + appserver)
             deployment_tasks.append(async_result)
 
-        for dt in deployment_tasks:
-            logmsg = dt.wait()
-            zoomdb.log(logmsg)
+        for (appserver, dt) in zip(opts["PLACEMENT"], deployment_tasks):
+            port = dt.wait()
+            zoomdb.log("Serving on %s:%d" % (appserver, port))
     else:
         for appserver in opts["PLACEMENT"]:
             zoomdb.log("Deploying to %s..." % appserver)
-            logmsg = deploy.deploy_to_appserver(
+            port = deploy.deploy_to_appserver(
                 opts["APP_ID"],
                 opts["BUNDLE_NAME"],
                 appserver,
                 *opts["DB"])
-            zoomdb.log(logmsg)
+            zoomdb.log("Serving on %s:%d" % (appserver, port))
 
 
 def run_post_build_hooks(zoomdb, opts):

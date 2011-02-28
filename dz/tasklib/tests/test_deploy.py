@@ -33,13 +33,13 @@ class DeployTestCase(DZTestCase):
         self.assertTrue(os.path.isfile(
                 "/cust/bundle_storage_local/bundle_app_2011-fixture.tgz"),
                         "Need a bundle to test deploying - " +
-                        "run python make_bundle_fixture.py")
+                        "run python dz/tasklib/tests/make_bundle_fixture.py")
 
     def _deploy_me(self):
         """
         Convenience function used in several tests.
         """
-        return deploy.deploy_app_bundle(
+        return deploy.install_app_bundle(
             self.app_id,
             self.bundle_name,
             self.appserver_name,
@@ -58,8 +58,7 @@ class DeployTestCase(DZTestCase):
         if os.path.isdir(bundle_dir):
             shutil.rmtree(bundle_dir)
 
-        r = self._deploy_me()
-        self.assertTrue(isinstance(r, str))
+        self._deploy_me()
         self.assertTrue(os.path.isdir(bundle_dir))
 
         for  build_file in ("noderabbit_requirements.txt",
