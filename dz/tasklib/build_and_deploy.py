@@ -50,7 +50,6 @@ def wait_for_database_setup_to_complete(zoomdb, opts):
         (created, db_host, db_name, db_username, db_password) = \
             database.setup_database_for_app(opts["APP_ID"])
 
-
     if created:
         zoomdb.log("Database %s was created. Congratulations " % db_name +
                    "on your first deployment of this project!")
@@ -112,8 +111,8 @@ def update_front_end_proxy(zoomdb, opts):
     Effectively have
     Nginx config stored in /etc/nginx/sites-available
 
-    Generate config template for site, note location of app servers as proxy backend.
-    Reload nginx.
+    Generate config template for site, note location of app servers as proxy
+    backend.  Reload nginx.
 
     Nginx examples for this are in the chef nginx recipe.
     """
