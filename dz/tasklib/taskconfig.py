@@ -22,3 +22,7 @@ APPSERVERS = [ 'localhost' ]
 # $ psql -U postgres
 # postgres=# alter role nrweb superuser createdb createrole;
 # ALTER ROLE
+
+SUPERVISOR_APP_CONF_DIR = "/etc/supervisor/conf.d"
+APP_SERVICE_START_PORT = 10000
+APP_SERVICE_MAX_PORT = 25000

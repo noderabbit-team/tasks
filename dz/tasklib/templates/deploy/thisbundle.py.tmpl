@@ -36,12 +36,13 @@ def run_managepy():
     management.execute_from_command_line()
 
 if __name__ == "__main__":
-    if sys.argv[-1] == "_dz_wsgi":
+    if sys.argv[1] == "_dz_wsgi":
+        port = int(sys.argv[2])
         gunicorn = "/usr/bin/gunicorn"
         sys.argv = [gunicorn,
-                    "--name={{bundle_name}}",
+                    "--name='{{bundle_name}} on :%d'" % port,
                     "--workers=1",
-                    "--bind=0.0.0.0:8001",  # TODO port shouldn't be hard-coded
+                    "--bind=0.0.0.0:%d" % port,
                     this_filename[:-len(".py")] + ":run_wsgi"]
 
         execfile(gunicorn, dict(__file__=gunicorn,

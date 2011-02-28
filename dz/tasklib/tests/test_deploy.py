@@ -6,6 +6,8 @@ from dz.tasklib import (bundle_storage_local,
 
 import os
 import shutil
+import time
+import urllib
 
 
 class DeployTestCase(DZTestCase):
@@ -33,6 +35,18 @@ class DeployTestCase(DZTestCase):
                         "Need a bundle to test deploying - " +
                         "run python make_bundle_fixture.py")
 
+    def _deploy_me(self):
+        """
+        Convenience function used in several tests.
+        """
+        return deploy.deploy_app_bundle(
+            self.app_id,
+            self.bundle_name,
+            self.appserver_name,
+            self.db_host, self.db_name,
+            self.db_username, self.db_password,
+            bundle_storage_engine=bundle_storage_local)
+
     def test_deploy_app_bundle(self):
         """
         Test the deploy_app_bundle function.
@@ -44,13 +58,7 @@ class DeployTestCase(DZTestCase):
         if os.path.isdir(bundle_dir):
             shutil.rmtree(bundle_dir)
 
-        r = deploy.deploy_app_bundle(
-            self.app_id,
-            self.bundle_name,
-            self.appserver_name,
-            self.db_host, self.db_name,
-            self.db_username, self.db_password,
-            bundle_storage_engine=bundle_storage_local)
+        r = self._deploy_me()
         self.assertTrue(isinstance(r, str))
         self.assertTrue(os.path.isdir(bundle_dir))
 
@@ -103,19 +111,20 @@ class DeployTestCase(DZTestCase):
     # def test_generate_supervisor_conf_file(self):
     # def test reload_supervisord(self):
 
-    def test_manage_cmd(self):
+    def test_managepy_cmd(self):
         """Test running a non-interactive manage.py command on a bundle."""
 
         # first ensure bundle has been deployed
-        deploy.deploy_app_bundle(
-            self.app_id,
-            self.bundle_name,
-            self.appserver_name,
-            self.db_host, self.db_name,
-            self.db_username, self.db_password,
-            bundle_storage_engine=bundle_storage_local)
+        self._deploy_me()
 
         # now check to see that we can run commands
+        diffsettings = deploy.managepy_command(self.app_id,
+                                               self.bundle_name,
+                                               "diffsettings")
+        self.assertTrue(("DATABASE_HOST = '%s'" % self.db_host)
+                        in diffsettings)
+
+        # Ensure "help" command raises a RuntimeError (nonzero exit status)
         try:
             deploy.managepy_command(self.app_id, self.bundle_name, "help")
         except RuntimeError, e:  # expect a RuntimeError as "manage.py help"
@@ -126,3 +135,52 @@ class DeployTestCase(DZTestCase):
         else:
             self.fail("I expected a RuntimeError to be raised from " +
                       "manage.py help, but didn't get one!")
+
+    def test_start_serving_bundle(self):
+        """
+        Test actually serving a deployed bundle, then taking it down.
+        """
+        self._deploy_me()
+        port = deploy.start_serving_bundle(self.app_id, self.bundle_name)
+
+        self.assertTrue(isinstance(port, int))
+
+        app_url = "http://localhost:%d" % port
+
+        load_attempts = 0
+        while True:
+            if load_attempts >= 10:
+                self.fail("Could not load URL %s after %d attempts." % (
+                        app_url,
+                        load_attempts))
+            try:
+                pagetext = urllib.urlopen(app_url).read()
+                self.assertTrue("Welcome to the Django tutorial polls app"
+                                in pagetext)
+                break
+            except Exception, e:
+                load_attempts += 1
+                print "[attempt %d] Couldn't load %s: %s" % (
+                    load_attempts, app_url, str(e))
+                time.sleep(0.25)
+
+        num_stopped = deploy.stop_serving_bundle(self.app_id, self.bundle_name)
+
+        self.assertEqual(num_stopped, 1)
+
+        with self.assertRaises(IOError):
+            urllib.urlopen(app_url).read()
+
+    def test_is_port_open(self):
+        """
+        Test our portscanner.
+        """
+        for p in xrange(taskconfig.APP_SERVICE_START_PORT,
+                        taskconfig.APP_SERVICE_START_PORT + 100):
+            is_open = deploy._is_port_open(p)
+            print "testing port %d: %s" % (p, is_open)
+            self.assertTrue(is_open)
+
+        # anything below 1024 is root only, so it should fail.
+        # port 22 is SSH, so it should almost certainly fail.
+        self.assertFalse(deploy._is_port_open(22))
