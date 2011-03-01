@@ -6,6 +6,7 @@ import taskconfig
 from dz.tasklib import utils
 from dz.tasklib.common_steps import checkout_code
 
+
 def get_settings_files(zoomdb, repodir):
     settings_files = []
     py_files = []
@@ -64,7 +65,7 @@ def extract_string_setting(parsetree, setting_name):
             return setvalue
 
 
-def guess_from_settings(zoomdb, path, parsetree, py_files, 
+def guess_from_settings(zoomdb, path, parsetree, py_files,
                         is_primary=False):
     """
     Guess the following project settings based on the repo layout:
@@ -163,8 +164,8 @@ def guess_from_settings(zoomdb, path, parsetree, py_files,
     urlmod_parts = root_urlconf.rsplit(".", 1)
 
     # if len(urlmod_parts) != 2:
-    #     logfunc("Unexpected single-part ROOT_URLCONF value: %r" % root_urlconf)
-    #     continue
+    #   logfunc("Unexpected single-part ROOT_URLCONF value: %r" % root_urlconf)
+    #   continue
 
     # is the ROOT_URLCONF module directly accessible with
     # only the repo root on the search path?

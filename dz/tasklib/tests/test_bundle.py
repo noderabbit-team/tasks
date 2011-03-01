@@ -144,7 +144,8 @@ class TasksTestCase(DZTestCase):
 
         zoomdb = StubZoomDB()
         app_id = "p001"
-        src_url = "test://voo2do"
+        here = path.abspath(path.split(__file__)[0])
+        src_url = path.join(here, 'fixtures', 'repo')
 
         check_repo.check_repo(zoomdb, app_id, src_url)
 
