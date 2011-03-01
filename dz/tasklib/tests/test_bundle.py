@@ -145,7 +145,10 @@ class TasksTestCase(DZTestCase):
         zoomdb = StubZoomDB()
         app_id = "p001"
         here = path.abspath(path.split(__file__)[0])
-        src_url = path.join(here, 'fixtures', 'repo')
+        tarball_path = path.join(here, 'fixtures', 'repo.tar.gz')
+        tmp_repo_dir = self.makeDir()
+        utils.local("tar xvzf %s -C %s" % (tarball_path, tmp_repo_dir))
+        src_url = path.join(tmp_repo_dir, "repo")
 
         check_repo.check_repo(zoomdb, app_id, src_url)
 
