@@ -4,7 +4,6 @@ See: http://wiki.postgresql.org/wiki/Shared_Database_Hosting
 """
 
 from dz.tasklib import taskconfig
-from dz.tasklib import utils
 
 import psycopg2
 import random
@@ -12,6 +11,19 @@ import string
 
 PASSWORD_CHARS = list(string.digits + string.ascii_letters)
 PASSWORD_LENGTH = 30
+
+
+class DatabaseInfo(object):
+    """
+    Class to hold database connection information.
+    """
+    def __init__(self, host, db_name, username, password=None,
+                 just_created=False):
+        self.host = host
+        self.db_name = db_name
+        self.username = username
+        self.password = password
+        self.just_created = just_created
 
 
 def _get_conn():
@@ -78,7 +90,12 @@ def get_or_create_database(app_id):
     cur.close()
     #conn.close()
 
-    return (created, db_host, db_name, db_username, db_password)
+    dbi = DatabaseInfo(host=db_host,
+                       db_name=db_name,
+                       username=db_username,
+                       password=db_password,
+                       just_created=created)
+    return dbi
 
 
 def lock_down_public_permissions():
