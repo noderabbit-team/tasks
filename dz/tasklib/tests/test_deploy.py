@@ -174,8 +174,8 @@ class DeployTestCase(DZTestCase):
         """
         Test our portscanner.
         """
-        for p in xrange(taskconfig.APP_SERVICE_START_PORT,
-                        taskconfig.APP_SERVICE_START_PORT + 100):
+        for p in xrange(taskconfig.APP_SERVICE_START_PORT + 100,
+                        taskconfig.APP_SERVICE_START_PORT + 200):
             is_open = deploy._is_port_open(p)
             print "testing port %d: %s" % (p, is_open)
             self.assertTrue(is_open)
