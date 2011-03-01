@@ -25,6 +25,11 @@ class DatabaseInfo(object):
         self.password = password
         self.just_created = just_created
 
+    def __str__(self):
+        return "Database info: %suser=%s password=%s dbname=%s host=%s" % (
+            "newly created " if self.just_created else "",
+            self.username, self.password, self.db_name, self.host)
+
 
 def _get_conn():
     """Get a database connection, using the existing one if exists."""

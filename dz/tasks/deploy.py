@@ -8,10 +8,9 @@ from dz.tasklib import deploy
 
 @task(name="deploy_to_appserver",
       queue="__QUEUE_MUST_BE_SPECIFIED_DYNAMICALLY__")
-def deploy_to_appserver(app_id, bundle_name, appserver_name,
-                        db_host, db_name, db_username, db_password):
+def deploy_to_appserver(app_id, bundle_name, appserver_name, dbinfo):
     return deploy.deploy_app_bundle(app_id, bundle_name, appserver_name,
-                                    db_host, db_name, db_username, db_password)
+                                    dbinfo)
 
 
 @task(name="managepy_command",

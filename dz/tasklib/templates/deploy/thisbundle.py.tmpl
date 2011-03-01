@@ -10,10 +10,10 @@ import sys
 
 # prepare project environment
 os.environ['CONFIG_WRITABLE_ROOT'] = "/tmp"
-os.environ['CONFIG_PG_DBNAME'] = "{{db_name}}"
-os.environ['CONFIG_PG_USER'] = "{{db_username}}"
-os.environ['CONFIG_PG_PASSWORD'] = "{{db_password}}"
-os.environ['CONFIG_PG_HOST'] = "{{db_host}}"
+os.environ['CONFIG_PG_DBNAME'] = "{{dbinfo.db_name}}"
+os.environ['CONFIG_PG_USER'] = "{{dbinfo.username}}"
+os.environ['CONFIG_PG_PASSWORD'] = "{{dbinfo.password}}"
+os.environ['CONFIG_PG_HOST'] = "{{dbinfo.host}}"
 os.environ['DJANGO_SETTINGS_MODULE'] = 'dz_settings'
 
 # activate virtualenv

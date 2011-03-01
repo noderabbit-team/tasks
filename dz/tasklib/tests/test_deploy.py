@@ -1,5 +1,6 @@
 from dz.tasklib.tests.dztestcase import DZTestCase
 from dz.tasklib import (bundle_storage_local,
+                        database,
                         deploy,
                         taskconfig,
                         utils)
@@ -21,10 +22,10 @@ class DeployTestCase(DZTestCase):
         self.app_id = "app"
         self.appserver_name = "localhost"
         self.bundle_name = "bundle_app_2011-fixture"
-        self.db_host = "db-host-001"
-        self.db_name = "my_app_id"
-        self.db_username = "my_app_id"
-        self.db_password = "my_app_id_pass"
+        self.dbinfo = database.DatabaseInfo(host="db-host-001",
+                                            db_name="my_app_id",
+                                            username="my_app_id",
+                                            password="my_app_id_pass")
 
     def test_bundle_fixture_in_local_storage(self):
         """
@@ -43,8 +44,7 @@ class DeployTestCase(DZTestCase):
             self.app_id,
             self.bundle_name,
             self.appserver_name,
-            self.db_host, self.db_name,
-            self.db_username, self.db_password,
+            self.dbinfo,
             bundle_storage_engine=bundle_storage_local)
 
     def test_deploy_app_bundle(self):
@@ -103,8 +103,7 @@ class DeployTestCase(DZTestCase):
             deploy.deploy_app_bundle(self.app_id,
                                      self.bundle_name,
                                      "BOGUS" + self.appserver_name,
-                                     self.db_host, self.db_name,
-                                     self.db_username, self.db_password)
+                                     self.dbinfo)
 
     # COMING SOON:
     # def test_generate_supervisor_conf_file(self):
@@ -120,7 +119,7 @@ class DeployTestCase(DZTestCase):
         diffsettings = deploy.managepy_command(self.app_id,
                                                self.bundle_name,
                                                "diffsettings")
-        self.assertTrue(("DATABASE_HOST = '%s'" % self.db_host)
+        self.assertTrue(("DATABASE_HOST = '%s'" % self.dbinfo.host)
                         in diffsettings)
 
         # Ensure "help" command raises a RuntimeError (nonzero exit status)

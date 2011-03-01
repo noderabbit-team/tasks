@@ -43,7 +43,8 @@ class BuildAndDeployTestcase(DZTestCase):
             zoomdb, app_id, src_url,
             zoombuild_cfg_content,
             use_subtasks=False,
-            bundle_storage_engine=bundle_storage_local)
+            bundle_storage_engine=bundle_storage_local,
+            post_build_hooks=[])
 
         zoombuild_cfg_output_filename = path.join(self.dir,
                                                   app_id,
@@ -51,3 +52,11 @@ class BuildAndDeployTestcase(DZTestCase):
         self.assertTrue(path.isfile(zoombuild_cfg_output_filename))
         self.assertEqual(file(zoombuild_cfg_output_filename).read(),
                          zoombuild_cfg_content)
+
+        # TODO: More stuff to test:
+        # - we get an accurate port # or URL back
+        # - deployment info is logged into DB
+        # - database creds are logged into DB
+        # - app actually loads (should be doable once database creds happen)
+        # - tear down app (so we don't pollute /etc/supervisor/conf.d with
+        #                  stuff that doesn't even exist anymore)

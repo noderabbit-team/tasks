@@ -72,7 +72,7 @@ class DatabaseTasksTestCase(DZTestCase):
                                                    db_name="nrweb",
                                                    username="nrweb",
                                                    # assume pg_hba trusts me
-                                                   password="") 
+                                                   password="")
         self.assertTrue(_can_access_db(nrweb_nrweb_dbinfo),
                         "Ensure nrweb can access nrweb.")
 

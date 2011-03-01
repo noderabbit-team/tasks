@@ -18,7 +18,4 @@ from dz.tasklib import database
 
 @task(name="setup_database_for_app", queue="database")
 def setup_database_for_app(app_id):
-    (created, db_host, db_name, db_username, db_password) = \
-        database.get_or_create_database(app_id)
-
-    return (created, db_host, db_name, db_username, db_password)
+    return database.get_or_create_database(app_id)

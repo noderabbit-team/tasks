@@ -42,24 +42,21 @@ def wait_for_database_setup_to_complete(zoomdb, opts):
     zoomdb.log("Checking to see if database setup is complete...")
 
     if opts["USE_SUBTASKS"]:
-        res = opts["database_setup_result"].wait()
+        dbinfo = opts["database_setup_result"].wait()
         del opts["database_setup_result"]
-        (created, db_host, db_name, db_username, db_password) = res
     else:
         zoomdb.log("Warning: running database creation in synchronous mode.")
-        (created, db_host, db_name, db_username, db_password) = \
-            database.setup_database_for_app(opts["APP_ID"])
+        dbinfo = database.setup_database_for_app(opts["APP_ID"])
 
-    if created:
-        zoomdb.log("Database %s was created. Congratulations " % db_name +
-                   "on your first deployment of this project!")
+    if dbinfo.just_created:
+        zoomdb.log("Database %s was created. " % dbinfo.db_name +
+                   "Congratulations on your first deployment of this project!")
     else:
-        zoomdb.log("Database %s was previously created. " % db_name +
+        zoomdb.log("Database %s was previously created. " % dbinfo.db_name +
                    "Congratulations on a new release!")
 
-    zoomdb.log("Database info: user=%s password=%s dbname=%s host=%s" % (
-            db_username, db_password, db_name, db_host))
-    opts["DB"] = [db_username, db_password, db_name, db_host]
+    zoomdb.log(str(dbinfo))
+    opts["DB"] = dbinfo
 
 
 def select_app_server_for_deployment(zoomdb, opts):
@@ -82,7 +79,7 @@ def deploy_project_to_appserver(zoomdb, opts):
                 args=[opts["APP_ID"],
                       opts["BUNDLE_NAME"],
                       appserver,
-                      ] + opts["DB"],
+                      opts["DB"]],
                 queue="appserver:" + appserver)
             deployment_tasks.append(async_result)
 
@@ -96,7 +93,7 @@ def deploy_project_to_appserver(zoomdb, opts):
                 opts["APP_ID"],
                 opts["BUNDLE_NAME"],
                 appserver,
-                *opts["DB"])
+                opts["DB"])
             zoomdb.log("Serving on %s:%d" % (appserver, port))
 
 
@@ -104,6 +101,21 @@ def run_post_build_hooks(zoomdb, opts):
     """
     Intended for post build application initialization/update commands.
     """
+    appserver = opts["PLACEMENT"][0]
+
+    for cmd in opts["POST_BUILD_HOOKS"]:
+        zoomdb.log("Running 'manage.py %s' ..." % cmd)
+        cmd_args = [opts["APP_ID"],
+                    opts["BUNDLE_NAME"],
+                    cmd]
+        if opts["USE_SUBTASKS"]:
+            res = deploy.managepy_command.apply_async(
+                args=cmd_args,
+                queue="appserver:" + appserver)
+            cmd_output = res.wait()
+        else:
+            cmd_output = deploy.managepy_command(*cmd_args)
+        zoomdb.log(cmd_output)
 
 
 def update_front_end_proxy(zoomdb, opts):
@@ -121,8 +133,13 @@ def update_front_end_proxy(zoomdb, opts):
 
 def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
                      use_subtasks=True,
-                     bundle_storage_engine=bundle_storage):
+                     bundle_storage_engine=bundle_storage,
+                     post_build_hooks=None,
+                     ):
     app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
+
+    if post_build_hooks is None:
+        post_build_hooks = ["syncdb", "migrate"]
 
     opts = {
         "APP_ID": app_id,
@@ -132,6 +149,7 @@ def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
         "ZOOMBUILD_CFG_CONTENT": zoombuild_cfg_content,
         "USE_SUBTASKS": use_subtasks,
         "BUNDLE_STORAGE": bundle_storage_engine,
+        "POST_BUILD_HOOKS": post_build_hooks,
         }
 
     utils.run_steps(zoomdb, opts, (

@@ -35,16 +35,12 @@ def _get_and_extract_bundle(bundle_name, app_dir, bundle_storage_engine):
     os.remove(bundletgz)
 
 
-def _write_deployment_config(outfilename, bundle_name,
-                             db_host, db_name, db_username, db_password):
+def _write_deployment_config(outfilename, bundle_name, dbinfo):
     utils.render_tpl_to_file(
         'deploy/thisbundle.py.tmpl',
         outfilename,
         bundle_name=bundle_name,
-        db_host=db_host,
-        db_name=db_name,
-        db_username=db_username,
-        db_password=db_password)
+        dbinfo=dbinfo)
     os.chmod(outfilename, 0700)
 
 
@@ -54,8 +50,7 @@ def _app_and_bundle_dirs(app_id, bundle_name):
     return app_dir, bundle_dir
 
 
-def deploy_app_bundle(app_id, bundle_name, appserver_name,
-                      db_host, db_name, db_username, db_password,
+def deploy_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
                       bundle_storage_engine=bundle_storage):
 
     my_hostname = socket.gethostname()
@@ -66,17 +61,15 @@ def deploy_app_bundle(app_id, bundle_name, appserver_name,
             "I am %s but the deploy is requesting %s." % (my_hostname,
                                                           appserver_name))
 
-    install_app_bundle(app_id, bundle_name, appserver_name,
-                        db_host, db_name, db_username, db_password,
-                        bundle_storage_engine=bundle_storage)
+    install_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
+                       bundle_storage_engine=bundle_storage)
 
     port = start_serving_bundle(app_id, bundle_name)
     return port
 
 
-def install_app_bundle(app_id, bundle_name, appserver_name,
-                        db_host, db_name, db_username, db_password,
-                        bundle_storage_engine=bundle_storage):
+def install_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
+                       bundle_storage_engine=bundle_storage):
     app_dir, bundle_dir = _app_and_bundle_dirs(app_id, bundle_name)
 
     if not os.path.exists(bundle_dir):
@@ -84,9 +77,7 @@ def install_app_bundle(app_id, bundle_name, appserver_name,
                                 bundle_storage_engine)
 
     _write_deployment_config(os.path.join(bundle_dir, "thisbundle.py"),
-                             bundle_name,
-                             db_host, db_name, db_username, db_password)
-
+                             bundle_name, dbinfo)
 
 
 def managepy_command(app_id, bundle_name, command):
@@ -206,8 +197,10 @@ def stop_serving_bundle(app_id, bundle_name):
 
     for bundle in _get_active_bundles():
         if bundle["app_id"] == app_id and bundle["bundle_name"] == bundle_name:
-            os.remove(os.path.join(taskconfig.SUPERVISOR_APP_CONF_DIR,
-                                   bundle["filename"]))
+            config_filename = os.path.join(taskconfig.SUPERVISOR_APP_CONF_DIR,
+                                           bundle["filename"])
+            print "Removing supervisor conf file: %s" % config_filename
+            os.remove(config_filename)
             num_stopped += 1
 
     _kick_supervisor()
