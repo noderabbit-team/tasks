@@ -1,5 +1,6 @@
 import datetime
 import os
+import random
 
 from mocker import MockerTestCase
 
@@ -24,12 +25,21 @@ class ZoomDatabaseTest(MockerTestCase):
             self.db.execute(statement)
 
         self.zoom_db = ZoomDatabase(self.db, 1)
+
         # For verifying results
         self.soup = SqlSoup(self.db)
 
+        # create a stub project
+        self.soup.dz2_project.insert(id=2, owner_id=1, source_code_url="",
+                                     title="UnitTest Project",
+                                     django_version="1.2",
+                                     database_type="postgresql-8.4",
+                                     base_python_package="",
+                                     django_settings_module="my.settings")
+
         # create a stub job
         self.soup.dz2_job.insert(id=1, task_id=1, jobcode="deploy",
-                                 project_id=777,
+                                 project_id=2,
                                  owner_id=1, issued_by_id=1,
                                  issued_at=datetime.datetime.utcnow())
 
@@ -131,3 +141,24 @@ class ZoomDatabaseTest(MockerTestCase):
                                       is_primary=True,
                                       basis="testing")
         self.assertEqual(self.soup.dz2_configguess.count(), 1)
+
+    def test_get_project(self):
+        """
+        Get the project associated with the current zoomdb instance's job.
+        """
+        p = self.zoom_db.get_project()
+        j = self.zoom_db.get_job()
+        self.assertEqual(j.project_id, p.id)
+
+    def test_modify_project(self):
+        """
+        Modify a project and save changes.
+        """
+        fake_hostname = "pants" + str(random.randint(1000, 9999))
+        p = self.zoom_db.get_project()
+        self.assertTrue(p.db_host is None)
+        p.db_host = fake_hostname
+        self.zoom_db.flush()
+
+        p2 = self.soup.dz2_project.filter(self.soup.dz2_project.id == 2).one()
+        self.assertEqual(p2.db_host, fake_hostname)

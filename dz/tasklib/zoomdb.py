@@ -39,6 +39,12 @@ class ZoomDatabase(object):
             timestamp=datetime.utcnow())
         self._soup.session.commit()
 
+    def flush(self):
+        """
+        Flush any changes sqlsoup has accumulated (write updates to the DB).
+        """
+        self._soup.flush()
+
     def logsys(self, cmd, null_stdin=True):
         """Run the provided command (using utils.subproc) and log the
         results. Intended for use from tasks only.
@@ -118,6 +124,14 @@ class ZoomDatabase(object):
             self._job = self._soup.dz2_job.filter(
                 self._soup.dz2_job.id == self._job_id).one()
         return self._job
+
+    def get_project(self):
+        """Get the project row."""
+        if not hasattr(self, "_project"):
+            j = self.get_job()
+            self._project = self._soup.dz2_project.filter(
+                self._soup.dz2_project.id == j.project_id).one()
+        return self._project
 
     def add_config_guess(self, field, value, is_primary, basis):
         """Add a config guess for the user to review/confirm."""

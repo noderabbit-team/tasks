@@ -53,6 +53,13 @@ class BuildAndDeployTestcase(DZTestCase):
         self.assertEqual(file(zoombuild_cfg_output_filename).read(),
                          zoombuild_cfg_content)
 
+        p = zoomdb.get_project()
+
+        for attr in ("db_host", "db_name", "db_username", "db_password",
+                     "is_flushed"):
+            print "project.%s = %s" % (attr, getattr(p, attr))
+            self.assertTrue(getattr(p, attr))
+
         # TODO: More stuff to test:
         # - we get an accurate port # or URL back
         # - deployment info is logged into DB
