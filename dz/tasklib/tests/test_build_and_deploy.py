@@ -2,8 +2,8 @@ from os import path
 
 from dz.tasklib import (taskconfig,
                         build_and_deploy,
+                        database,
                         bundle_storage_local)
-from dz.tasks import database
 from dz.tasklib.tests.stub_zoomdb import StubZoomDB
 from dz.tasklib.tests.dztestcase import DZTestCase
 
@@ -39,6 +39,8 @@ class BuildAndDeployTestcase(DZTestCase):
                         "zoombuild.cfg for test speedup. Contents:\n" +
                         zoombuild_cfg_content)
 
+        self.assertFalse(zoomdb.is_flushed)
+
         build_and_deploy.build_and_deploy(
             zoomdb, app_id, src_url,
             zoombuild_cfg_content,
@@ -55,10 +57,17 @@ class BuildAndDeployTestcase(DZTestCase):
 
         p = zoomdb.get_project()
 
-        for attr in ("db_host", "db_name", "db_username", "db_password",
-                     "is_flushed"):
+        for attr in ("db_host", "db_name", "db_username", "db_password"):
             print "project.%s = %s" % (attr, getattr(p, attr))
             self.assertTrue(getattr(p, attr))
+
+        self.assertTrue(zoomdb.is_flushed)
+
+        # TODO: instead of just manually throwing away DB stuff, add a
+        # destroy_project_data function that could be user-accessible in
+        # case a user ever wants to throw away their DB and start over.
+        database.drop_user(p.db_username)
+        database.drop_database(p.db_name)
 
         # TODO: More stuff to test:
         # - we get an accurate port # or URL back
@@ -67,3 +76,5 @@ class BuildAndDeployTestcase(DZTestCase):
         # - app actually loads (should be doable once database creds happen)
         # - tear down app (so we don't pollute /etc/supervisor/conf.d with
         #                  stuff that doesn't even exist anymore)
+        #   - remove supervisor conf.d entry
+        #   - remove postgres database and user

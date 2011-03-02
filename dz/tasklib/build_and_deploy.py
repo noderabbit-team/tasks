@@ -51,9 +51,34 @@ def wait_for_database_setup_to_complete(zoomdb, opts):
     if dbinfo.just_created:
         zoomdb.log("Database %s was created. " % dbinfo.db_name +
                    "Congratulations on your first deployment of this project!")
+        p = zoomdb.get_project()
+        p.db_host = dbinfo.host
+        p.db_name = dbinfo.db_name
+        p.db_username = dbinfo.username
+        p.db_password = dbinfo.password
+        zoomdb.flush()
+
     else:
         zoomdb.log("Database %s was previously created. " % dbinfo.db_name +
                    "Congratulations on a new release!")
+        p = zoomdb.get_project()
+        for pattr, dbiattr in (
+            ("db_host", "host"),
+            ("db_name", "db_name"),
+            ("db_username", "username"),
+            ("db_password", "password"),
+            ):
+
+            val = getattr(p, pattr)
+
+            if not val:
+                raise utils.InfrastructureException(
+                    "Couldn't find existing %s setting in project. " % pattr +
+                    "The database for your project was previously created " +
+                    "but access information has been lost; please contact " +
+                    "support for assistance.")
+            else:
+                setattr(dbinfo, dbiattr, val)
 
     zoomdb.log(str(dbinfo))
     opts["DB"] = dbinfo
