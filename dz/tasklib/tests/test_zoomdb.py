@@ -105,21 +105,23 @@ class ZoomDatabaseTest(MockerTestCase):
 
     def test_add_worker(self):
         """Record addition of a worker for an appbundle in DB."""
-        app_db_id = 100
+        app_db_id = 2
         bundle_id = 200
         instance_id = "i-asdoasdf"
         server_ip = "10.0.100.210"
         server_port = 10230
 
         self.assertEqual(self.soup.dz2_appserverdeployment.count(), 0)
+        self.assertEqual(len(self.zoom_db.get_project_workers()), 0)
 
-        self.zoom_db.add_worker(app_db_id,
-                                bundle_id,
+        self.zoom_db.add_worker(bundle_id,
                                 instance_id,
                                 server_ip,
                                 server_port)
 
         self.assertEqual(self.soup.dz2_appserverdeployment.count(), 1)
+        self.assertEqual(len(self.zoom_db.get_project_workers()), 1)
+
         worker_deployment_record = list(
             self.soup.dz2_appserverdeployment.all())[0]
         self.assertEqual(worker_deployment_record.project_id, app_db_id)

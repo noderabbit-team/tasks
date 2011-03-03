@@ -109,7 +109,7 @@ class ZoomDatabase(object):
                 self._soup.dz2_appbundle.project_id == self.get_project_id()))
 
     def add_worker(
-        self, app_db_id, bundle_id, instance_id, server_ip, server_port):
+        self, bundle_id, instance_id, server_ip, server_port):
         """Record a worker added for an application.
 
         :param app_db_id: Application/Project database id
@@ -119,13 +119,19 @@ class ZoomDatabase(object):
         :param server_port: The port on the server, the app is listening on.
         """
         self._soup.dz2_appserverdeployment.insert(
-            project_id=app_db_id,
+            project_id=self.get_project_id(),
             bundle_id=bundle_id,
             server_instance_id=instance_id,
             server_ip=server_ip,
             server_port=server_port,
             creation_date=datetime.utcnow())
         self._soup.session.commit()
+
+    def get_project_workers(self):
+        """Get all AppServerDeployments for this job's project."""
+        return list(self._soup.dz2_appserverdeployment.filter(
+                self._soup.dz2_appserverdeployment.project_id ==
+                self.get_project_id()))
 
     def get_job(self):
         """Get the Job row."""

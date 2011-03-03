@@ -17,6 +17,13 @@ class MockProject(object):
     db_password = ""
 
 
+class MockBundle(object):
+    def __init__(self):
+        MockBundle.count += 1
+        self.id = MockBundle.count
+MockBundle.count = 0
+
+
 class StubZoomDB(ZoomDatabase):
     def __init__(self):
         self.logs = []
@@ -24,6 +31,7 @@ class StubZoomDB(ZoomDatabase):
         self.project = MockProject()
         self.is_flushed = False
         self.bundles = []
+        self.workers = []
 
     def flush(self):
         self.is_flushed = True
@@ -42,6 +50,13 @@ class StubZoomDB(ZoomDatabase):
 
     def add_bundle(self, bundle_name, code_revision=None):
         self.bundles.append((bundle_name, code_revision))
+        return MockBundle()
 
     def get_all_bundles(self):
         return self.bundles
+
+    def add_worker(self, bundle_id, instance_id, server_ip, server_port):
+        self.workers.append((bundle_id, instance_id, server_ip, server_port))
+
+    def get_project_workers(self):
+        return self.workers

@@ -1,5 +1,6 @@
 from dz.tasklib import taskconfig
 import os
+import socket
 
 from dz.tasklib import (utils,
                         common_steps,
@@ -95,7 +96,7 @@ def select_app_server_for_deployment(zoomdb, opts):
 
 
 def deploy_project_to_appserver(zoomdb, opts):
-    deployed_addresses = []  # in hostname:port format
+    deployed_addresses = []  # in (hostname,port) format
 
     if opts["USE_SUBTASKS"]:
         # send concurrent deploy commands to all placed servers.
@@ -115,7 +116,7 @@ def deploy_project_to_appserver(zoomdb, opts):
         for (appserver, dt) in zip(opts["PLACEMENT"], deployment_tasks):
             port = dt.wait()
             zoomdb.log("Serving on %s:%d" % (appserver, port))
-            deployed_addresses.append("%s:%d" % (appserver, port))
+            deployed_addresses.append((appserver, port))
 
     else:
         for appserver in opts["PLACEMENT"]:
@@ -126,9 +127,18 @@ def deploy_project_to_appserver(zoomdb, opts):
                 appserver,
                 opts["DB"])
             zoomdb.log("Serving on %s:%d" % (appserver, port))
-            deployed_addresses.append("%s:%d" % (appserver, port))
+            deployed_addresses.append((appserver, port))
 
     opts["DEPLOYED_ADDRESSES"] = deployed_addresses
+
+    bundle_id = opts["BUNDLE_INFO"].id
+    for (hostname, port) in deployed_addresses:
+        instance_id = hostname  # TODO: this is a hack :(
+        host_ip = socket.gethostbyname(hostname)
+        zoomdb.add_worker(bundle_id,
+                          instance_id,
+                          host_ip,
+                          port)
 
 
 def run_post_build_hooks(zoomdb, opts):
@@ -154,13 +164,12 @@ def run_post_build_hooks(zoomdb, opts):
 
         return cmd_output
 
-
     post_build_hooks = opts["POST_BUILD_HOOKS"]
 
     if post_build_hooks is None:
         post_build_hooks = [["syncdb", "--noinput"]]
         managepy_help = run_managepy_cmd("help", nonzero_exit_ok=True)
-        available_commands = [x.strip() for x in 
+        available_commands = [x.strip() for x in
                               managepy_help.rsplit("Available subcommands:",
                                                    1)[1].splitlines()]
         if "migrate" in available_commands:

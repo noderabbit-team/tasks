@@ -50,6 +50,7 @@ class BuildAndDeployTestcase(DZTestCase):
 
         self.assertFalse(zoomdb.is_flushed)
         self.assertEqual(len(zoomdb.get_all_bundles()), 0)
+        self.assertEqual(len(zoomdb.get_project_workers()), 0)
 
         # Note: if you get a database-related utils.InfrastructureError
         # on the below, you might have a lingering test DB or user. Remove
@@ -79,12 +80,14 @@ class BuildAndDeployTestcase(DZTestCase):
 
         self.assertTrue(zoomdb.is_flushed)
         self.assertEqual(len(zoomdb.get_all_bundles()), 1)
+        self.assertEqual(len(zoomdb.get_project_workers()), 1)
 
         # check the deployed app!
         self.assertEqual(len(deployed_addresses), 1)
 
+        appserver_host, appserver_port = deployed_addresses[0]
         polls_src = urllib.urlopen(
-            "http://%s/polls/" % deployed_addresses[0]).read()
+            "http://%s:%d/polls/" % (appserver_host, appserver_port)).read()
         self.assertTrue("No polls are available." in polls_src)
 
         # TODO: More stuff to test:
