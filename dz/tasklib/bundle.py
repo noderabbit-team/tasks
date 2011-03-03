@@ -5,10 +5,9 @@ import ConfigParser
 import tempfile
 import subprocess
 
-from boto.s3.connection import S3Connection
-
 from dz.tasklib import (taskconfig,
                         bundle_storage,
+                        bundle_storage_local,
                         utils)
 
 
@@ -161,13 +160,20 @@ def bundle_app(app_id, force_bundle_name=None):
 
 
 def zip_and_upload_bundle(app_id, bundle_name,
-                          bundle_storage_engine=bundle_storage):
+                          bundle_storage_engine=None):
     """
     Task: Zip up the bundle and upload it to S3
     :param custdir: Absolute path to the base customer directory
     :param app_id: A path such that ``os.path.join(custdir, app_id)`` is a
                    valid directory.
     """
+
+    if bundle_storage_engine is None:
+        if taskconfig.DEFAULT_BUNDLE_STORAGE_ENGINE == "bundle_storage_local":
+            bundle_storage_engine = bundle_storage_local
+        else:
+            bundle_storage_engine = bundle_storage
+
     archive_file_path = tempfile.mktemp(suffix=".tgz")
 
     app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)

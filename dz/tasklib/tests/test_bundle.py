@@ -12,10 +12,11 @@ from boto.s3.connection import S3Connection
 from os import path
 from datetime import datetime
 
-from dz.tasklib import taskconfig
-from dz.tasklib import utils
-from dz.tasklib import bundle
-from dz.tasklib import check_repo
+from dz.tasklib import (taskconfig,
+                        utils,
+                        bundle,
+                        check_repo,
+                        bundle_storage)
 from dz.tasklib.tests.stub_zoomdb import StubZoomDB
 from dz.tasklib.tests.dztestcase import DZTestCase
 
@@ -55,7 +56,8 @@ class TasksTestCase(DZTestCase):
 
         key_name = bundle.zip_and_upload_bundle(
             os.path.basename(self.app_dir),
-            os.path.basename(self.dir))
+            os.path.basename(self.dir),
+            bundle_storage_engine=bundle_storage)
 
         s3 = S3Connection()
         bucket = s3.get_bucket(
@@ -63,6 +65,9 @@ class TasksTestCase(DZTestCase):
         fh = open(self.makeFile(), "w")
 
         key = bucket.get_key(key_name)
+
+        self.assertTrue(key is not None)
+
         key.get_file(fh)
         key.delete()
         fh.flush()

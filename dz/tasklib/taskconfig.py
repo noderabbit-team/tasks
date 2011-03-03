@@ -26,3 +26,12 @@ APPSERVERS = [ 'localhost' ]
 SUPERVISOR_APP_CONF_DIR = "/etc/supervisor/conf.d"
 APP_SERVICE_START_PORT = 10000
 APP_SERVICE_MAX_PORT = 25000
+
+DEFAULT_BUNDLE_STORAGE_ENGINE = "bundle_storage"  # override to use
+                                                  # "bundle_storage_local"
+                                                  # in development
+
+try:
+    from local_taskconfig import *
+except ImportError:
+    pass
