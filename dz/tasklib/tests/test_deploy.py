@@ -1,5 +1,6 @@
 from dz.tasklib.tests.dztestcase import DZTestCase
-from dz.tasklib import (bundle_storage_local,
+from dz.tasklib import (bundle,
+                        bundle_storage_local,
                         database,
                         deploy,
                         taskconfig,
@@ -27,12 +28,50 @@ class DeployTestCase(DZTestCase):
                                             username="my_app_id",
                                             password="my_app_id_pass")
 
+    @classmethod
+    def setUpClass(cls):
+        """Ensure the necessary fixtures are installed in the right places."""
+        bundle_name = "bundle_app_2011-fixture"
+        cls.bundle_fixture = os.path.join(taskconfig.NR_CUSTOMER_DIR,
+                                          "bundle_storage_local",
+                                          bundle_name + ".tgz")
+
+        if not os.path.isfile(cls.bundle_fixture):
+            print "Making a bundle fixture for testing."
+
+            here = os.path.abspath(os.path.split(__file__)[0])
+            fixture_dir = os.path.join(here, 'fixtures')
+            app_name = "app"
+
+            # force rename the bundle
+            app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_name)
+
+            if os.path.isdir(app_dir):
+                shutil.rmtree(app_dir)
+
+            shutil.copytree(os.path.join(fixture_dir, app_name),
+                            app_dir)
+            bundle_name = bundle.bundle_app(app_name,
+                                            force_bundle_name=bundle_name)
+
+            bundle_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR,
+                                      app_name,
+                                      bundle_name)
+
+            tarball_name = bundle.zip_and_upload_bundle(app_name,
+                                                        bundle_name,
+                                                        bundle_storage_local)
+
+            print "Created bundle fixture in %s" % tarball_name
+
+            # after upload, delete the dir where bundle was created
+            shutil.rmtree(bundle_dir)
+
     def test_bundle_fixture_in_local_storage(self):
         """
         Ensure the bundle fixture file exists in local bundle storage.
         """
-        self.assertTrue(os.path.isfile(
-                "/cust/bundle_storage_local/bundle_app_2011-fixture.tgz"),
+        self.assertTrue(os.path.isfile(self.__class__.bundle_fixture),
                         "Need a bundle to test deploying - " +
                         "run python dz/tasklib/tests/make_bundle_fixture.py")
 
