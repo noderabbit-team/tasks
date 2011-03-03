@@ -102,6 +102,7 @@ class TasksTestCase(DZTestCase):
         # Made a datestamp'd bundle app directory
         self.assertTrue(bundle_name.startswith('bundle_app_%d' % now.year))
         self.assertTrue(path.isdir(bundle_dir))
+        self.assertTrue(path.isfile(path.join(bundle_dir, "zoombuild.cfg")))
         # Moved the app src/ directory into user-src, respecting base package
         listdir_fixture = os.listdir(path.join(src, 'src'))
         base_package_as_path = "mysite"

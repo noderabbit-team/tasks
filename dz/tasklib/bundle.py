@@ -92,7 +92,7 @@ def bundle_app(app_id, force_bundle_name=None):
     # archive a copy of the build parameters
     shutil.copyfile(buildconfig,
                     os.path.join(bundle_dir,
-                                 taskconfig.NR_PIP_REQUIREMENTS_FILENAME))
+                                 "zoombuild.cfg"))
 
     # Write install requirements
     utils.install_requirements(buildconfig_info["pip_reqs"], bundle_dir)
