@@ -16,9 +16,11 @@ def write_build_configuration(zoomdb, opts):
 
 
 def build_project_bundle(zoomdb, opts):
-    bundle_name = bundle.bundle_app(opts["APP_ID"])
+    bundle_name, code_revision = bundle.bundle_app(opts["APP_ID"])
     zoomdb.log("Built project into bundle: %s" % bundle_name)
     opts["BUNDLE_NAME"] = bundle_name
+    # and log this bundle into zoomdb
+    opts["BUNDLE_INFO"] = zoomdb.add_bundle(bundle_name, code_revision)
 
 
 def request_database_setup(zoomdb, opts):

@@ -42,6 +42,12 @@ def parse_zoombuild(buildcfg):
     return result
 
 
+def _ignore_vcs_files(srcdir, names):
+    """Ignore function for shutil.copytree, which ensures we don't copy
+    version control system files - these don't need to be in the bundles."""
+    return [n for n in names if n in (".git", ".svn")]
+
+
 def bundle_app(app_id, force_bundle_name=None):
     """
     Task: Bundle an app with ``app_id`` found in ``custdir``
@@ -96,6 +102,10 @@ def bundle_app(app_id, force_bundle_name=None):
     # Write install requirements
     utils.install_requirements(buildconfig_info["pip_reqs"], bundle_dir)
 
+    # Check what version of the code we've got
+    code_revision, stderr, p = utils.subproc("(cd %s; git log -n 1)" %
+                                             appsrcdir)
+
     # Copy in user code and add to pth
     to_src = os.path.join(bundle_dir, 'user-src')
 
@@ -114,7 +124,7 @@ def bundle_app(app_id, force_bundle_name=None):
     # Therefore it is OK to simply warn about any bad links but otherwise
     # assume that things were copied over OK.
     try:
-        shutil.copytree(appsrcdir, to_src)
+        shutil.copytree(appsrcdir, to_src, ignore=_ignore_vcs_files)
     except shutil.Error, e:
         for src, dst, error in e.args[0]:
             if not os.path.islink(src):
@@ -156,7 +166,7 @@ def bundle_app(app_id, force_bundle_name=None):
         os.path.join(bundle_dir, 'dz_settings.py'),
         dz_settings=buildconfig_info["django_settings_module"])
 
-    return bundle_name
+    return bundle_name, code_revision
 
 
 def zip_and_upload_bundle(app_id, bundle_name,
