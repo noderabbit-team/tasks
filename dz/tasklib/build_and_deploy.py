@@ -164,10 +164,15 @@ def run_post_build_hooks(zoomdb, opts):
         if "migrate" in available_commands:
             post_build_hooks.append("migrate")
 
-    for cmd in post_build_hooks:
-        zoomdb.log("Running 'manage.py %s' ..." % cmd)
-        cmd_output = run_managepy_cmd(cmd)
-        zoomdb.log(cmd_output)
+    try:
+        for cmd in post_build_hooks:
+            cmdtext = " ".join(cmd) if isinstance(cmd, list) else cmd
+            zoomdb.log("Running 'manage.py %s': " % cmdtext)
+            cmd_output = run_managepy_cmd(cmd)
+            zoomdb.log(cmd_output)
+    except RuntimeError, e:
+        zoomdb.log("WARNING: there was an error running a post-build " +
+                   "command. <pre>" + e.message + "</pre>")
 
 
 def update_front_end_proxy(zoomdb, opts):
