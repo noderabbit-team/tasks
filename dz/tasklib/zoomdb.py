@@ -8,13 +8,14 @@ class ZoomDatabase(object):
     Database access layer for jobs to interact with djangozoom.
     """
     LOG_INFO = "i"
+    LOG_WARN = "w"
     LOG_ERROR = "e"
     LOG_STEP_BEGIN = "sb"
     LOG_STEP_END = "se"
     LOG_JOB_BEGIN = "jb"
     LOG_JOB_END = "je"
 
-    VALID_LOG = (LOG_INFO, LOG_ERROR, LOG_STEP_BEGIN, LOG_STEP_END,
+    VALID_LOG = (LOG_INFO, LOG_WARN, LOG_ERROR, LOG_STEP_BEGIN, LOG_STEP_END,
                  LOG_JOB_BEGIN, LOG_JOB_END)
 
     def __init__(self, db, job_id):

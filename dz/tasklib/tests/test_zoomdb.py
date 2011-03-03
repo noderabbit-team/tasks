@@ -53,6 +53,15 @@ class ZoomDatabaseTest(MockerTestCase):
         self.assertEqual(log.message, "message")
         self.assertEqual(log.logtype, ZoomDatabase.LOG_INFO)
 
+        self.zoom_db.log("a warning", ZoomDatabase.LOG_WARN)
+        results = list(self.soup.dz2_log.all())
+        self.assertEqual(len(results), 2)
+        logw = results.pop()
+        self.assertEqual(logw.id, 2)
+        self.assertEqual(logw.job_id, 1)
+        self.assertEqual(logw.message, "a warning")
+        self.assertEqual(logw.logtype, ZoomDatabase.LOG_WARN)
+
     def test_add_bundle(self):
         """Verify adding a bundle location."""
         app_db_id = 100
