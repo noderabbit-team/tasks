@@ -56,32 +56,32 @@ class DatabaseTasksTestCase(DZTestCase):
         database.lock_down_public_permissions()
 
         app_id = "test_%d" % random.randint(100, 1000)
-        dbinfo = database.get_or_create_database(app_id)
 
-        for attr in ("just_created", "host", "db_name", "username",
-                     "password"):
-            self.assertTrue(getattr(dbinfo, attr))
+        try:
+            dbinfo = database.get_or_create_database(app_id)
 
-        self.assertTrue(_can_access_db(dbinfo, try_create=True),
-                        "Ensure new database can be accessed.")
+            for attr in ("just_created", "host", "db_name", "username",
+                         "password"):
+                self.assertTrue(getattr(dbinfo, attr))
 
-        cust_nrweb_dbinfo = database.DatabaseInfo(host=dbinfo.host,
-                                             db_name="nrweb",
-                                             username=dbinfo.username,
-                                             password=dbinfo.password)
-        self.assertTrue(not _can_access_db(cust_nrweb_dbinfo),
-                        "Ensure cust user CANNOT access nrweb.")
+            self.assertTrue(_can_access_db(dbinfo, try_create=True),
+                            "Ensure new database can be accessed.")
 
-        nrweb_nrweb_dbinfo = database.DatabaseInfo(host=dbinfo.host,
-                                                   db_name="nrweb",
-                                                   username="nrweb",
-                                                   # assume pg_hba trusts me
-                                                   password="")
-        self.assertTrue(_can_access_db(nrweb_nrweb_dbinfo),
-                        "Ensure nrweb can access nrweb.")
+            cust_nrweb_dbinfo = database.DatabaseInfo(
+                host=dbinfo.host, db_name="nrweb",
+                username=dbinfo.username, password=dbinfo.password)
+            self.assertTrue(not _can_access_db(cust_nrweb_dbinfo),
+                            "Ensure cust user CANNOT access nrweb.")
 
-        database.drop_database(dbinfo.db_name)
-        database.drop_user(dbinfo.username)
+            nrweb_nrweb_dbinfo = database.DatabaseInfo(
+                host=dbinfo.host, db_name="nrweb",
+                username="nrweb", password="")
+            self.assertTrue(_can_access_db(nrweb_nrweb_dbinfo),
+                            "Ensure nrweb can access nrweb.")
+
+        finally:
+            database.drop_database(dbinfo.db_name)
+            database.drop_user(dbinfo.username)
 
         self.assertTrue(not _can_access_db(dbinfo),
                         "Ensure dropped database can no longer be accessed.")

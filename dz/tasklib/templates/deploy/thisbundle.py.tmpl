@@ -36,7 +36,7 @@ def run_managepy():
     management.execute_from_command_line()
 
 if __name__ == "__main__":
-    if sys.argv[1] == "_dz_wsgi":
+    if len(sys.argv) >= 3 and sys.argv[1] == "_dz_wsgi":
         port = int(sys.argv[2])
         gunicorn = "/usr/bin/gunicorn"
         sys.argv = [gunicorn,

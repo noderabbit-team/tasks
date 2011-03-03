@@ -93,6 +93,8 @@ def select_app_server_for_deployment(zoomdb, opts):
 
 
 def deploy_project_to_appserver(zoomdb, opts):
+    deployed_addresses = []  # in hostname:port format
+
     if opts["USE_SUBTASKS"]:
         # send concurrent deploy commands to all placed servers.
         deployment_tasks = []
@@ -111,6 +113,8 @@ def deploy_project_to_appserver(zoomdb, opts):
         for (appserver, dt) in zip(opts["PLACEMENT"], deployment_tasks):
             port = dt.wait()
             zoomdb.log("Serving on %s:%d" % (appserver, port))
+            deployed_addresses.append("%s:%d" % (appserver, port))
+
     else:
         for appserver in opts["PLACEMENT"]:
             zoomdb.log("Deploying to %s..." % appserver)
@@ -120,6 +124,9 @@ def deploy_project_to_appserver(zoomdb, opts):
                 appserver,
                 opts["DB"])
             zoomdb.log("Serving on %s:%d" % (appserver, port))
+            deployed_addresses.append("%s:%d" % (appserver, port))
+
+    opts["DEPLOYED_ADDRESSES"] = deployed_addresses
 
 
 def run_post_build_hooks(zoomdb, opts):
@@ -128,11 +135,13 @@ def run_post_build_hooks(zoomdb, opts):
     """
     appserver = opts["PLACEMENT"][0]
 
-    for cmd in opts["POST_BUILD_HOOKS"]:
-        zoomdb.log("Running 'manage.py %s' ..." % cmd)
+    def run_managepy_cmd(cmd, nonzero_exit_ok=False):
+        """Wraps logic for invoking a manage.py command using either
+        subtasks or direct function call."""
         cmd_args = [opts["APP_ID"],
                     opts["BUNDLE_NAME"],
-                    cmd]
+                    cmd,
+                    nonzero_exit_ok]
         if opts["USE_SUBTASKS"]:
             res = deploy.managepy_command.apply_async(
                 args=cmd_args,
@@ -140,6 +149,24 @@ def run_post_build_hooks(zoomdb, opts):
             cmd_output = res.wait()
         else:
             cmd_output = deploy.managepy_command(*cmd_args)
+
+        return cmd_output
+
+
+    post_build_hooks = opts["POST_BUILD_HOOKS"]
+
+    if post_build_hooks is None:
+        post_build_hooks = [["syncdb", "--noinput"]]
+        managepy_help = run_managepy_cmd("help", nonzero_exit_ok=True)
+        available_commands = [x.strip() for x in 
+                              managepy_help.rsplit("Available subcommands:",
+                                                   1)[1].splitlines()]
+        if "migrate" in available_commands:
+            post_build_hooks.append("migrate")
+
+    for cmd in post_build_hooks:
+        zoomdb.log("Running 'manage.py %s' ..." % cmd)
+        cmd_output = run_managepy_cmd(cmd)
         zoomdb.log(cmd_output)
 
 
@@ -162,9 +189,6 @@ def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
                      post_build_hooks=None,
                      ):
     app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
-
-    if post_build_hooks is None:
-        post_build_hooks = ["syncdb", "migrate"]
 
     opts = {
         "APP_ID": app_id,
@@ -189,3 +213,5 @@ def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
             run_post_build_hooks,
             update_front_end_proxy,
             ))
+
+    return opts["DEPLOYED_ADDRESSES"]

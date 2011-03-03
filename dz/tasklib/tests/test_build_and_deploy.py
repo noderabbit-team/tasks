@@ -1,4 +1,5 @@
 from os import path
+import urllib
 
 from dz.tasklib import (taskconfig,
                         build_and_deploy,
@@ -16,16 +17,25 @@ class BuildAndDeployTestcase(DZTestCase):
     def setUp(self):
         self.dir = self.makeDir()
         self.patch(taskconfig, "NR_CUSTOMER_DIR", self.dir)
+        self.app_id = "p001"
+
+    def tearDown(self):
+        # TODO: instead of just manually throwing away DB stuff, add a
+        # destroy_project_data function that could be user-accessible in
+        # case a user ever wants to throw away their DB and start over.
+        database.drop_database(self.app_id)
+        database.drop_user(self.app_id)
+
 
     def test_build_and_deploy(self):
         """Invoke the build and deploy task."""
         zoomdb = StubZoomDB()
 
-        app_id = "p001"
         src_url = "git://github.com/shimon/djangotutorial.git"
 
         here = path.abspath(path.split(__file__)[0])
         app_fixture = path.join(here, 'fixtures', 'app')
+        django_tarball = path.join(here, 'fixtures', 'Django-1.2.5.tar.gz')
         zcfg_fixture = path.join(app_fixture, "zoombuild.cfg")
 
         zoombuild_cfg_content = file(zcfg_fixture).read()
@@ -33,7 +43,7 @@ class BuildAndDeployTestcase(DZTestCase):
         # cut out the Django requirement - we don't want to download and
         # upload that!
         zoombuild_cfg_content = zoombuild_cfg_content.replace(
-            "pip_reqs: Django==1.2.5", "pip_reqs: ")
+            "pip_reqs: Django==1.2.5", "pip_reqs: %s" % django_tarball)
         self.assertTrue("Django==" not in zoombuild_cfg_content,
                         "Expected to remove Django version from " +
                         "zoombuild.cfg for test speedup. Contents:\n" +
@@ -41,15 +51,21 @@ class BuildAndDeployTestcase(DZTestCase):
 
         self.assertFalse(zoomdb.is_flushed)
 
-        build_and_deploy.build_and_deploy(
-            zoomdb, app_id, src_url,
+        # Note: if you get a database-related utils.InfrastructureError
+        # on the below, you might have a lingering test DB or user. Remove
+        # it by running:
+        # dropdb -U nrweb p001; dropuser -U nrweb p001;
+
+        deployed_addresses = build_and_deploy.build_and_deploy(
+            zoomdb, self.app_id, src_url,
             zoombuild_cfg_content,
             use_subtasks=False,
             bundle_storage_engine=bundle_storage_local,
-            post_build_hooks=[])
+            #post_build_hooks=[]
+            )
 
         zoombuild_cfg_output_filename = path.join(self.dir,
-                                                  app_id,
+                                                  self.app_id,
                                                   "zoombuild.cfg")
         self.assertTrue(path.isfile(zoombuild_cfg_output_filename))
         self.assertEqual(file(zoombuild_cfg_output_filename).read(),
@@ -63,11 +79,12 @@ class BuildAndDeployTestcase(DZTestCase):
 
         self.assertTrue(zoomdb.is_flushed)
 
-        # TODO: instead of just manually throwing away DB stuff, add a
-        # destroy_project_data function that could be user-accessible in
-        # case a user ever wants to throw away their DB and start over.
-        database.drop_user(p.db_username)
-        database.drop_database(p.db_name)
+        # check the deployed app!
+        self.assertEqual(len(deployed_addresses), 1)
+
+        polls_src = urllib.urlopen(
+            "http://%s/polls/" % deployed_addresses[0]).read()
+        self.assertTrue("No polls are available." in polls_src)
 
         # TODO: More stuff to test:
         # - we get an accurate port # or URL back

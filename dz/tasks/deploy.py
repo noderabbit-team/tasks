@@ -15,5 +15,6 @@ def deploy_to_appserver(app_id, bundle_name, appserver_name, dbinfo):
 
 @task(name="managepy_command",
       queue="__QUEUE_MUST_BE_SPECIFIED_DYNAMICALLY__")
-def managepy_command(app_id, bundle_name, command):
-    return deploy.managepy_command(app_id, bundle_name, command)
+def managepy_command(app_id, bundle_name, command, nonzero_exit_ok=False):
+    return deploy.managepy_command(app_id, bundle_name, command,
+                                   nonzero_exit_ok)

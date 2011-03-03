@@ -80,7 +80,7 @@ def install_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
                              bundle_name, dbinfo)
 
 
-def managepy_command(app_id, bundle_name, command):
+def managepy_command(app_id, bundle_name, command, nonzero_exit_ok=False):
     app_dir, bundle_dir = _app_and_bundle_dirs(app_id, bundle_name)
 
     if not os.path.isdir(bundle_dir):
@@ -88,12 +88,16 @@ def managepy_command(app_id, bundle_name, command):
             "This server doesn't seem to have the requested app bundle " +
             "currently deployed: app=%s, bundle=%s." % (app_id, bundle_name))
 
-    stdout, stderr, proc = utils.subproc(
-        [os.path.join(bundle_dir, "thisbundle.py"), command])
+    procargs = [os.path.join(bundle_dir, "thisbundle.py")]
+    if isinstance(command, list):
+        procargs += command
+    else:
+        procargs.append(command)
+    stdout, stderr, proc = utils.subproc(procargs)
 
     result = stdout + "\n" + stderr
 
-    if proc.returncode != 0:
+    if proc.returncode != 0 and not(nonzero_exit_ok):
         raise RuntimeError(
             ("Nonzero return code %d from manage.py %s:\n" % (proc.returncode,
                                                               command)) +
