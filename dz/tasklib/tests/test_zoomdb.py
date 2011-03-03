@@ -190,3 +190,9 @@ class ZoomDatabaseTest(MockerTestCase):
 
         for k, v in bun_attrs.items():
             self.assertEqual(getattr(bun0, k), v)
+
+    def test_long_commit_msg_truncation(self):
+        long_msg = "x" * 5000
+        bun = self.zoom_db.add_bundle(bundle_name="abundle",
+                                      code_revision=long_msg)
+        self.assertEqual(len(bun.code_revision), 255)

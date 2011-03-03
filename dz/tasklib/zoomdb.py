@@ -84,6 +84,10 @@ class ZoomDatabase(object):
         :param bundle_name: The name of the application bundle.
         :param code_revision: The code revision the bundle was created from.
         """
+
+        if len(code_revision) > 255:
+            code_revision = code_revision[0:252] + "..."
+
         bundle = self._soup.dz2_appbundle.insert(
             project_id=self.get_project_id(),
             bundle_name=bundle_name,
