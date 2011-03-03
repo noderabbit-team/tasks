@@ -1,7 +1,7 @@
 from datetime import datetime
 from sqlalchemy.ext.sqlsoup import SqlSoup
 from dz.tasklib import utils
-import traceback
+
 
 class ZoomDatabase(object):
     """
@@ -76,22 +76,21 @@ class ZoomDatabase(object):
             cmd, stdout, stderr)
         self.log(msg)
 
-    def add_bundle(
-        self, app_db_id, bundle_name, bundle_location, code_revision=None):
-        """ Store the app's bundle location.
+    def add_bundle(self, bundle_name, code_revision=None):
+        """
+        Store the app's bundle location (assuming this zoomdb's job has an
+        associated project).
 
-        :param app_db_id: The application/project database primary key.
         :param bundle_name: The name of the application bundle.
-        :param bundle_location: The S3 location of the bundle.
         :param code_revision: The code revision the bundle was created from.
         """
-        self._soup.dz2_appbundle.insert(
-            project_id=app_db_id,
+        bundle = self._soup.dz2_appbundle.insert(
+            project_id=self.get_project_id(),
             bundle_name=bundle_name,
-            bundle_location=bundle_location,
             code_revision=code_revision,
             creation_date=datetime.utcnow())
         self._soup.session.commit()
+        return bundle
 
     def get_bundle(self, bundle_id):
         """Retrieve a bundle by database id.
@@ -99,6 +98,11 @@ class ZoomDatabase(object):
         return self._soup.dz2_appbundle.filter(
             self._soup.dz2_appbundle.id == bundle_id).one()
         self._soup.session.commit()
+
+    def get_all_bundles(self):
+        """Get a list of all app_bundles for the current job's project."""
+        return list(self._soup.dz2_appbundle.filter(
+                self._soup.dz2_appbundle.project_id == self.get_project_id()))
 
     def add_worker(
         self, app_db_id, bundle_id, instance_id, server_ip, server_port):
@@ -134,10 +138,14 @@ class ZoomDatabase(object):
                 self._soup.dz2_project.id == j.project_id).one()
         return self._project
 
+    def get_project_id(self):
+        """Get the project_id associated with this zoomdb's job."""
+        return self.get_job().project_id
+
     def add_config_guess(self, field, value, is_primary, basis):
         """Add a config guess for the user to review/confirm."""
         self._soup.dz2_configguess.insert(
-            project_id=self.get_job().project_id,
+            project_id=self.get_project_id(),
             field=field,
             value=value,
             is_primary=is_primary,

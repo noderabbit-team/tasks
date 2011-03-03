@@ -64,17 +64,14 @@ class ZoomDatabaseTest(MockerTestCase):
 
     def test_add_bundle(self):
         """Verify adding a bundle location."""
-        app_db_id = 100
+        app_db_id = 2
         bundle_name = "p00100_foobar_bundle_20110206_001"
-        bundle_location = "s3:somebucket:" + bundle_name
         code_revision = "e4397ee07a644d0086aa-b03b72390a99"
 
         self.assertEqual(self.soup.dz2_appbundle.count(), 0,
                          "Start out with no appbundles in DB")
 
-        self.zoom_db.add_bundle(app_db_id,
-                                bundle_name,
-                                bundle_location,
+        self.zoom_db.add_bundle(bundle_name,
                                 code_revision)
 
         self.assertEqual(self.soup.dz2_appbundle.count(), 1)
@@ -83,11 +80,10 @@ class ZoomDatabaseTest(MockerTestCase):
 
         self.assertEqual(bundle_from_db.project_id, app_db_id)
         self.assertEqual(bundle_from_db.bundle_name, bundle_name)
-        self.assertEqual(bundle_from_db.bundle_location, bundle_location)
         self.assertEqual(bundle_from_db.code_revision, code_revision)
-        self.assertTrue((datetime.datetime.utcnow() - 
-                         bundle_from_db.creation_date
-                         ) < datetime.timedelta(seconds=1))
+        self.assertTrue((datetime.datetime.utcnow() -
+                         bundle_from_db.creation_date)
+                        < datetime.timedelta(seconds=1))
 
     def test_get_bundle(self):
         """Get bundle by ID"""
@@ -171,3 +167,26 @@ class ZoomDatabaseTest(MockerTestCase):
 
         p2 = self.soup.dz2_project.filter(self.soup.dz2_project.id == 2).one()
         self.assertEqual(p2.db_host, fake_hostname)
+
+    def test_app_bundles(self):
+        """
+        Log a new AppBundle in the DB.
+        """
+
+        buns = self.zoom_db.get_all_bundles()
+        self.assertEqual(len(buns), 0)
+
+        bun_attrs = {
+            "bundle_name": "some_bundle",
+            "code_revision": "16b1fe9968368ba5346ebdcc53992171852c5949",
+            }
+
+        bun = self.zoom_db.add_bundle(**bun_attrs)
+        self.assertEqual(bun.id, 1)
+
+        buns = self.zoom_db.get_all_bundles()
+        self.assertEqual(len(buns), 1)
+        bun0 = buns[0]
+
+        for k, v in bun_attrs.items():
+            self.assertEqual(getattr(bun0, k), v)

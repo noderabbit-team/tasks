@@ -23,6 +23,7 @@ class StubZoomDB(ZoomDatabase):
         self.config_guesses = []
         self.project = MockProject()
         self.is_flushed = False
+        self.bundles = []
 
     def flush(self):
         self.is_flushed = True
@@ -38,3 +39,9 @@ class StubZoomDB(ZoomDatabase):
 
     def get_project(self):
         return self.project
+
+    def add_bundle(self, bundle_name, code_revision=None):
+        self.bundles.append((bundle_name, code_revision))
+
+    def get_all_bundles(self):
+        return self.bundles

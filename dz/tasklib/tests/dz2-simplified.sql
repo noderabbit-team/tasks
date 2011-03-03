@@ -25,7 +25,6 @@ CREATE TABLE "dz2_appbundle" (
     "id" INTEGER NOT NULL PRIMARY KEY,
     "project_id" integer NOT NULL, -- REFERENCES "dz2_project" ("id") DEFERRABLE INITIALLY DEFERRED,
     "bundle_name" varchar(255) NOT NULL,
-    "bundle_location" varchar(255) NOT NULL,
     "code_revision" varchar(255),
     "creation_date" timestamp with time zone NOT NULL
 )

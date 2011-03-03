@@ -101,15 +101,18 @@ class TasksTestCase(DZTestCase):
         dest = path.join(self.dir, 'app')
         shutil.copytree(src, dest)
 
-        bundle_name = bundle.bundle_app('app')
+        (bundle_name, code_revision) = bundle.bundle_app('app')
         bundle_dir = path.join(self.dir, 'app', bundle_name)
         now = datetime.utcnow()
         # Made a datestamp'd bundle app directory
         self.assertTrue(bundle_name.startswith('bundle_app_%d' % now.year))
+        self.assertTrue(code_revision.startswith("commit "))
         self.assertTrue(path.isdir(bundle_dir))
         self.assertTrue(path.isfile(path.join(bundle_dir, "zoombuild.cfg")))
         # Moved the app src/ directory into user-src, respecting base package
         listdir_fixture = os.listdir(path.join(src, 'src'))
+        # except special ignored files:
+        listdir_fixture.remove(".git")
         base_package_as_path = "mysite"
         user_src_base_dir = path.join(bundle_dir, 'user-src',
                                       base_package_as_path)
