@@ -6,6 +6,7 @@ tasks.
 from dz.tasklib import taskconfig
 import os
 
+
 def checkout_code(zoomdb, opts):
     """
     Checkout code from opts["SRC_URL"] into opts["CO_DIR"].
@@ -27,9 +28,9 @@ def checkout_code(zoomdb, opts):
 
     if os.path.exists(".git"):
         zoomdb.log("Updating code from repository.")
-        cmd = ["git","pull"]
+        cmd = ["git", "pull"]
     else:
         zoomdb.log("Cloning your repository.")
-        cmd = ["git","clone",repourl, "."]
+        cmd = ["git", "clone", repourl, "."]
 
     zoomdb.logsys(cmd)
