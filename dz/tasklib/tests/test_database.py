@@ -48,6 +48,9 @@ class DatabaseTasksTestCase(DZTestCase):
         self.assertEqual(di.password, "123")
         self.assertEqual(di.db_name, "mydb")
 
+        # make DatabaseInfo a dict subclass so it can be serialized
+        self.assertTrue(isinstance(di, dict))
+
     def test_get_or_create_and_drop(self):
         """
         Create a new DB & user, ensure user can use only that DB, then drop.

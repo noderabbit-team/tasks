@@ -78,7 +78,7 @@ def wait_for_database_setup_to_complete(zoomdb, opts):
                     "but access information has been lost; please contact " +
                     "support for assistance.")
             else:
-                setattr(dbinfo, dbiattr, val)
+                dbinfo[dbiattr] = val
 
     zoomdb.log(str(dbinfo))
     opts["DB"] = dbinfo

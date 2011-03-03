@@ -13,17 +13,38 @@ PASSWORD_CHARS = list(string.digits + string.ascii_letters)
 PASSWORD_LENGTH = 30
 
 
-class DatabaseInfo(object):
+class DatabaseInfo(dict):
     """
-    Class to hold database connection information.
+    Class to hold database connection information. It's a dict subclass, so
+    any serialization method should work OK.
     """
     def __init__(self, host, db_name, username, password=None,
                  just_created=False):
-        self.host = host
-        self.db_name = db_name
-        self.username = username
-        self.password = password
-        self.just_created = just_created
+        self['host'] = host
+        self['db_name'] = db_name
+        self['username'] = username
+        self['password'] = password
+        self['just_created'] = just_created
+
+    @property
+    def host(self):
+        return self['host']
+
+    @property
+    def db_name(self):
+        return self['db_name']
+
+    @property
+    def username(self):
+        return self['username']
+
+    @property
+    def password(self):
+        return self['password']
+
+    @property
+    def just_created(self):
+        return self['just_created']
 
     def __str__(self):
         return "Database info: %suser=%s password=%s dbname=%s host=%s" % (
