@@ -5,17 +5,20 @@ from dz.tasklib.tests.dztestcase import DZTestCase
 from dz.tasklib import database
 
 
-def _can_access_db(dbinfo):
+def _can_access_db(dbinfo, try_create=False):
     """Test whether the given user can access the database."""
 
+    sql = "select 'that worked'"
+    if try_create:
+        sql = ("create table foo (bar integer); insert into foo values (1);" +
+               sql + " from foo;")
+
     if dbinfo.password is not None:
-        cmd = ("PGUSER=%s PGPASSWD=%s psql %s -c " +
-               "\"select 'that worked'\"") % (
-            dbinfo.username, dbinfo.password, dbinfo.db_name)
+        cmd = ("PGUSER=%s PGPASSWD=%s psql %s -c \"%s\"") % (
+            dbinfo.username, dbinfo.password, dbinfo.db_name, sql)
     else:
-        cmd = ("PGUSER=%s psql %s -c " +
-               "\"select 'that worked'\"") % (
-            dbinfo.username, dbinfo.db_name)
+        cmd = ("PGUSER=%s psql %s -c \"%s\"") % (
+            dbinfo.username, dbinfo.db_name, sql)
 
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
@@ -23,7 +26,8 @@ def _can_access_db(dbinfo):
 
     if p.returncode != 0:
         # Don't actually print this; sometimes we want this to fail
-        #print("psql attempt didn't work, exited status %d" % p.returncode)
+        # print(("psql attempt didn't work, exited status %d, " +
+        #        "stdout=%r, stderr=%r") % (p.returncode, stdout, stderr))
         return False
 
     assert "that worked" in stdout, ("If psql didn't exit, then this " +
@@ -46,7 +50,7 @@ class DatabaseTasksTestCase(DZTestCase):
 
     def test_get_or_create_and_drop(self):
         """
-        Create a new database, then drop it.
+        Create a new DB & user, ensure user can use only that DB, then drop.
         """
 
         database.lock_down_public_permissions()
@@ -58,7 +62,7 @@ class DatabaseTasksTestCase(DZTestCase):
                      "password"):
             self.assertTrue(getattr(dbinfo, attr))
 
-        self.assertTrue(_can_access_db(dbinfo),
+        self.assertTrue(_can_access_db(dbinfo, try_create=True),
                         "Ensure new database can be accessed.")
 
         cust_nrweb_dbinfo = database.DatabaseInfo(host=dbinfo.host,

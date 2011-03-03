@@ -89,7 +89,8 @@ def get_or_create_database(app_id):
             db_password += random.choice(PASSWORD_CHARS)
 
         cur.execute("""CREATE USER %s WITH NOSUPERUSER NOCREATEDB
-                       NOCREATEROLE PASSWORD '%s'""" % (
+                       NOCREATEROLE PASSWORD '%s';
+                    """ % (
                 db_username, db_password))
 
     cur.close()
@@ -109,14 +110,19 @@ def lock_down_public_permissions():
     other users' databases, including our nrweb database.
     """
 
-    _sql_as_superuser("""
-REVOKE ALL ON DATABASE template1 FROM public;
-REVOKE ALL ON SCHEMA public FROM public;
-GRANT ALL ON SCHEMA public TO postgres;
+    _sql_as_superuser("\n".join([
+                "REVOKE ALL ON DATABASE template1 FROM public;",
 
-REVOKE ALL ON DATABASE nrweb FROM public;
-GRANT ALL ON DATABASE nrweb TO nrweb;
-""")
+                "GRANT ALL ON SCHEMA public TO PUBLIC;", 
+                # actually we want each user to be able to create tables in
+                # the public schema for any DB they can connect to.
+
+                #"REVOKE ALL ON SCHEMA public FROM public;",
+                #"GRANT ALL ON SCHEMA public TO postgres;",
+
+                "REVOKE ALL ON DATABASE nrweb FROM public;",
+                "GRANT ALL ON DATABASE nrweb TO nrweb;",
+                ]))
 
 
 def drop_database(database):
