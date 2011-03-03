@@ -26,7 +26,6 @@ class BuildAndDeployTestcase(DZTestCase):
         database.drop_database(self.app_id)
         database.drop_user(self.app_id)
 
-
     def test_build_and_deploy(self):
         """Invoke the build and deploy task."""
         zoomdb = StubZoomDB()
@@ -50,6 +49,7 @@ class BuildAndDeployTestcase(DZTestCase):
                         zoombuild_cfg_content)
 
         self.assertFalse(zoomdb.is_flushed)
+        self.assertEqual(len(zoomdb.get_all_bundles()), 0)
 
         # Note: if you get a database-related utils.InfrastructureError
         # on the below, you might have a lingering test DB or user. Remove
@@ -78,6 +78,7 @@ class BuildAndDeployTestcase(DZTestCase):
             self.assertTrue(getattr(p, attr))
 
         self.assertTrue(zoomdb.is_flushed)
+        self.assertEqual(len(zoomdb.get_all_bundles()), 1)
 
         # check the deployed app!
         self.assertEqual(len(deployed_addresses), 1)

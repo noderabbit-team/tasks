@@ -76,9 +76,9 @@ def wait_for_database_setup_to_complete(zoomdb, opts):
             if not val:
                 raise utils.InfrastructureException(
                     "Couldn't find existing %s setting in project. " % pattr +
-                    "The database for your project was previously created " +
-                    "but access information has been lost; please contact " +
-                    "support for assistance.")
+                    "The database for your project, %s, " % dbinfo.db_name +
+                    "was previously created but access information has been"
+                    "lost; please contact support for assistance.")
             else:
                 dbinfo[dbiattr] = val
 
@@ -174,7 +174,7 @@ def run_post_build_hooks(zoomdb, opts):
             zoomdb.log("Executed: " + cmd_output)
     except RuntimeError, e:
         zoomdb.log("Warning: there was an error running a post-build "
-                   "command. <pre>" + e.message + "</pre>",
+                   "command. Detail:\n" + e.message,
                    zoomdb.LOG_WARN)
 
 
