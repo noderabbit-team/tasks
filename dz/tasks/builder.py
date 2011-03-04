@@ -1,13 +1,7 @@
 """
-
-Builds out app server bundle
-
- - configures app server settings
- - uploads zipped bundle to s3.
-
+Overarching user-visible tasks relating to building and deploying projects.
 """
 
-from celery.task import task
 from dz.tasks.decorators import task_inject_zoomdb
 import dz.tasklib.check_repo
 import dz.tasklib.bundle
@@ -29,9 +23,8 @@ def build_and_deploy(job_id, zoomdb, job_params):
     """
     Checkout an app and inspect settings for use by the database.
     """
-    dz.tasklib.build_and_deploy.build_and_deploy(
+    return dz.tasklib.build_and_deploy.build_and_deploy(
         zoomdb,
         job_params["app_id"],
         job_params["src_url"],
-        job_params["zoombuild_cfg_content"],
-        )
+        job_params["zoombuild_cfg_content"])
