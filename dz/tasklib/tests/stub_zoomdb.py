@@ -18,10 +18,22 @@ class MockProject(object):
 
 
 class MockBundle(object):
-    def __init__(self):
+    def __init__(self, bundle_name="bundle_app_2011-fixture"):
+        self.bundle_name = bundle_name
         MockBundle.count += 1
         self.id = MockBundle.count
 MockBundle.count = 0
+
+
+class MockWorker(object):
+    def __init__(self, bundle_id, instance_id, server_ip, server_port):
+        MockWorker.count += 1
+        self.id = MockWorker.count
+        self.bundle_id = bundle_id
+        self.server_instance_id = instance_id
+        self.server_ip = server_ip
+        self.server_port = server_port
+MockWorker.count = 0
 
 
 class StubZoomDB(ZoomDatabase):
@@ -32,6 +44,7 @@ class StubZoomDB(ZoomDatabase):
         self.is_flushed = False
         self.bundles = []
         self.workers = []
+        self._job_id = 1
 
     def flush(self):
         self.is_flushed = True
@@ -52,11 +65,21 @@ class StubZoomDB(ZoomDatabase):
         self.bundles.append((bundle_name, code_revision))
         return MockBundle()
 
+    def get_bundle(self, bundle_id):
+        if len(self.bundles):
+            return MockBundle(bundle_name=self.bundles[0][0])
+        else:
+            return MockBundle()
+
     def get_all_bundles(self):
         return self.bundles
 
     def add_worker(self, bundle_id, instance_id, server_ip, server_port):
-        self.workers.append((bundle_id, instance_id, server_ip, server_port))
+        self.workers.append(MockWorker(
+                bundle_id, instance_id, server_ip, server_port))
 
     def get_project_workers(self):
+        return self.workers
+
+    def search_workers(self, app_id, bundle_names=None, active=True):
         return self.workers
