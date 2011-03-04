@@ -160,6 +160,9 @@ def bundle_app(app_id, force_bundle_name=None):
         if os.path.isdir(from_static):
             shutil.copytree(from_static, to_static)
 
+    # Remove the python executable, we don't use it
+    os.remove(os.path.join(bundle_dir, "bin", "python"))
+
     # Add settings file
     utils.render_tpl_to_file(
         'bundle/settings.py.tmpl',

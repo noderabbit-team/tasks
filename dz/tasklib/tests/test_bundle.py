@@ -109,6 +109,10 @@ class TasksTestCase(DZTestCase):
         self.assertTrue(code_revision.startswith("commit "))
         self.assertTrue(path.isdir(bundle_dir))
         self.assertTrue(path.isfile(path.join(bundle_dir, "zoombuild.cfg")))
+
+        # don't include the python executable
+        self.assertFalse(path.isfile(path.join(bundle_dir, "bin", "python")))
+
         # Moved the app src/ directory into user-src, respecting base package
         listdir_fixture = os.listdir(path.join(src, 'src'))
         # except special ignored files:
