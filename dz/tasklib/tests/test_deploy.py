@@ -6,6 +6,8 @@ from dz.tasklib import (bundle,
                         taskconfig,
                         utils)
 
+from dz.tasklib.tests.stub_zoomdb import StubZoomDB
+
 import os
 import shutil
 import time
@@ -20,7 +22,7 @@ class DeployTestCase(DZTestCase):
     def setUp(self):
         self.customer_directory = taskconfig.NR_CUSTOMER_DIR
 
-        self.app_id = "app"
+        self.app_id = "test_deploy_app"
         self.appserver_name = "localhost"
         self.bundle_name = "bundle_app_2011-fixture"
         self.dbinfo = database.DatabaseInfo(host="db-host-001",
@@ -51,8 +53,9 @@ class DeployTestCase(DZTestCase):
 
             shutil.copytree(os.path.join(fixture_dir, app_name),
                             app_dir)
-            bundle_name = bundle.bundle_app(app_name,
-                                            force_bundle_name=bundle_name)
+            bundle_name, code_revision = bundle.bundle_app(
+                app_name,
+                force_bundle_name=bundle_name)
 
             bundle_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR,
                                       app_name,
@@ -67,6 +70,28 @@ class DeployTestCase(DZTestCase):
             # after upload, delete the dir where bundle was created
             shutil.rmtree(bundle_dir)
 
+    def check_can_eventually_load(self, url, pagetext_fragment):
+        """
+        Check that the given URL can be loaded, within a reasonable number
+        of attempts, and that pagetext_fragment appears in the response.
+        """
+        load_attempts = 0
+
+        while True:
+            if load_attempts >= 10:
+                self.fail("Could not load URL %s after %d attempts." % (
+                        url,
+                        load_attempts))
+            try:
+                pagetext = urllib.urlopen(url).read()
+                self.assertTrue(pagetext_fragment in pagetext)
+                break
+            except Exception, e:
+                load_attempts += 1
+                print "[attempt %d] Couldn't load %s: %s" % (
+                    load_attempts, url, str(e))
+                time.sleep(0.25)
+
     def test_bundle_fixture_in_local_storage(self):
         """
         Ensure the bundle fixture file exists in local bundle storage.
@@ -75,7 +100,7 @@ class DeployTestCase(DZTestCase):
                         "Need a bundle to test deploying - " +
                         "run python dz/tasklib/tests/make_bundle_fixture.py")
 
-    def _deploy_me(self):
+    def _install_my_bundle(self):
         """
         Convenience function used in several tests.
         """
@@ -86,7 +111,7 @@ class DeployTestCase(DZTestCase):
             self.dbinfo,
             bundle_storage_engine=bundle_storage_local)
 
-    def test_deploy_app_bundle(self):
+    def test_deploy_and_undeploy(self):
         """
         Test the deploy_app_bundle function.
         """
@@ -97,7 +122,7 @@ class DeployTestCase(DZTestCase):
         if os.path.isdir(bundle_dir):
             shutil.rmtree(bundle_dir)
 
-        self._deploy_me()
+        self._install_my_bundle()
         self.assertTrue(os.path.isdir(bundle_dir))
 
         for  build_file in ("noderabbit_requirements.txt",
@@ -144,15 +169,11 @@ class DeployTestCase(DZTestCase):
                                      "BOGUS" + self.appserver_name,
                                      self.dbinfo)
 
-    # COMING SOON:
-    # def test_generate_supervisor_conf_file(self):
-    # def test reload_supervisord(self):
-
     def test_managepy_cmd(self):
         """Test running a non-interactive manage.py command on a bundle."""
 
         # first ensure bundle has been deployed
-        self._deploy_me()
+        self._install_my_bundle()
 
         # now check to see that we can run commands
         diffsettings = deploy.managepy_command(self.app_id,
@@ -177,29 +198,21 @@ class DeployTestCase(DZTestCase):
         """
         Test actually serving a deployed bundle, then taking it down.
         """
-        self._deploy_me()
+        self._install_my_bundle()
         port = deploy.start_serving_bundle(self.app_id, self.bundle_name)
 
         self.assertTrue(isinstance(port, int))
 
         app_url = "http://localhost:%d" % port
 
-        load_attempts = 0
-        while True:
-            if load_attempts >= 10:
-                self.fail("Could not load URL %s after %d attempts." % (
-                        app_url,
-                        load_attempts))
-            try:
-                pagetext = urllib.urlopen(app_url).read()
-                self.assertTrue("Welcome to the Django tutorial polls app"
-                                in pagetext)
-                break
-            except Exception, e:
-                load_attempts += 1
-                print "[attempt %d] Couldn't load %s: %s" % (
-                    load_attempts, app_url, str(e))
-                time.sleep(0.25)
+        self.check_can_eventually_load(
+            app_url,
+            "Welcome to the Django tutorial polls app")
+
+        # we shouldn't be able to serve the same bundle again from this
+        # appserver
+        with self.assertRaises(utils.InfrastructureException):
+            deploy.start_serving_bundle(self.app_id, self.bundle_name)
 
         num_stopped = deploy.stop_serving_bundle(self.app_id, self.bundle_name)
 
@@ -212,12 +225,36 @@ class DeployTestCase(DZTestCase):
         """
         Test our portscanner.
         """
+        print "Testing ports..."
         for p in xrange(taskconfig.APP_SERVICE_START_PORT + 100,
                         taskconfig.APP_SERVICE_START_PORT + 200):
             is_open = deploy._is_port_open(p)
-            print "testing port %d: %s" % (p, is_open)
+            #print "testing port %d: %s\r" % (p, is_open),
             self.assertTrue(is_open)
 
         # anything below 1024 is root only, so it should fail.
         # port 22 is SSH, so it should almost certainly fail.
         self.assertFalse(deploy._is_port_open(22))
+
+    def test_undeploy(self):
+        """
+        Test taking down a deployed bundle.
+        """
+        self._install_my_bundle()
+        port = deploy.start_serving_bundle(self.app_id, self.bundle_name)
+
+        self.check_can_eventually_load(
+            "http://localhost:%s" % port,
+            "Welcome to the Django tutorial polls app")
+
+        zoomdb = StubZoomDB()
+        zoomdb.add_worker(1, "localhost", "127.0.0.1", port)
+
+        self.assertFalse(deploy._is_port_open(port))
+
+        deploy.undeploy(zoomdb,
+                        self.app_id,
+                        None,  # or [1],
+                        use_subtasks=False)
+
+        self.assertTrue(deploy._is_port_open(port))

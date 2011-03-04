@@ -9,14 +9,14 @@
   - Update app server locations (host, socket) in nr database.
 
 """
+import datetime
 import os
 import socket
 import subprocess
 
 from dz.tasklib import (bundle_storage,
                         taskconfig,
-                        utils,
-                        )
+                        utils)
 
 
 def _get_and_extract_bundle(bundle_name, app_dir, bundle_storage_engine):
@@ -168,6 +168,18 @@ def start_serving_bundle(app_id, bundle_name):
     Serve the given bundle under supervisor, and return the port on which
     the service is running.
     """
+
+    # check that this bundle isn't already being served here - otherwise
+    # supervisor will silently ignore the redundant config files!
+    for bun in _get_active_bundles():
+        if bun["app_id"] == app_id and bun["bundle_name"] == bundle_name:
+            raise utils.InfrastructureException(
+                "Redundant bundle service request: server "
+                "%s is already serving app_id %s, bundle_name %s." % (
+                    socket.gethostname(),
+                    app_id,
+                    bundle_name))
+
     port_to_use = _get_a_free_port()
 
     config_filename = os.path.join(taskconfig.SUPERVISOR_APP_CONF_DIR,
@@ -210,3 +222,65 @@ def stop_serving_bundle(app_id, bundle_name):
     _kick_supervisor()
 
     return num_stopped
+
+
+def undeploy(zoomdb, app_id, bundle_ids, use_subtasks=True):
+    matching_deployments = zoomdb.search_workers(app_id, bundle_ids,
+                                                 active=True)
+
+    if len(matching_deployments) == 0:
+        raise utils.InfrastructureException(
+            "No active deployments found for app_id=%s, bundle_ids=%r." %
+            app_id, bundle_ids)
+
+    droptasks = []
+
+    import dz.tasks.deploy  # do this non-globally due to dependencies
+
+    for dep in matching_deployments:
+        args = [zoomdb,
+                app_id,
+                dep.bundle_id,
+                dep.server_instance_id,
+                dep.server_port]
+
+        if use_subtasks:
+            droptasks.append(
+                dz.tasks.deploy.undeploy_from_appserver(
+                        args=args,
+                        queue="appserver:" + dep.server_instance_id))
+
+        else:
+            result = undeploy_from_appserver(*args)
+            zoomdb.log("Dropped %s - %s" % (dep, result))
+            dep.deactivation_date = datetime.datetime.utcnow()
+            zoomdb.flush()
+
+    if use_subtasks:
+        for dep, dt in zip(matching_deployments, droptasks):
+            result = dt.wait()
+            zoomdb.log("Dropped %s - %s" % (dep, result))
+            dep.deactivation_date = datetime.datetime.utcnow()
+            zoomdb.flush()
+
+
+def undeploy_from_appserver(zoomdb, app_id, bundle_id,
+                            appserver_instance_id, appserver_port):
+    my_hostname = socket.gethostname()
+
+    if appserver_instance_id not in (my_hostname, "localhost"):
+        raise utils.InfrastructureException(
+            "Incorrect appserver received undeploy_from_appserver task; " +
+            "I am %s but the undeploy is for %s." % (my_hostname,
+                                                     appserver_instance_id))
+
+    bundle = zoomdb.get_bundle(bundle_id)
+    num_stopped = stop_serving_bundle(app_id, bundle.bundle_name)
+
+    if num_stopped != 1:
+        raise utils.InfrastructureException(
+            ("Attempting to undeploy one bundle (app_id %s, bundle_id %s, "
+             "bundle_name %s) from appserver %s:%d, but %d bundles were "
+             "stopped.")
+            % (app_id, bundle_id, bundle.bundle_name,
+               appserver_instance_id, appserver_port))

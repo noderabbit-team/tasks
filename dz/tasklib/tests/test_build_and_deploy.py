@@ -1,10 +1,13 @@
 from os import path
+import os
 import urllib
 
-from dz.tasklib import (taskconfig,
-                        build_and_deploy,
+from dz.tasklib import (build_and_deploy,
+                        bundle_storage_local,
                         database,
-                        bundle_storage_local)
+                        deploy,
+                        taskconfig,
+                        utils)
 from dz.tasklib.tests.stub_zoomdb import StubZoomDB
 from dz.tasklib.tests.dztestcase import DZTestCase
 
@@ -17,7 +20,7 @@ class BuildAndDeployTestcase(DZTestCase):
     def setUp(self):
         self.dir = self.makeDir()
         self.patch(taskconfig, "NR_CUSTOMER_DIR", self.dir)
-        self.app_id = "p001"
+        self.app_id = "test001"
 
     def tearDown(self):
         # TODO: instead of just manually throwing away DB stuff, add a
@@ -52,18 +55,21 @@ class BuildAndDeployTestcase(DZTestCase):
         self.assertEqual(len(zoomdb.get_all_bundles()), 0)
         self.assertEqual(len(zoomdb.get_project_workers()), 0)
 
-        # Note: if you get a database-related utils.InfrastructureError
-        # on the below, you might have a lingering test DB or user. Remove
-        # it by running:
-        # dropdb -U nrweb p001; dropuser -U nrweb p001;
-
         deployed_addresses = build_and_deploy.build_and_deploy(
             zoomdb, self.app_id, src_url,
             zoombuild_cfg_content,
             use_subtasks=False,
             bundle_storage_engine=bundle_storage_local,
-            #post_build_hooks=[]
             )
+
+        # # call the tasks module directly instead, so we get that tested too.
+        # # actually this doesn't work because of the decorator; doh!
+        # deployed_addresses = builder.build_and_deploy(zoomdb._job_id, zoomdb,
+        #         {
+        #         "app_id": self.app_id,
+        #         "src_url": src_url,
+        #         "zoombuild_cfg_content": zoombuild_cfg_content,
+        #         })
 
         zoombuild_cfg_output_filename = path.join(self.dir,
                                                   self.app_id,
@@ -85,17 +91,29 @@ class BuildAndDeployTestcase(DZTestCase):
         # check the deployed app!
         self.assertEqual(len(deployed_addresses), 1)
 
-        appserver_host, appserver_port = deployed_addresses[0]
-        polls_src = urllib.urlopen(
-            "http://%s:%d/polls/" % (appserver_host, appserver_port)).read()
-        self.assertTrue("No polls are available." in polls_src)
+        for appserver_host, appserver_port in deployed_addresses:
+            polls_url = "http://%s:%d/polls/" % (appserver_host,
+                                                 appserver_port)
+            polls_src = urllib.urlopen(polls_url).read()
+            self.assertTrue("No polls are available." in polls_src)
 
-        # TODO: More stuff to test:
-        # - we get an accurate port # or URL back
-        # - deployment info is logged into DB
-        # - database creds are logged into DB
-        # - app actually loads (should be doable once database creds happen)
-        # - tear down app (so we don't pollute /etc/supervisor/conf.d with
-        #                  stuff that doesn't even exist anymore)
-        #   - remove supervisor conf.d entry
-        #   - remove postgres database and user
+        # OK, now undeploy.
+        deploy.undeploy(zoomdb, self.app_id, bundle_ids=None,
+                        use_subtasks=False)
+
+        # check that URLs are no longer accessible
+        for appserver_host, appserver_port in deployed_addresses:
+            polls_url = "http://%s:%d/polls/" % (appserver_host,
+                                                 appserver_port)
+            with self.assertRaises(IOError):
+                urllib.urlopen(polls_url).read()
+
+        # check that supervisor files are gone
+        for fname in os.listdir(taskconfig.SUPERVISOR_APP_CONF_DIR):
+            self.assertFalse(fname.startswith("%s." % self.app_id))
+
+        # check that DB still exists though
+        dblist = utils.local("psql -l -U nrweb | awk '{print $1}'")
+        self.assertTrue(self.app_id in dblist.splitlines())
+
+        # DB and dbuser will be deleted in tearDown().
