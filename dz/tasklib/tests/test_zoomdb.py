@@ -131,6 +131,50 @@ class ZoomDatabaseTest(MockerTestCase):
         self.assertEqual(worker_deployment_record.server_ip, server_ip)
         self.assertEqual(worker_deployment_record.server_port, server_port)
 
+    def test_search_workers(self):
+        """
+        Test querying with search_workers.
+        """
+        z = self.zoom_db
+
+        b1 = z.add_bundle("test_bundle_1")
+        b2 = z.add_bundle("test_bundle_2")
+
+        wo1 = z.add_worker(b1.id, "test_host_1", "127.0.0.1", 11111)
+        wo2 = z.add_worker(b2.id, "test_host_2", "127.0.1.0", 11112)
+
+        ws1 = z.get_project_workers()
+        ws2 = z.search_workers(active=None)
+        ws1.sort(key=lambda x: x.id)
+        ws2.sort(key=lambda x: x.id)
+
+        self.assertEqual(ws1, ws2)
+        self.assertEqual(len(ws2), 2)
+
+        # now let's do some searches...
+        s1 = z.search_workers(bundle_ids=[b1.id])
+        self.assertEqual(len(s1), 1)
+        self.assertEqual(s1[0], wo1)
+
+        # and deactivate
+        wo2.deactivation_date = datetime.datetime.utcnow()
+        z.flush()
+        s2 = z.search_workers(bundle_ids=[b2.id])  # active only by default!
+        self.assertEqual(len(s2), 0)
+
+        # gimme the inactive one
+        s3 = z.search_workers(bundle_ids=[b2.id], active=False)
+        self.assertEqual(len(s3), 1)
+
+        # gimme both active and inactive
+        s4 = z.search_workers(bundle_ids=[b2.id], active=None)
+        self.assertEqual(len(s4), 1)
+
+        # and just gimme everything active
+        s5 = z.search_workers()
+        self.assertEqual(len(s5), 1)
+        self.assertEqual(s5[0], wo1)
+
     def test_get_job(self):
         """
         Get the job associated with current zoomdb instance.

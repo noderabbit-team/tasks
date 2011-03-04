@@ -85,6 +85,9 @@ class ZoomDatabase(object):
         :param code_revision: The code revision the bundle was created from.
         """
 
+        if code_revision is None:
+            code_revision = ""
+
         if len(code_revision) > 255:
             code_revision = code_revision[0:252] + "..."
 
@@ -118,7 +121,7 @@ class ZoomDatabase(object):
         :param server_ip: The server ip address.
         :param server_port: The port on the server, the app is listening on.
         """
-        self._soup.dz2_appserverdeployment.insert(
+        worker = self._soup.dz2_appserverdeployment.insert(
             project_id=self.get_project_id(),
             bundle_id=bundle_id,
             server_instance_id=instance_id,
@@ -126,6 +129,48 @@ class ZoomDatabase(object):
             server_port=server_port,
             creation_date=datetime.utcnow())
         self._soup.session.commit()
+        return worker
+
+    def search_workers(self, bundle_ids=None, active=True):
+        """
+        Get workers in this job's project matching the supplied criteria.
+
+        :param bundle_ids: Bundle DB ids to match; if None, any bundles in
+                             the app are included.
+        :param active: If True (the default, limit results to currently
+                       active workers.
+        """
+        asd = self._soup.dz2_appserverdeployment
+        #bundle = self._soup.dz2_appbundle
+        qs = asd.filter(asd.project_id == self.get_project_id())
+
+# # same thing, but spelled out entirely explicitly
+# # including the association table.
+# session.query(Article).join(
+#     (article_keywords,
+#     Articles.id==article_keywords.c.article_id),
+#     (Keyword, Keyword.id==article_keywords.c.keyword_id)
+#     )
+
+        # if bundle_names:
+        #     qs = qs.join((bundle,
+        #                   asd.bundle_id == bundle.id)).filter(
+        #         bundle.bundle_name._in(bundle_names))
+        # SR 3/4/11: for some reason the above doesn't work. Fuck it,
+        # i'll filter in Python. Sorry.
+
+        if active is not None:
+            if active:
+                qs = qs.filter(asd.deactivation_date == None)
+            else:
+                qs = qs.filter(asd.deactivation_date != None)
+
+        result = list(qs)
+
+        if bundle_ids:
+            result = filter(lambda b: b.bundle_id in bundle_ids, result)
+
+        return result
 
     def get_project_workers(self):
         """Get all AppServerDeployments for this job's project."""
