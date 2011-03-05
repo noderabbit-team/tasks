@@ -99,9 +99,9 @@ class TasksTestCase(DZTestCase):
         here = path.abspath(path.split(__file__)[0])
         src = path.join(here, 'fixtures', 'app')
         dest = path.join(self.dir, 'app')
-        utils.local('(cd %s; git init; git add -A; git commit -m test)' % path.join(dest, 'src'))
 #        import pdb; pdb.set_trace()
         shutil.copytree(src, dest)
+        utils.local('(cd %s; git init; git add -A; git commit -m test)' % path.join(dest, 'src'))
 
         (bundle_name, code_revision) = bundle.bundle_app('app')
         bundle_dir = path.join(self.dir, 'app', bundle_name)
