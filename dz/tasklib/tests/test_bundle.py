@@ -99,6 +99,8 @@ class TasksTestCase(DZTestCase):
         here = path.abspath(path.split(__file__)[0])
         src = path.join(here, 'fixtures', 'app')
         dest = path.join(self.dir, 'app')
+        utils.local('(cd %s; git init; git add -A; git commit -m test)' % path.join(dest, 'src'))
+#        import pdb; pdb.set_trace()
         shutil.copytree(src, dest)
 
         (bundle_name, code_revision) = bundle.bundle_app('app')
@@ -162,7 +164,7 @@ class TasksTestCase(DZTestCase):
         tmp_repo_dir = self.makeDir()
         utils.local("tar xvzf %s -C %s" % (tarball_path, tmp_repo_dir))
         src_url = path.join(tmp_repo_dir, "repo")
-
+        import pdb; pdb.set_trace()
         check_repo.check_repo(zoomdb, app_id, src_url)
 
         src_dir = path.join(self.dir, app_id, "src")

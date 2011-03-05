@@ -103,6 +103,7 @@ def bundle_app(app_id, force_bundle_name=None):
     utils.install_requirements(buildconfig_info["pip_reqs"], bundle_dir)
 
     # Check what version of the code we've got
+    import pdb; pdb.set_trace()
     code_revision, stderr, p = utils.subproc("(cd %s; git log -n 1)" %
                                              appsrcdir)
 
