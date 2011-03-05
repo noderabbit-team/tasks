@@ -99,7 +99,6 @@ class TasksTestCase(DZTestCase):
         here = path.abspath(path.split(__file__)[0])
         src = path.join(here, 'fixtures', 'app')
         dest = path.join(self.dir, 'app')
-#        import pdb; pdb.set_trace()
         shutil.copytree(src, dest)
         utils.local('(cd %s; git init; git add -A; git commit -m test)' % path.join(dest, 'src'))
 
@@ -118,7 +117,8 @@ class TasksTestCase(DZTestCase):
         # Moved the app src/ directory into user-src, respecting base package
         listdir_fixture = os.listdir(path.join(src, 'src'))
         # except special ignored files:
-        listdir_fixture.remove(".git")
+        if ".git" in listdir_fixture:
+            listdir_fixture.remove(".git")
         base_package_as_path = "mysite"
         user_src_base_dir = path.join(bundle_dir, 'user-src',
                                       base_package_as_path)
@@ -164,7 +164,6 @@ class TasksTestCase(DZTestCase):
         tmp_repo_dir = self.makeDir()
         utils.local("tar xvzf %s -C %s" % (tarball_path, tmp_repo_dir))
         src_url = path.join(tmp_repo_dir, "repo")
-        import pdb; pdb.set_trace()
         check_repo.check_repo(zoomdb, app_id, src_url)
 
         src_dir = path.join(self.dir, app_id, "src")
