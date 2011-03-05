@@ -258,3 +258,11 @@ class DeployTestCase(DZTestCase):
                         use_subtasks=False)
 
         self.assertTrue(deploy._is_port_open(port))
+
+    def test_undeploy_nonexistent(self):
+        """
+        Test undeploying something that doesn't actually exist.
+        """
+        with self.assertRaises(utils.InfrastructureException):
+            deploy.undeploy_from_appserver(StubZoomDB(), 1, 1,
+                                           "localhost", 10001)

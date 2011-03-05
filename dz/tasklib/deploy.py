@@ -283,4 +283,4 @@ def undeploy_from_appserver(zoomdb, app_id, bundle_id,
              "bundle_name %s) from appserver %s:%d, but %d bundles were "
              "stopped.")
             % (app_id, bundle_id, bundle.bundle_name,
-               appserver_instance_id, appserver_port))
+               appserver_instance_id, appserver_port, num_stopped))
