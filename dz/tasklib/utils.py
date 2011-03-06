@@ -93,8 +93,10 @@ def install_requirements(reqs, path):
     reqfile.writelines(reqs)
     reqfile.close()
     pip = os.path.join(path, 'bin', 'pip')
-    #local("%s install -q -r %s" % (pip, fname))
-    local("%s install -r %s" % (pip, fname))
+    output = local("%s install -r %s" % (pip, fname))
+    print "=== output from pip ==="
+    print output
+    print "=== end of output from pip ==="
 
 
 def add_to_pth(paths, vpath, relative=False):
