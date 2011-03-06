@@ -18,6 +18,14 @@ class InfrastructureException(Exception):
     pass
 
 
+class ExternalServiceException(Exception):
+    """
+    Exception indicating a problem outside of DjangoZoom, such as failure
+    to fetch an externally-hosted required module.
+    """
+    pass
+
+
 def local(command, capture=True):
     """
     Run a command locally.
@@ -93,7 +101,13 @@ def install_requirements(reqs, path):
     reqfile.writelines(reqs)
     reqfile.close()
     pip = os.path.join(path, 'bin', 'pip')
-    output = local("%s install -r %s" % (pip, fname))
+
+    output, stderr, p = subproc("%s install -r %s" % (pip, fname))
+    if p.returncode != 0:
+        raise ExternalServiceException((
+                "Error attempting to install requirements %r. "
+                "Pip output:\n %s\n%s") % (reqs, output, stderr))
+
     print "=== output from pip ==="
     print output
     print "=== end of output from pip ==="

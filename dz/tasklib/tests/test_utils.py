@@ -6,9 +6,9 @@ from os import path
 
 from dz.tasklib import taskconfig
 from dz.tasklib import utils
+from dz.tasklib.tests.dztestcase import DZTestCase
 
-
-class UtilsTestCase(unittest.TestCase):
+class UtilsTestCase(DZTestCase):
     def setUp(self):
         self.dir = tempfile.mkdtemp()
 
@@ -57,6 +57,20 @@ class UtilsTestCase(unittest.TestCase):
         self.assertTrue(path.exists(fpath))
         contents = open(fpath, 'r').read()
         self.assertEquals(contents, 'importlib')
+
+    def test_install_requirements_failure(self):
+        """
+        Tests pip failures don't cause the whole process to exit.
+        """
+        utils.make_virtualenv(path.join(self.dir))
+
+        try:
+            utils.install_requirements(['BULLSHIT_REQ'], self.dir)
+        except utils.ExternalServiceException, e:
+            self.assertTrue(("Could not find any downloads that satisfy "
+                             "the requirement BULLSHIT-REQ") in e.message)
+        else:
+            self.fail("ExternalServiceException not raised")
 
     def test_add_to_pth(self):
         """
