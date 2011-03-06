@@ -189,18 +189,26 @@ class CeleryQueuesTestCase(unittest.TestCase):
             self.assertEqual([task["outcome"]["TEST_CELERYD_NAME"]],
                              _get_hostnames_for_queue(task["queue"]))
 
-    def test_celery_taskmeta_provides_no_date_done(self):
+    def test_celery_taskmeta_finally_provides_date_done(self):
         """
-        Ensure celery does not provide a date_done entry in taskmeta when
-        used with the database results backend. This seems to be a bug; see
+        Ensure celery does not^H^H^H ACTUALLY DOES, SEE UPDATE 3/6 BELOW
+        provide a date_done entry in taskmeta when used with the database
+        results backend. This seems to be a bug; see
         https://github.com/ask/celery/issues/issue/325
 
         UPDATE 2/19/2011: Ask says it was accidentally removed, and has
         committed a fix. Look for this test to fail and the monkeypatch
         become unneccessary in the next Celery release.
         https://github.com/ask/celery/issues/325#comment_789370
+
+        UPDATE 3/6/2011: Celery 2.2.4 appears to include a fix for this
+        issue. I'm renaming this function from 
+        test_celery_taskmeta_provides_no_date_done
+        to
+        test_celery_taskmeta_finally_provides_date_done
+        and inverting the test logic.
         """
-        self.assertTrue(not _does_taskmeta_include_date_done())
+        self.assertTrue(_does_taskmeta_include_date_done())
 
     def test_celery_taskmeta_monkeypatch(self):
         """
@@ -208,7 +216,7 @@ class CeleryQueuesTestCase(unittest.TestCase):
         backend.
         """
 
-        self.assertTrue(not _does_taskmeta_include_date_done())
+        pre_monkey_result = _does_taskmeta_include_date_done()
 
         import dz.tasks
         dz.tasks.monkey_patch_celery_db_models_Task()
@@ -217,4 +225,5 @@ class CeleryQueuesTestCase(unittest.TestCase):
 
         dz.tasks.undo_monkey_patch_celery_db_models_Task()
 
-        self.assertTrue(not _does_taskmeta_include_date_done())
+        self.assertEqual(_does_taskmeta_include_date_done(),
+                         pre_monkey_result)
