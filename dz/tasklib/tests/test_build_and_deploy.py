@@ -104,7 +104,7 @@ class BuildAndDeployTestcase(DZTestCase):
             self.assertTrue("No polls are available." in polls_src)
 
         # now check the nginx service
-        host = "%s.djangozoom.net" % self.app_id
+        host = zoomdb.get_project_virtual_hosts()[0]
 
         def get_via_nginx():
             conn = httplib.HTTPConnection("127.0.0.1")
@@ -115,7 +115,10 @@ class BuildAndDeployTestcase(DZTestCase):
             res_src = res.read()
             return res_src
 
-        self.assertTrue("No polls are available." in get_via_nginx())
+        page_src = get_via_nginx()
+        self.assertTrue("No polls are available." in page_src,
+                        "Couldn't find polls text in "
+                        "page src (%r)." % page_src)
 
         # OK, now undeploy.
         deploy.undeploy(zoomdb, self.app_id, bundle_ids=None,

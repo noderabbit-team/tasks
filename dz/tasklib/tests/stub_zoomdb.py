@@ -87,3 +87,9 @@ class StubZoomDB(ZoomDatabase):
 
     def search_workers(self, app_id, bundle_names=None, active=True):
         return self.workers
+
+    def get_project_virtual_hosts(self):
+        """Use special identifiers for test vhost names so we don't conflict
+        with hosts that may already exist on the test system."""
+        super_vhosts = super(StubZoomDB, self).get_project_virtual_hosts()
+        return ["test-" + v for v in super_vhosts]

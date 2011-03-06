@@ -216,5 +216,4 @@ class ZoomDatabase(object):
             taskconfig.PROJECT_SYSID_FORMAT % self.get_project_id())
 
         # TODO: query the DB for matching VirtualHostname records
-
         return [canonical_vhost_name]
