@@ -200,13 +200,13 @@ def update_front_end_proxy(zoomdb, opts):
     appservers = opts["DEPLOYED_ADDRESSES"]  # (host,port) format
     virtual_hostnames = zoomdb.get_project_virtual_hosts()
 
-    args = [opts["APP_ID"], appservers, virtual_hostnames]
+    args = [zoomdb._job_id, opts["APP_ID"], appservers, virtual_hostnames]
 
     if opts["USE_SUBTASKS"]:
         res = nginx.update_proxy_conf.apply_async(args=args)
         res.wait()
     else:
-        nginx.update_proxy_conf(*([zoomdb._job_id] + args))
+        nginx.update_proxy_conf(*args)
 
     zoomdb.log("Updated proxy server configuration. Your project is now "
                "available from the following URLs: " +
