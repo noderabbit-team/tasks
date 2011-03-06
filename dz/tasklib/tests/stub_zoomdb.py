@@ -3,6 +3,7 @@ from dz.tasklib.zoomdb import ZoomDatabase
 
 class MockProject(object):
     owner = 0
+    project_id = 1
     source_code_url = ""
     title = ""
     django_version = ""
@@ -60,6 +61,9 @@ class StubZoomDB(ZoomDatabase):
 
     def get_project(self):
         return self.project
+
+    def get_project_id(self):
+        return self.project.project_id
 
     def add_bundle(self, bundle_name, code_revision=None):
         self.bundles.append((bundle_name, code_revision))
