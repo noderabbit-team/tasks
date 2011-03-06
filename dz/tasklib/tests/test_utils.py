@@ -74,7 +74,8 @@ class UtilsTestCase(unittest.TestCase):
         """
         utils.make_virtualenv(self.dir)
         utils.add_to_pth(['foo', 'bar'], self.dir, relative=True)
-        pthfname = path.join(utils.get_site_packages(self.dir), taskconfig.NR_PTH_FILENAME)
+        pthfname = path.join(utils.get_site_packages(self.dir),
+                             taskconfig.NR_PTH_FILENAME)
         contents = open(pthfname, 'r').read()
         self.assertTrue(path.join(self.dir, 'foo') in contents, contents)
         self.assertTrue(path.join(self.dir, 'bar') in contents, contents)
@@ -91,6 +92,11 @@ class UtilsTestCase(unittest.TestCase):
         self.assertEqual(content, read)
         self.assertTrue('foo' in read)
 
+    def test_local_privileged(self):
+        """Runs a privileged (setuid) external program.
+        """
+        result = utils.local_privileged(["whoami"])
+        self.assertEqual("root\n", result)
+
     def tearDown(self):
         shutil.rmtree(self.dir)
-

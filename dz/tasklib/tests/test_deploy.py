@@ -255,7 +255,8 @@ class DeployTestCase(DZTestCase):
         deploy.undeploy(zoomdb,
                         self.app_id,
                         None,  # or [1],
-                        use_subtasks=False)
+                        use_subtasks=False,
+                        also_update_proxies=False)
 
         self.assertTrue(deploy._is_port_open(port))
 

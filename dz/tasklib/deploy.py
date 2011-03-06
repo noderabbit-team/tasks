@@ -224,7 +224,8 @@ def stop_serving_bundle(app_id, bundle_name):
     return num_stopped
 
 
-def undeploy(zoomdb, app_id, bundle_ids, use_subtasks=True):
+def undeploy(zoomdb, app_id, bundle_ids, use_subtasks=True,
+             also_update_proxies=True):
     matching_deployments = zoomdb.search_workers(app_id, bundle_ids,
                                                  active=True)
 
@@ -262,6 +263,40 @@ def undeploy(zoomdb, app_id, bundle_ids, use_subtasks=True):
             zoomdb.log("Dropped %s - %s" % (dep, result))
             dep.deactivation_date = datetime.datetime.utcnow()
             zoomdb.flush()
+
+    # now update frontend proxies
+    if also_update_proxies:
+        remaining_appservers = [(w.server_instance_id, w.server_port)
+                                for w in zoomdb.get_project_workers()
+                                if not(w.deactivation_date)]
+        if len(remaining_appservers):
+            zoomdb.log("Updating front-end proxy to use remaining appservers "
+                       "(%r)" % (remaining_appservers,))
+            if use_subtasks:
+                import dz.tasks.nginx
+                dz.tasks.nginx.update_proxy_conf(
+                    zoomdb._job_id,
+                    app_id,
+                    remaining_appservers,
+                    zoomdb.get_project_virtual_hosts())
+            else:
+                import dz.tasklib.nginx
+                dz.tasklib.nginx.update_local_proxy_config(
+                    app_id,
+                    remaining_appservers,
+                    zoomdb.get_project_virtual_hosts())
+        else:
+            # there are no more appservers; remove from proxy
+            zoomdb.log(("This undeployment removes the last active appservers "
+                        "for %r; stopping front-end proxy service for "
+                        "associated virtual hostnames too.") % app_id)
+
+            if use_subtasks:
+                import dz.tasks.nginx
+                dz.tasks.nginx.remove_local_proxy_conf(zoomdb._job_id, app_id)
+            else:
+                import dz.tasklib.nginx
+                dz.tasklib.nginx.remove_local_proxy_config(app_id)
 
 
 def undeploy_from_appserver(zoomdb, app_id, bundle_id,

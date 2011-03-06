@@ -6,9 +6,15 @@ Needs to know.
  - static media locations (aka site media)
 
 """
-from celery import task
+from dz.tasks.decorators import task_inject_zoomdb
+from dz.tasklib import nginx
 
 
-@task
-def nginx(message):
-    pass
+@task_inject_zoomdb(name="update_proxy_conf", queue="frontend_proxy")
+def update_proxy_conf(job_id, zoomdb, app_id, appservers, virtual_hostnames):
+    nginx.update_local_proxy_config(app_id, appservers, virtual_hostnames)
+
+
+@task_inject_zoomdb(name="update_proxy_conf", queue="frontend_proxy")
+def remove_proxy_conf(job_id, zoomdb, app_id):
+    nginx.remove_local_proxy_config(app_id)

@@ -1,6 +1,7 @@
 from os import path
 import os
 import urllib
+import httplib
 
 from dz.tasklib import (build_and_deploy,
                         bundle_storage_local,
@@ -87,6 +88,11 @@ class BuildAndDeployTestcase(DZTestCase):
         self.assertTrue(zoomdb.is_flushed)
         self.assertEqual(len(zoomdb.get_all_bundles()), 1)
         self.assertEqual(len(zoomdb.get_project_workers()), 1)
+        site_nginx_conf_file = os.path.join(taskconfig.NGINX_SITES_ENABLED_DIR,
+                                            self.app_id)
+        self.assertTrue(os.path.isfile(site_nginx_conf_file),
+                        "expected to find a config file in nginx's "
+                        "sites-enabled directory, but didn't")
 
         # check the deployed app!
         self.assertEqual(len(deployed_addresses), 1)
@@ -96,6 +102,20 @@ class BuildAndDeployTestcase(DZTestCase):
                                                  appserver_port)
             polls_src = urllib.urlopen(polls_url).read()
             self.assertTrue("No polls are available." in polls_src)
+
+        # now check the nginx service
+        host = "%s.djangozoom.net" % self.app_id
+
+        def get_via_nginx():
+            conn = httplib.HTTPConnection("127.0.0.1")
+            conn.putrequest("GET", "/polls/", skip_host=True)
+            conn.putheader("Host", host)
+            conn.endheaders()
+            res = conn.getresponse()
+            res_src = res.read()
+            return res_src
+
+        self.assertTrue("No polls are available." in get_via_nginx())
 
         # OK, now undeploy.
         deploy.undeploy(zoomdb, self.app_id, bundle_ids=None,
@@ -108,9 +128,15 @@ class BuildAndDeployTestcase(DZTestCase):
             with self.assertRaises(IOError):
                 urllib.urlopen(polls_url).read()
 
+        # check that Nginx conf file is gone
+        self.assertFalse(os.path.isfile(site_nginx_conf_file),
+                        "expected nginx config file gone")
+
         # check that supervisor files are gone
         for fname in os.listdir(taskconfig.SUPERVISOR_APP_CONF_DIR):
-            self.assertFalse(fname.startswith("%s." % self.app_id))
+            self.assertFalse(fname.startswith("%s." % self.app_id),
+                             "There is a lingering supervisor config "
+                             "file: %s" % fname)
 
         # check that DB still exists though
         dblist = utils.local("psql -l -U nrweb | awk '{print $1}'")

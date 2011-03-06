@@ -93,7 +93,8 @@ def install_requirements(reqs, path):
     reqfile.writelines(reqs)
     reqfile.close()
     pip = os.path.join(path, 'bin', 'pip')
-    local("%s install -q -r %s" % (pip, fname))
+    #local("%s install -q -r %s" % (pip, fname))
+    local("%s install -r %s" % (pip, fname))
 
 
 def add_to_pth(paths, vpath, relative=False):
@@ -146,3 +147,19 @@ def run_steps(zoomdb, opts, steps):
             os.chdir(cur_dir)
 
         zoomdb.log(nicename, zoomdb.LOG_STEP_END)
+
+
+def local_privileged(cmdargs):
+    assert isinstance(cmdargs, list)
+    privileged_program = cmdargs.pop(0)
+    assert "/" not in privileged_program, ("Privileged programs can only "
+                                           "be run from the designated "
+                                           "directory. Paths are not allowed.")
+
+    privileged_program_path = os.path.join(taskconfig.PRIVILEGED_PROGRAMS_PATH,
+                                           privileged_program)
+
+    fullcmd = ["sudo", privileged_program_path] + cmdargs
+    print "Running local_privileged command: %r" % fullcmd
+    stdout, stderr, p = subproc(fullcmd, null_stdin=True)
+    return stdout
