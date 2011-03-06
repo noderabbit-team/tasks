@@ -8,6 +8,7 @@ from sqlalchemy.ext.sqlsoup import SqlSoup
 from sqlalchemy import create_engine
 
 from dz.tasklib.zoomdb import ZoomDatabase
+from dz.tasklib import taskconfig
 
 
 class ZoomDatabaseTest(MockerTestCase):
@@ -242,3 +243,11 @@ class ZoomDatabaseTest(MockerTestCase):
         bun = self.zoom_db.add_bundle(bundle_name="abundle",
                                       code_revision=long_msg)
         self.assertEqual(len(bun.code_revision), 255)
+
+    def test_get_vhosts(self):
+        """Test getting project virtual host names."""
+        proj_id = taskconfig.PROJECT_SYSID_FORMAT % \
+            self.zoom_db.get_project_id()
+        expected = ["%s.djangozoom.net" % proj_id]
+
+        self.assertEqual(self.zoom_db.get_project_virtual_hosts(), expected)

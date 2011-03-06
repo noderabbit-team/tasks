@@ -1,6 +1,7 @@
 from datetime import datetime
 from sqlalchemy.ext.sqlsoup import SqlSoup
-from dz.tasklib import utils
+from dz.tasklib import (utils,
+                        taskconfig)
 
 
 class ZoomDatabase(object):
@@ -206,3 +207,14 @@ class ZoomDatabase(object):
             is_primary=is_primary,
             basis=basis)
         self._soup.session.commit()
+
+    def get_project_virtual_hosts(self):
+        """Get virtual hostname strings for this project. Always includes at 
+        least the one canonical vhost name."""
+        canonical_vhost_name = \
+            taskconfig.CANONICAL_VIRTUAL_HOST_FORMAT % (
+            taskconfig.PROJECT_SYSID_FORMAT % self.get_project_id())
+
+        # TODO: query the DB for matching VirtualHostname records
+
+        return [canonical_vhost_name]
