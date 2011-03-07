@@ -78,12 +78,13 @@ def wait_for_database_setup_to_complete(zoomdb, opts):
                 raise utils.InfrastructureException(
                     "Couldn't find existing %s setting in project. " % pattr +
                     "The database for your project, %s, " % dbinfo.db_name +
-                    "was previously created but access information has been"
+                    "was previously created but access information has been "
                     "lost; please contact support for assistance.")
             else:
                 dbinfo[dbiattr] = val
 
-    zoomdb.log(str(dbinfo))
+    # DON'T SHOW THIS TO END USERS - it includes the DB password!
+    #zoomdb.log(str(dbinfo))
     opts["DB"] = dbinfo
 
 
