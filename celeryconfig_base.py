@@ -1,10 +1,13 @@
-BROKER_HOST = "ec2-72-44-42-23.compute-1.amazonaws.com"
-#BROKER_PORT = 5672
-BROKER_PORT = 4369
-BROKER_USER = "nrweb"
-BROKER_PASSWORD = "MiXNYPwsKbRkQCEU"
-
+# these values don't change depending on the deployment:
+BROKER_PORT = 5672 # for some reason port 5672 is preferred over 4369
 CELERY_RESULT_BACKEND = "database"
-CELERY_RESULT_DBURI = "postgresql+psycopg2://nrweb:nrweb@/nrweb"
 CELERY_IMPORTS = ("dz.tasks", )
 CELERY_TASK_SERIALIZER = "json"
+
+# the following will be adjusted based on deploy.deploy_settings at deploy
+# time, or overridden by celeryconfig_debug when running on a developer's
+# box.
+BROKER_HOST = "BROKER_HOST_MISSING"
+BROKER_USER = "BROKER_USER_MISSING"
+BROKER_PASSWORD = "BROKER_PASSWORD_MISSING"
+CELERY_RESULT_DBURI = "postgresql+psycopg2://nrweb:nrweb@/nrweb"

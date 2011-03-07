@@ -24,12 +24,15 @@ DROP TABLE celery_tasksetmeta;
 DROP SEQUENCE celery_tasksetmeta_id_seq;
 """
 
-from celeryconfig import *
+from celeryconfig_base import *
 
 BROKER_HOST = "localhost"
-BROKER_PORT = 5672
+#BROKER_PORT = 5672
 BROKER_USER = "zoom"
 BROKER_PASSWORD = "zoom"
 BROKER_VHOST = "djangozoom"
 
 CELERY_IMPORTS = ("dz.tasks", )
+
+# local unauthenticated DB
+CELERY_RESULT_DBURI = "postgresql+psycopg2://nrweb:nrweb@/nrweb"
