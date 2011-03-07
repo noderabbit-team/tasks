@@ -4,3 +4,4 @@ mocker
 sqlalchemy
 Celery
 boto
+Jinja2
