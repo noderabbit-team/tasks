@@ -120,7 +120,17 @@ def get_or_create_database(app_id):
                 db_username, db_password))
 
     cur.close()
-    #conn.close()
+    #conn.close() #### TODO #### Need to actually call this. Otherwise
+    # the connection sits around, and no new databases can be created
+    # because the template1 connection remains open! Then you get:
+    #
+    # OperationalError: source database "template1" is being accessed by
+    # other users
+    #
+    # This doesn't happen in testing because this module goes out of scope
+    # but in production the connection just sits in celery! Maybe we should
+    # use some sort of proper connection pool, but just disconnecting would
+    # be a good start. :)
 
     dbi = DatabaseInfo(host=db_host,
                        db_name=db_name,
