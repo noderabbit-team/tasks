@@ -102,6 +102,7 @@ def install_requirements(reqs, path):
     reqfile.close()
     pip = os.path.join(path, 'bin', 'pip')
 
+    # TODO: add at some point:  --log=<somepath>
     output, stderr, p = subproc("%s install -r %s" % (pip, fname))
     if p.returncode != 0:
         raise ExternalServiceException((
