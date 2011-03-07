@@ -55,9 +55,14 @@ class DatabaseInfo(dict):
 def _get_conn():
     """Get a database connection, using the existing one if exists."""
     if not hasattr(_get_conn, "_conn"):
-        _get_conn._conn = psycopg2.connect(
-            "dbname=%(initial_db)s user=%(username)s" %
-            taskconfig.DATABASE_SUPERUSER)
+        conn_string = ("dbname=%(initial_db)s user=%(username)s" %
+                       taskconfig.DATABASE_SUPERUSER)
+
+        if "password" in taskconfig.DATABASE_SUPERUSER:
+            conn_string += (" password=%(password)s" %
+                            taskconfig.DATABASE_SUPERUSER)
+
+        _get_conn._conn = psycopg2.connect(conn_string)
         _get_conn._conn.set_isolation_level(
             psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
