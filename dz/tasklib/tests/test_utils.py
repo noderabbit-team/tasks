@@ -114,3 +114,30 @@ class UtilsTestCase(DZTestCase):
 
     def tearDown(self):
         shutil.rmtree(self.dir)
+
+    def test_node_metadata(self):
+        instance_id = utils.node_meta("instance_id")
+        node_name = utils.node_meta("name")
+        node_role = utils.node_meta("role")
+
+        self.assertEqual(instance_id, "localhost")
+        self.assertEqual(node_name, "localhost")
+        self.assertEqual(node_role, "localhost")
+
+        here = path.abspath(path.split(__file__)[0])
+        test_fixture_meta = path.join(here, 'fixtures', 'node_meta')
+        self.patch(taskconfig, "NODE_META_DATA_DIR", test_fixture_meta)
+
+        self.assertEqual(utils.node_meta("instance_id"), "i-12345")
+        self.assertEqual(utils.node_meta("name"), "myname")
+        self.assertEqual(utils.node_meta("role"), "myrole")
+
+    def test_get_internal_ip(self):
+        self.assertEqual(utils.get_internal_ip(), "127.0.0.1")
+
+        import urllib
+        import StringIO
+        self.patch(urllib, "urlopen",
+                   lambda url: StringIO.StringIO("WHATEVER"))
+
+        self.assertEqual(utils.get_internal_ip(), "WHATEVER")

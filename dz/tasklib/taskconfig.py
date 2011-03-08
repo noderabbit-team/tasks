@@ -16,6 +16,8 @@ CANONICAL_VIRTUAL_HOST_FORMAT = "%s.djangozoom.net"
 TEST_REPO_DIR = "/usr/local/noderabbit/test-repos"
 TEST_REPO_URL_PREFIX = "test://"
 
+NODE_META_DATA_DIR = "/usr/local/noderabbit/node_meta"
+
 DATABASE_SUPERUSER = {
     "username": "nrweb",
     "initial_db": "template1",

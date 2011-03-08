@@ -1,11 +1,12 @@
 import os
+import socket
 import subprocess
 import sys
 from fabric.api import local as fab_local
 from fabric.state import connections
 from jinja2 import PackageLoader, Environment
 import taskconfig
-
+import urllib
 
 tpl_env = Environment(loader=PackageLoader('dz.tasklib'))
 
@@ -180,3 +181,44 @@ def local_privileged(cmdargs):
     print "Running local_privileged command: %r" % fullcmd
     stdout, stderr, p = subproc(fullcmd, null_stdin=True)
     return stdout
+
+
+def _is_running_on_ec2():
+    kernel_version = local("uname -r")
+    return "virtual" in kernel_version
+
+
+def node_meta(field):
+    try:
+        f = file(os.path.join(taskconfig.NODE_META_DATA_DIR, field))
+        value = f.read().strip()
+        f.close()
+        return value
+    except Exception, e:
+        kernel_version = local("uname -r")
+        if _is_running_on_ec2():
+            raise InfrastructureException(
+                "Unknown metadata requested: %s.\nException: %s" % (
+                    field, str(e)))
+        else:
+            # we're running on a test system.
+            print "(Not on a VM; faking metadata for %s...)" % field
+            return "localhost"
+
+
+def get_internal_ip():
+    """
+    Get my "internal" IP, meaning the IP which the frontend proxy should use
+    when referring to an appserver.
+    """
+    try:
+        ip = urllib.urlopen(
+            "http://instance-data.ec2.internal/latest/meta-data/local-ipv4",
+            ).read()
+
+    except IOError:
+        if _is_running_on_ec2():
+            raise
+        ip = socket.gethostbyname(socket.gethostname())
+
+    return ip
