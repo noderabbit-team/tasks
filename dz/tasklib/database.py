@@ -3,7 +3,8 @@ Manage databases for customer projects in our shared PostgreSQL cluster.
 See: http://wiki.postgresql.org/wiki/Shared_Database_Hosting
 """
 
-from dz.tasklib import taskconfig
+from dz.tasklib import (taskconfig,
+                        utils)
 
 import psycopg2
 import random
@@ -96,7 +97,7 @@ def get_or_create_database(app_id):
     :returns: A tuple (created, db_host, db_name, db_username, db_password).
               If created is False, db_password will be None.
     """
-    db_host = "localhost"
+    db_host = utils.get_internal_ip()
     db_name = app_id
     db_username = app_id
     db_password = None
