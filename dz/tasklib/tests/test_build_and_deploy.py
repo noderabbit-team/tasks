@@ -97,9 +97,9 @@ class BuildAndDeployTestcase(DZTestCase):
         # check the deployed app!
         self.assertEqual(len(deployed_addresses), 1)
 
-        for appserver_host, appserver_port in deployed_addresses:
-            polls_url = "http://%s:%d/polls/" % (appserver_host,
-                                                 appserver_port)
+        for (instance_id, node_name, host_ip, host_port) in deployed_addresses:
+            polls_url = "http://%s:%d/polls/" % (host_ip,
+                                                 host_port)
             polls_src = urllib.urlopen(polls_url).read()
             self.assertTrue("No polls are available." in polls_src)
 
@@ -125,9 +125,9 @@ class BuildAndDeployTestcase(DZTestCase):
                         use_subtasks=False)
 
         # check that URLs are no longer accessible
-        for appserver_host, appserver_port in deployed_addresses:
-            polls_url = "http://%s:%d/polls/" % (appserver_host,
-                                                 appserver_port)
+        for (instance_id, node_name, host_ip, host_port) in deployed_addresses:
+            polls_url = "http://%s:%d/polls/" % (host_ip,
+                                                 host_port)
             with self.assertRaises(IOError):
                 urllib.urlopen(polls_url).read()
 

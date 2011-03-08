@@ -5,12 +5,16 @@ from dz.tasklib.tests.dztestcase import DZTestCase
 
 import os
 
+
 class NginxTestCase(DZTestCase):
 
     def setUp(self):
         self.app_id = "test_nginx_001"
-        self.appservers = [("foo", 123),
-                           ("bar", 456)]
+
+        # appservers in (instance_id, node_name, host_ip, host_port) form
+        self.appservers = [("foo", "foo_node", "10.0.0.1", 123),
+                           ("bar", "bar_node", "10.0.0.2", 456)]
+
         self.virtual_hostnames = [
             "%s.djangozoom.net" % self.app_id,
             "myfoobar.djangozoom.net",
@@ -54,8 +58,8 @@ class NginxTestCase(DZTestCase):
 
         self.assertTrue(len(file_content) > 0, "doh, conf file appears empty")
 
-        for a in self.appservers:
-            upstream_line = "server %s:%d" % a
+        for (instance_id, node_name, host_ip, host_port) in self.appservers:
+            upstream_line = "server %s:%d" % (host_ip, host_port)
             self.assertTrue(upstream_line in file_content)
 
     def test_fail_when_no_appservers(self):

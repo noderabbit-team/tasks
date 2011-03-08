@@ -25,7 +25,13 @@ def update_local_proxy_config(app_id, appservers, virtual_hostnames):
     utils.render_tpl_to_file("nginx/site.conf",
                              site_conf_filename,
                              app_id=app_id,
-                             appservers=[dict(host=a[0], port=a[1])
+                             appservers=[dict(
+                # (instance_id, node_name, host_ip, host_port)
+                instance_id=a[0],
+                node_name=a[1],
+                host_ip=a[2],
+                host_port=a[3],
+                )
                                          for a in appservers],
                              virtual_hostnames=virtual_hostnames)
 

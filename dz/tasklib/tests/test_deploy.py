@@ -199,11 +199,15 @@ class DeployTestCase(DZTestCase):
         Test actually serving a deployed bundle, then taking it down.
         """
         self._install_my_bundle()
-        port = deploy.start_serving_bundle(self.app_id, self.bundle_name)
+        (instance_id, node_name, host_ip, host_port) = \
+            deploy.start_serving_bundle(self.app_id, self.bundle_name)
 
-        self.assertTrue(isinstance(port, int))
+        self.assertTrue(isinstance(instance_id, str))
+        self.assertTrue(isinstance(node_name, str))
+        self.assertTrue(isinstance(host_ip, str))
+        self.assertTrue(isinstance(host_port, int))
 
-        app_url = "http://localhost:%d" % port
+        app_url = "http://%s:%d" % (host_ip, host_port)
 
         self.check_can_eventually_load(
             app_url,
@@ -241,16 +245,17 @@ class DeployTestCase(DZTestCase):
         Test taking down a deployed bundle.
         """
         self._install_my_bundle()
-        port = deploy.start_serving_bundle(self.app_id, self.bundle_name)
+        (instance_id, node_name, host_ip, host_port) = \
+            deploy.start_serving_bundle(self.app_id, self.bundle_name)
 
         self.check_can_eventually_load(
-            "http://localhost:%s" % port,
+            "http://%s:%s" % (host_ip, host_port),
             "Welcome to the Django tutorial polls app")
 
         zoomdb = StubZoomDB()
-        zoomdb.add_worker(1, "localhost", "127.0.0.1", port)
+        zoomdb.add_worker(1, "localhost", "127.0.0.1", host_port)
 
-        self.assertFalse(deploy._is_port_open(port))
+        self.assertFalse(deploy._is_port_open(host_port))
 
         deploy.undeploy(zoomdb,
                         self.app_id,
@@ -258,7 +263,7 @@ class DeployTestCase(DZTestCase):
                         use_subtasks=False,
                         also_update_proxies=False)
 
-        self.assertTrue(deploy._is_port_open(port))
+        self.assertTrue(deploy._is_port_open(host_port))
 
     def test_undeploy_nonexistent(self):
         """

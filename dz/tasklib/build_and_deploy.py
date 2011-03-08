@@ -115,31 +115,39 @@ def deploy_project_to_appserver(zoomdb, opts):
             deployment_tasks.append(async_result)
 
         for (appserver, dt) in zip(opts["PLACEMENT"], deployment_tasks):
-            port = dt.wait()
-            zoomdb.log("Serving on %s:%d" % (appserver, port))
-            deployed_addresses.append((appserver, port))
+            (instance_id, node_name, host_ip, host_port) = dt.wait()
+            zoomdb.log("Serving on %s:%d" % (host_ip, host_port))
+            deployed_addresses.append((instance_id, node_name,
+                                       host_ip, host_port))
 
     else:
         for appserver in opts["PLACEMENT"]:
             zoomdb.log("Deploying to %s..." % appserver)
-            port = deploy.deploy_to_appserver(
+            (instance_id, node_name, host_ip, host_port) = \
+                deploy.deploy_to_appserver(
                 opts["APP_ID"],
                 opts["BUNDLE_NAME"],
                 appserver,
                 opts["DB"])
-            zoomdb.log("Serving on %s:%d" % (appserver, port))
-            deployed_addresses.append((appserver, port))
+            zoomdb.log("Serving on %s:%d" % (host_ip, host_port))
+            deployed_addresses.append((instance_id, node_name,
+                                       host_ip, host_port))
 
     opts["DEPLOYED_ADDRESSES"] = deployed_addresses
 
     bundle_id = opts["BUNDLE_INFO"].id
-    for (hostname, port) in deployed_addresses:
-        instance_id = hostname  # TODO: this is a hack :(
-        host_ip = socket.gethostbyname(hostname)
+    for (instance_id, node_name, host_ip, host_port) in deployed_addresses:
+        #instance_id = hostname  # TODO: this is a hack :(
+
+        # this won't work on ec2, we'll need to have deploy_to_appserver
+        # return the appserver's internal IP address (or public int/ext
+        # hostname)
+        #host_ip = socket.gethostbyname(hostname)
+
         zoomdb.add_worker(bundle_id,
                           instance_id,
                           host_ip,
-                          port)
+                          host_port)
 
 
 def run_post_build_hooks(zoomdb, opts):

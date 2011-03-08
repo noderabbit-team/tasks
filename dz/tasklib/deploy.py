@@ -165,8 +165,10 @@ def _get_a_free_port():
 
 def start_serving_bundle(app_id, bundle_name):
     """
-    Serve the given bundle under supervisor, and return the port on which
-    the service is running.
+    Serve the given bundle under supervisor, and return the appserver info
+    for where the service is running.
+
+    :returns: (instance_id, node_name, host_ip, host_port)
     """
 
     # check that this bundle isn't already being served here - otherwise
@@ -199,7 +201,11 @@ def start_serving_bundle(app_id, bundle_name):
 
     _kick_supervisor()
 
-    return port_to_use
+    instance_id = utils.node_meta("instance_id")
+    node_name = utils.node_meta("name")
+    host_ip = utils.get_internal_ip()
+
+    return (instance_id, node_name, host_ip, port_to_use)
 
 
 def stop_serving_bundle(app_id, bundle_name):
