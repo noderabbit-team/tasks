@@ -53,7 +53,7 @@ def _app_and_bundle_dirs(app_id, bundle_name):
 def deploy_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
                       bundle_storage_engine=bundle_storage):
 
-    my_hostname = socket.gethostname()
+    my_hostname = utils.node_meta("name")
 
     if appserver_name not in (my_hostname, "localhost"):
         raise utils.InfrastructureException(
@@ -175,9 +175,10 @@ def start_serving_bundle(app_id, bundle_name):
     # supervisor will silently ignore the redundant config files!
     for bun in _get_active_bundles():
         if bun["app_id"] == app_id and bun["bundle_name"] == bundle_name:
-            raise utils.InfrastructureException(
-                "Redundant bundle service request: server "
-                "%s is already serving app_id %s, bundle_name %s." % (
+            raise utils.InfrastructureException((
+                    "Redundant bundle service request: server %s (hostname=%s)"
+                    " is already serving app_id %s, bundle_name %s.") % (
+                    utils.node_meta("name"),
                     socket.gethostname(),
                     app_id,
                     bundle_name))
@@ -307,7 +308,7 @@ def undeploy(zoomdb, app_id, bundle_ids, use_subtasks=True,
 
 def undeploy_from_appserver(zoomdb, app_id, bundle_id,
                             appserver_instance_id, appserver_port):
-    my_hostname = socket.gethostname()
+    my_hostname = utils.node_meta("name")
 
     if appserver_instance_id not in (my_hostname, "localhost"):
         raise utils.InfrastructureException(
