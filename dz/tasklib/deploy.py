@@ -307,7 +307,7 @@ def undeploy(zoomdb, app_id, bundle_ids, use_subtasks=True,
 
 def undeploy_from_appserver(zoomdb, app_id, bundle_id,
                             appserver_instance_id, appserver_port):
-    my_hostname = socket.gethostname()
+    my_hostname = utils.node_meta("name")
 
     if appserver_instance_id not in (my_hostname, "localhost"):
         raise utils.InfrastructureException(
