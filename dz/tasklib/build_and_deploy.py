@@ -116,7 +116,7 @@ def deploy_project_to_appserver(zoomdb, opts):
 
         for (appserver, dt) in zip(opts["PLACEMENT"], deployment_tasks):
             (instance_id, node_name, host_ip, host_port) = dt.wait()
-            zoomdb.log("Serving on %s:%d" % (host_ip, host_port))
+            zoomdb.log("Serving on %s:%d" % (instance_id, host_port))
             deployed_addresses.append((instance_id, node_name,
                                        host_ip, host_port))
 
@@ -209,7 +209,12 @@ def update_front_end_proxy(zoomdb, opts):
     appservers = opts["DEPLOYED_ADDRESSES"]  # (host,port) format
     virtual_hostnames = zoomdb.get_project_virtual_hosts()
 
-    args = [zoomdb._job_id, opts["APP_ID"], appservers, virtual_hostnames]
+    zcfg = utils.parse_zoombuild(os.path.join(opts["APP_DIR"],
+                                              "zoombuild.cfg"))
+    site_media_map = utils.parse_site_media_map(zcfg.get("site_media_map", ""))
+
+    args = [zoomdb._job_id, opts["APP_ID"], opts["BUNDLE_NAME"],
+            appservers, virtual_hostnames, site_media_map]
 
     if opts["USE_SUBTASKS"]:
         res = nginx.update_proxy_conf.apply_async(args=args)
