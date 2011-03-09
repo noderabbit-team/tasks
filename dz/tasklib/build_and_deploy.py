@@ -178,11 +178,18 @@ def run_post_build_hooks(zoomdb, opts):
     if post_build_hooks is None:
         post_build_hooks = [["syncdb", "--noinput"]]
         managepy_help = run_managepy_cmd("help", nonzero_exit_ok=True)
-        available_commands = [x.strip() for x in
-                              managepy_help.rsplit("Available subcommands:",
-                                                   1)[1].splitlines()]
-        if "migrate" in available_commands:
-            post_build_hooks.append("migrate")
+
+        try:
+            available_commands = [x.strip() for x in
+                                  managepy_help.rsplit("Available subcommands:",
+                                                       1)[1].splitlines()]
+            if "migrate" in available_commands:
+                post_build_hooks.append("migrate")
+        except IndexError:
+            zoomdb.log(("Warning: Couldn't determine whether you have a "
+                        "'migrate' command because 'manage.py help' didn't "
+                        "provide a list of available subcommands as expected. "
+                        "Full manage.py help output was:\n%s") % managepy_help)
 
     try:
         for cmd in post_build_hooks:
