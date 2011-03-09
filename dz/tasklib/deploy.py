@@ -12,27 +12,10 @@
 import datetime
 import os
 import socket
-import subprocess
 
 from dz.tasklib import (bundle_storage,
                         taskconfig,
                         utils)
-
-
-def _get_and_extract_bundle(bundle_name, app_dir, bundle_storage_engine):
-    bundletgz = bundle_storage_engine.get(bundle_name + ".tgz")
-    if not os.path.isdir(app_dir):
-        os.makedirs(app_dir)
-    current_dir = os.getcwd()
-    os.chdir(app_dir)
-
-    try:
-        p = subprocess.Popen(["tar", "xzf", bundletgz], close_fds=True)
-        os.waitpid(p.pid, 0)
-    finally:
-        os.chdir(current_dir)
-
-    os.remove(bundletgz)
 
 
 def _write_deployment_config(outfilename, bundle_name, dbinfo):
@@ -42,12 +25,6 @@ def _write_deployment_config(outfilename, bundle_name, dbinfo):
         bundle_name=bundle_name,
         dbinfo=dbinfo)
     os.chmod(outfilename, 0700)
-
-
-def _app_and_bundle_dirs(app_id, bundle_name):
-    app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
-    bundle_dir = os.path.join(app_dir, bundle_name)
-    return app_dir, bundle_dir
 
 
 def deploy_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
@@ -70,18 +47,18 @@ def deploy_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
 
 def install_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
                        bundle_storage_engine=bundle_storage):
-    app_dir, bundle_dir = _app_and_bundle_dirs(app_id, bundle_name)
+    app_dir, bundle_dir = utils.app_and_bundle_dirs(app_id, bundle_name)
 
     if not os.path.exists(bundle_dir):
-        _get_and_extract_bundle(bundle_name, app_dir,
-                                bundle_storage_engine)
+        utils.get_and_extract_bundle(bundle_name, app_dir,
+                                     bundle_storage_engine)
 
     _write_deployment_config(os.path.join(bundle_dir, "thisbundle.py"),
                              bundle_name, dbinfo)
 
 
 def managepy_command(app_id, bundle_name, command, nonzero_exit_ok=False):
-    app_dir, bundle_dir = _app_and_bundle_dirs(app_id, bundle_name)
+    app_dir, bundle_dir = utils.app_and_bundle_dirs(app_id, bundle_name)
 
     if not os.path.isdir(bundle_dir):
         raise utils.InfrastructureException(
@@ -190,7 +167,7 @@ def start_serving_bundle(app_id, bundle_name):
                                                            bundle_name,
                                                            port_to_use))
 
-    app_dir, bundle_dir = _app_and_bundle_dirs(app_id, bundle_name)
+    app_dir, bundle_dir = utils.app_and_bundle_dirs(app_id, bundle_name)
     utils.render_tpl_to_file(
         'deploy/supervisor_entry.conf',
         config_filename,

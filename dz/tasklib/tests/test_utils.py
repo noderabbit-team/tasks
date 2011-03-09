@@ -141,3 +141,36 @@ class UtilsTestCase(DZTestCase):
                    lambda url: StringIO.StringIO("WHATEVER"))
 
         self.assertEqual(utils.get_internal_ip(), "WHATEVER")
+
+    def test_parse_zoombuild(self):
+        here = path.abspath(path.split(__file__)[0])
+        test_fixture_cfg = path.join(here, 'fixtures', 'app', 'zoombuild.cfg')
+
+        result = utils.parse_zoombuild(test_fixture_cfg)
+
+        self.assertEqual(result["base_python_package"], "mysite")
+
+    def test_parse_site_media_map(self):
+        here = path.abspath(path.split(__file__)[0])
+        test_fixture_cfg = path.join(here, 'fixtures', 'app', 'zoombuild.cfg')
+        zcfg = utils.parse_zoombuild(test_fixture_cfg)
+
+        input_text = zcfg["site_media_map"]
+
+        self.assertEqual(len(input_text.splitlines()), 2)
+        self.assertTrue("static static" in input_text)
+        self.assertTrue("foo bar" in input_text)
+
+        smm = utils.parse_site_media_map(input_text)
+        self.assertTrue(isinstance(smm, dict))
+
+        # each url path should start and end with a single slash
+        for url_path in smm.keys():
+            self.assertTrue(url_path.startswith("/"))
+            self.assertTrue(url_path.endswith("/"))
+            self.assertFalse(url_path.startswith("//"))
+            self.assertFalse(url_path.endswith("//"))
+
+        self.assertEqual(smm["/foo/"], "bar")
+        self.assertEqual(smm["/static/"], "static")
+        self.assertEqual(len(smm), 2)

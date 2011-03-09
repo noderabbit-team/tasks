@@ -1,7 +1,6 @@
 import os
 import shutil
 import datetime
-import ConfigParser
 import tempfile
 import subprocess
 
@@ -9,37 +8,6 @@ from dz.tasklib import (taskconfig,
                         bundle_storage,
                         bundle_storage_local,
                         utils)
-
-
-def parse_zoombuild(buildcfg):
-    """
-    Parse and validate a :file:`zoombuild.cfg`.
-
-    A example can be found in ``tests/fixtures/app/zoombuild.cfg``.
-
-    :param buildcfg: Absolute path to config file
-    """
-    config = ConfigParser.RawConfigParser()
-    config.read(buildcfg)
-
-    required_settings = [
-        'base_python_package',
-        'django_settings_module',
-        'site_media_map',
-        'additional_python_path_dirs',
-        'pip_reqs',
-        ]
-
-    result = {}
-
-    try:
-        for s in required_settings:
-            result[s] = config.get('project', s)
-
-    except ConfigParser.NoSectionError:
-        raise ValueError("Sorry, couldn't find %r in 'project'." % buildcfg)
-
-    return result
 
 
 def _ignore_vcs_files(srcdir, names):
@@ -75,7 +43,7 @@ def bundle_app(app_id, force_bundle_name=None):
            "Expected zoombuild.cfg file in %r, but no dice." % buildconfig
 
     # parse the zoombuild.cfg file
-    buildconfig_info = parse_zoombuild(buildconfig)
+    buildconfig_info = utils.parse_zoombuild(buildconfig)
 
     err_msg = ("File %r doesn't look like a valid" % buildconfig,
                "zoombuild.cfg format file.")
@@ -152,13 +120,15 @@ def bundle_app(app_id, force_bundle_name=None):
         utils.add_to_pth([os.path.join('user-src', bpp_as_path)],
                          bundle_dir, relative=True)
 
-    # Copy static directories to a better location
-    for line in buildconfig_info["site_media_map"].splitlines():
-        static, _ = line.strip().split()
-        from_static = os.path.join(appsrcdir, static)
-        to_static = os.path.join(bundle_dir, static)
-        if os.path.isdir(from_static):
-            shutil.copytree(from_static, to_static)
+    # SR 3/8/11 ...what were we trying to do here? I don't get it...
+    # # Copy static directories to a better location
+    #
+    # for line in buildconfig_info["site_media_map"].splitlines():
+    #     static, _ = line.strip().split()
+    #     from_static = os.path.join(appsrcdir, static)
+    #     to_static = os.path.join(bundle_dir, static)
+    #     if os.path.isdir(from_static):
+    #         shutil.copytree(from_static, to_static)
 
     # Remove the python executable, we don't use it
     os.remove(os.path.join(bundle_dir, "bin", "python"))

@@ -1,12 +1,14 @@
+from fabric.api import local as fab_local
+from fabric.state import connections
+from jinja2 import PackageLoader, Environment
 import os
 import socket
 import subprocess
 import sys
-from fabric.api import local as fab_local
-from fabric.state import connections
-from jinja2 import PackageLoader, Environment
-import taskconfig
 import urllib
+import ConfigParser
+
+import taskconfig
 
 tpl_env = Environment(loader=PackageLoader('dz.tasklib'))
 
@@ -222,3 +224,89 @@ def get_internal_ip():
         ip = socket.gethostbyname(socket.gethostname())
 
     return ip
+
+
+def parse_zoombuild(buildcfg):
+    """
+    Parse and validate a :file:`zoombuild.cfg`.
+
+    A example can be found in ``tests/fixtures/app/zoombuild.cfg``.
+
+    :param buildcfg: Absolute path to config file
+    """
+    config = ConfigParser.RawConfigParser()
+    config.read(buildcfg)
+
+    required_settings = [
+        'base_python_package',
+        'django_settings_module',
+        'site_media_map',
+        'additional_python_path_dirs',
+        'pip_reqs',
+        ]
+
+    result = {}
+
+    try:
+        for s in required_settings:
+            result[s] = config.get('project', s)
+
+    except ConfigParser.NoSectionError:
+        raise ValueError("Sorry, couldn't find %r in 'project'." % buildcfg)
+
+    return result
+
+
+def get_and_extract_bundle(bundle_name, app_dir, bundle_storage_engine):
+    """
+    Get a bundle from the provided bundle_storage_engine, and extract it
+    into app_dir (creating if neccessary).
+    """
+    bundletgz = bundle_storage_engine.get(bundle_name + ".tgz")
+    if not os.path.isdir(app_dir):
+        os.makedirs(app_dir)
+    current_dir = os.getcwd()
+    os.chdir(app_dir)
+
+    try:
+        p = subprocess.Popen(["tar", "xzf", bundletgz], close_fds=True)
+        os.waitpid(p.pid, 0)
+    finally:
+        os.chdir(current_dir)
+
+    os.remove(bundletgz)
+
+
+def app_and_bundle_dirs(app_id, bundle_name=None):
+    """Given an app_id and bundle name, return the app directory and bundle
+    directory as a tuple."""
+
+    if bundle_name is None:
+        bundle_name = "_"
+
+    app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
+    bundle_dir = os.path.join(app_dir, bundle_name)
+    return app_dir, bundle_dir
+
+
+def parse_site_media_map(site_media_map_text):
+    """Given a site_media_map entry, parse the results into a dict mapping
+    {url_path: file_path}."""
+
+    def _normalize_url_path(url):
+        url = url.strip("/")
+        if not url:
+            return "/"
+        else:
+            return "/" + url + "/"
+
+    result = {}
+
+    for line in site_media_map_text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        url_path, file_path = line.split(None, 1)
+        result[_normalize_url_path(url_path)] = file_path
+
+    return result
