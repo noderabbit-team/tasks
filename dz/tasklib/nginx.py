@@ -34,6 +34,11 @@ def update_local_proxy_config(app_id, bundle_name,
                                         file_path.lstrip("/")),
                 ) for url_path, file_path in site_media_map.items()]
 
+    # NOTE THE SLASHES::::
+    # location /static/ {
+    #     alias /tmp/tmpR_1dI5/test001/bundle_test001_2011-03-09-03.52.55/user-src/static/;
+    # }
+
     utils.render_tpl_to_file("nginx/site.conf",
                              site_conf_filename,
                              app_id=app_id,
