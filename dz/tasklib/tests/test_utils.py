@@ -134,13 +134,9 @@ class UtilsTestCase(DZTestCase):
 
     def test_get_internal_ip(self):
         self.assertEqual(utils.get_internal_ip(), "127.0.0.1")
-
-        import urllib
-        import StringIO
-        self.patch(urllib, "urlopen",
-                   lambda url: StringIO.StringIO("WHATEVER"))
-
-        self.assertEqual(utils.get_internal_ip(), "WHATEVER")
+        self.assertTrue("\n" not in utils.get_internal_ip())
+        # no crazy comcast dns masking html garbage, plz
+        self.assertTrue("<" not in utils.get_internal_ip())
 
     def test_parse_zoombuild(self):
         here = path.abspath(path.split(__file__)[0])

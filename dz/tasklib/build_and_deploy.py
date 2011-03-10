@@ -17,6 +17,8 @@ def write_build_configuration(zoomdb, opts):
 
 
 def build_project_bundle(zoomdb, opts):
+    zoomdb.log("We're getting your project's dependencies and packaging "
+               "everything up. This might take a couple of minutes.")
     bundle_name, code_revision = bundle.bundle_app(opts["APP_ID"])
     zoomdb.log("Built project into bundle: %s" % bundle_name)
     opts["BUNDLE_NAME"] = bundle_name
