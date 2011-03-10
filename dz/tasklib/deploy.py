@@ -144,6 +144,12 @@ def start_serving_bundle(app_id, bundle_name):
     """
     Serve the given bundle under supervisor, and return the appserver info
     for where the service is running.
+    
+    If you are running locally as dev, you need to make sure the user 
+    running Celery has permissions to write to the /etc/supervisor/conf.d dir.
+    
+    $ sudo chgrp nateaune /etc/supervisor/conf.d/
+    $ sudo chmod g+w /etc/supervisor/conf.d/
 
     :returns: (instance_id, node_name, host_ip, host_port)
     """
