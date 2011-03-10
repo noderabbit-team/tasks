@@ -7,8 +7,11 @@ import os
 import shutil
 
 from dz.tasklib import (taskconfig,
+                        bundle_storage,
+                        deploy,
                         utils)
 
+SKIP_BUNDLE_INSTALL = object()
 
 def _get_nginx_conffile(app_id):
     return os.path.join(taskconfig.NGINX_SITES_ENABLED_DIR,
@@ -16,7 +19,8 @@ def _get_nginx_conffile(app_id):
 
 
 def update_local_proxy_config(app_id, bundle_name,
-                              appservers, virtual_hostnames, site_media_map):
+                              appservers, virtual_hostnames, site_media_map,
+                              bundle_storage_engine=bundle_storage):
     site_conf_filename = _get_nginx_conffile(app_id)
 
     if len(appservers) == 0:
@@ -25,6 +29,12 @@ def update_local_proxy_config(app_id, bundle_name,
                 "At least one upstream is required.") % app_id)
 
     app_dir, bundle_dir = utils.app_and_bundle_dirs(app_id, bundle_name)
+
+    # We need to make sure this bundle's static is installed locally, so we
+    # can serve its static media.
+    if bundle_storage_engine is not SKIP_BUNDLE_INSTALL:
+        deploy.install_app_bundle_static(app_id, bundle_name,
+                                         bundle_storage_engine)
 
     sme = [dict(url_path=url_path,
                 bundle_dir=bundle_dir,
