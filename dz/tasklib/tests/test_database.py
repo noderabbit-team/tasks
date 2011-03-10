@@ -1,8 +1,14 @@
+import os
+import shutil
 import random
 import subprocess
+import sys
+
+import psycopg2
 
 from dz.tasklib.tests.dztestcase import DZTestCase
-from dz.tasklib import database
+from dz.tasklib import (database,
+                        taskconfig)
 
 
 def _can_access_db(dbinfo, try_create=False):
@@ -88,3 +94,57 @@ class DatabaseTasksTestCase(DZTestCase):
 
         self.assertTrue(not _can_access_db(dbinfo),
                         "Ensure dropped database can no longer be accessed.")
+
+    '''
+    Shoot - I don't think we need this anymore.
+
+    def test_create_twice(self):
+        """
+        Test creating a database and then immediately creating another in a
+        separate module space, to ensure that there aren't lingering
+        connections to the template1 db preventing progress.
+        """
+        here = os.path.abspath(os.path.split(__file__)[0])
+        database_src = os.path.join(here, "..", "database.py")
+
+        test_modules_dir = self.makeDir()
+        database_1_file = os.path.join(test_modules_dir, "database_1.py")
+        database_2_file = os.path.join(test_modules_dir, "database_2.py")
+
+        shutil.copyfile(database_src, database_1_file)
+        shutil.copyfile(database_src, database_2_file)
+
+        sys.path.insert(0, test_modules_dir)
+
+        import database_1
+        import database_2
+
+        self.assertTrue(database_1 is not database_2)
+        self.assertTrue(database_1._get_conn is not database_2._get_conn)
+
+        app_id_1 = "test_twice_1_%d" % random.randint(100, 1000)
+        app_id_2 = "test_twice_2_%d" % random.randint(100, 1000)
+
+        database_1.get_or_create_database(app_id_1)
+
+        with self.assertRaises(psycopg2.OperationalError):
+            database_2.get_or_create_database(app_id_2)
+
+        for app_id in (app_id_1, app_id_2):
+            try:
+                database.drop_database(app_id)
+                database.drop_user(app_id)
+            except psycopg2.ProgrammingError:
+                pass
+
+        # now "fix" it
+        orig_initial_db = taskconfig.DATABASE_SUPERUSER["initial_db"]
+        taskconfig.DATABASE_SUPERUSER["initial_db"] = "nrweb"
+
+        ### TODO: reload doesn't seem sufficient; try manually clearing conn
+        database_1._get_conn().close()
+        database_2._get_conn().close()
+
+        database_1.get_or_create_database(app_id_1)
+        database_2.get_or_create_database(app_id_2)
+        '''

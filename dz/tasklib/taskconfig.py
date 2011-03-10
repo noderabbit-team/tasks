@@ -20,7 +20,10 @@ NODE_META_DATA_DIR = "/usr/local/noderabbit/node_meta"
 
 DATABASE_SUPERUSER = {
     "username": "nrweb",
-    "initial_db": "template1",
+    "initial_db": "nrweb",
+    # The initial_db mustn't be template1, because that is used internally
+    # by postgresql when creating a database. having an open connection to
+    # template1 therefore stops DB creation.
 }
 
 # note: for each hostname below, make sure you have your celeryd listening
