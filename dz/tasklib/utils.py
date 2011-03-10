@@ -186,6 +186,7 @@ def local_privileged(cmdargs):
 
 
 def _is_running_on_ec2():
+    """Make a guess at whether we're running on ec2."""
     kernel_version = local("uname -r")
     return "virtual" in kernel_version
 
@@ -211,19 +212,11 @@ def node_meta(field):
 def get_internal_ip():
     """
     Get my "internal" IP, meaning the IP which the frontend proxy should use
-    when referring to an appserver.
+    when referring to an appserver. There are multiple ways to do this but
+    the pure-python approach seems to work well on EC2 as well as on local
+    dev boxes.
     """
-    try:
-        ip = urllib.urlopen(
-            "http://instance-data.ec2.internal/latest/meta-data/local-ipv4",
-            ).read()
-
-    except IOError:
-        if _is_running_on_ec2():
-            raise
-        ip = socket.gethostbyname(socket.gethostname())
-
-    return ip
+    return socket.gethostbyname(socket.gethostname())
 
 
 def parse_zoombuild(buildcfg):
