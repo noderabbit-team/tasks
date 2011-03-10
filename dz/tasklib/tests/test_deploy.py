@@ -43,7 +43,7 @@ class DeployTestCase(DZTestCase):
 
             here = os.path.abspath(os.path.split(__file__)[0])
             fixture_dir = os.path.join(here, 'fixtures')
-            app_name = "app"
+            app_name = "test_deploy_app"
 
             # force rename the bundle
             app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_name)
@@ -51,7 +51,7 @@ class DeployTestCase(DZTestCase):
             if os.path.isdir(app_dir):
                 shutil.rmtree(app_dir)
 
-            shutil.copytree(os.path.join(fixture_dir, app_name),
+            shutil.copytree(os.path.join(fixture_dir, "app"),
                             app_dir)
             bundle_name, code_revision = bundle.bundle_app(
                 app_name,
