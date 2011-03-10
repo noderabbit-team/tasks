@@ -30,7 +30,7 @@ def update_local_proxy_config(app_id, bundle_name,
                 bundle_dir=bundle_dir,
                 file_path=file_path,
                 alias_dest=os.path.join(bundle_dir,
-                                        "user-src",
+                                        "user-repo",
                                         file_path.lstrip("/")),
                 ) for url_path, file_path in site_media_map.items()]
 
