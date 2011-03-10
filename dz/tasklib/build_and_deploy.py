@@ -212,6 +212,11 @@ def update_front_end_proxy(zoomdb, opts):
     backend.  Reload nginx.
 
     Nginx examples for this are in the chef nginx recipe.
+    
+    When running locally in dev, you must make sure whatever user runs celeryd
+    has write permission to /etc/nginx/sites-enabled
+    $ sudo chgrp nateaune /etc/nginx/sites-enabled/
+    $ sudo chmod g+w /etc/nginx/sites-enabled/
     """
     appservers = opts["DEPLOYED_ADDRESSES"]  # (host,port) format
     virtual_hostnames = zoomdb.get_project_virtual_hosts()
