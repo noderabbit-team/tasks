@@ -130,7 +130,6 @@ class BuildAndDeployTestcase(DZTestCase):
                                         "src", "static", "polls.jpg")
         self.assertEqual(image_src, file(local_image_file).read())
 
-
         # OK, now undeploy.
         deploy.undeploy(zoomdb, self.app_id, bundle_ids=None,
                         use_subtasks=False)
