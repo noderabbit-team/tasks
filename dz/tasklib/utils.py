@@ -105,8 +105,11 @@ def install_requirements(reqs, path):
     reqfile.close()
     pip = os.path.join(path, 'bin', 'pip')
 
-    # TODO: add at some point:  --log=<somepath>
-    output, stderr, p = subproc("%s install -r %s" % (pip, fname))
+    logfile = os.path.join(path, "dz-pip.log")
+
+    # run pip, store log in the target environment for debugging
+    output, stderr, p = subproc("%s install --log=%s -r %s" % (
+            pip, logfile, fname))
     if p.returncode != 0:
         raise ExternalServiceException((
                 "Error attempting to install requirements %r. "
