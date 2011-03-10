@@ -106,19 +106,29 @@ class BuildAndDeployTestcase(DZTestCase):
         # now check the nginx service
         host = zoomdb.get_project_virtual_hosts()[0]
 
-        def get_via_nginx():
+        def get_via_nginx(urlpath):
             conn = httplib.HTTPConnection("127.0.0.1")
-            conn.putrequest("GET", "/polls/", skip_host=True)
+            conn.putrequest("GET", urlpath, skip_host=True)
             conn.putheader("Host", host)
             conn.endheaders()
             res = conn.getresponse()
             res_src = res.read()
             return res_src
 
-        page_src = get_via_nginx()
+        page_src = get_via_nginx("/polls/")
         self.assertTrue("No polls are available." in page_src,
                         "Couldn't find polls text in "
                         "page src (%r)." % page_src)
+
+        # for nginx to serve static files, the cust dir has to be
+        # world-read/executable. This should be the default on the
+        # proxy server ONLY.
+        os.chmod(self.dir, 0755)
+
+        image_src = get_via_nginx("/static/img/polls.jpg")
+        local_image_file = os.path.join(app_fixture,
+                                        "src", "static", "polls.jpg")
+        self.assertEqual(image_src, file(local_image_file).read())
 
         # OK, now undeploy.
         deploy.undeploy(zoomdb, self.app_id, bundle_ids=None,

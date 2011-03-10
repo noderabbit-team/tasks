@@ -46,15 +46,25 @@ def deploy_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
 
 
 def install_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
-                       bundle_storage_engine=bundle_storage):
+                       bundle_storage_engine=bundle_storage,
+                       static_only=False):
     app_dir, bundle_dir = utils.app_and_bundle_dirs(app_id, bundle_name)
 
     if not os.path.exists(bundle_dir):
         utils.get_and_extract_bundle(bundle_name, app_dir,
                                      bundle_storage_engine)
 
-    _write_deployment_config(os.path.join(bundle_dir, "thisbundle.py"),
-                             bundle_name, dbinfo)
+    if not static_only:
+        _write_deployment_config(os.path.join(bundle_dir, "thisbundle.py"),
+                                 bundle_name, dbinfo)
+
+
+def install_app_bundle_static(app_id, bundle_name,
+                              bundle_storage_engine=bundle_storage):
+    return install_app_bundle(app_id, bundle_name,
+                              None, None,
+                              bundle_storage_engine,
+                              static_only=True)
 
 
 def managepy_command(app_id, bundle_name, command, nonzero_exit_ok=False):

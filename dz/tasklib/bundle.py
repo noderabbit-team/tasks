@@ -85,6 +85,15 @@ def bundle_app(app_id, force_bundle_name=None):
     else:
         bpp_as_path = None
 
+    # Add in a symlink pointing to the actual repo, so that we can
+    # find static files later
+    repo_link = os.path.join(bundle_dir, 'user-repo')
+    if bpp_as_path:
+        repo_link_src = os.path.join('user-src', bpp_as_path)
+    else:
+        repo_link_src = 'user-src'
+    os.symlink(repo_link_src, repo_link)
+
     # Do the shutil.copytree inside a try/except block so that we can
     # identify bad symlinks. According to http://bugs.python.org/issue6547,
     # bad symlinks will cause an shutil.Error to be raised only at the

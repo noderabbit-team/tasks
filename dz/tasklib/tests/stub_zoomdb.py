@@ -19,7 +19,7 @@ class MockProject(object):
 
 
 class MockBundle(object):
-    def __init__(self, bundle_name="bundle_app_2011-fixture"):
+    def __init__(self, bundle_name="bundle_test_deploy_app_2011-fixture"):
         self.bundle_name = bundle_name
         MockBundle.count += 1
         self.id = MockBundle.count

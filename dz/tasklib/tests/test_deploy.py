@@ -13,6 +13,59 @@ import shutil
 import time
 import urllib
 
+def create_test_bundle_in_local_storage():
+    """
+    Creates a bundle for testing, and uploads it to the local storage.
+    Returns the bundle's tarball's name.
+
+    This function is used from test_nginx and perhaps other tests that
+    require a bundle -- modify with care.
+    """
+    print "Making a bundle fixture for testing."
+    bundle_name = "bundle_test_deploy_app_2011-fixture"
+
+    here = os.path.abspath(os.path.split(__file__)[0])
+    fixture_dir = os.path.join(here, 'fixtures')
+    app_name = "test_deploy_app"
+
+    # force rename the bundle
+    app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_name)
+
+    if os.path.isdir(app_dir):
+        shutil.rmtree(app_dir)
+
+    shutil.copytree(os.path.join(fixture_dir, "app"), app_dir)
+
+    zcfg_path = os.path.join(app_dir, "zoombuild.cfg")
+    zcfg_content = file(zcfg_path).read()
+    django_tarball = os.path.join(here, 'fixtures', 'Django-1.2.5.tar.gz')
+    zcfg_content = zcfg_content.replace(
+        "pip_reqs: Django==1.2.5", "pip_reqs: %s" % django_tarball)
+
+    faster_zcfg = file(zcfg_path, "w")
+    faster_zcfg.write(zcfg_content)
+    faster_zcfg.close()
+
+    bundle_name, code_revision = bundle.bundle_app(
+        app_name,
+        force_bundle_name=bundle_name)
+
+    bundle_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR,
+                              app_name,
+                              bundle_name)
+
+    tarball_name = bundle.zip_and_upload_bundle(app_name,
+                                                bundle_name,
+                                                bundle_storage_local)
+
+    print "Created bundle fixture in %s" % tarball_name
+
+    # after upload, delete the dir where bundle was created
+    shutil.rmtree(bundle_dir)
+
+    return tarball_name
+
+
 
 class DeployTestCase(DZTestCase):
     """
@@ -24,7 +77,7 @@ class DeployTestCase(DZTestCase):
 
         self.app_id = "test_deploy_app"
         self.appserver_name = "localhost"
-        self.bundle_name = "bundle_app_2011-fixture"
+        self.bundle_name = self.__class__.bundle_name
         self.dbinfo = database.DatabaseInfo(host="db-host-001",
                                             db_name="my_app_id",
                                             username="my_app_id",
@@ -33,42 +86,13 @@ class DeployTestCase(DZTestCase):
     @classmethod
     def setUpClass(cls):
         """Ensure the necessary fixtures are installed in the right places."""
-        bundle_name = "bundle_app_2011-fixture"
+        cls.bundle_name = "bundle_test_deploy_app_2011-fixture"
         cls.bundle_fixture = os.path.join(taskconfig.NR_CUSTOMER_DIR,
                                           "bundle_storage_local",
-                                          bundle_name + ".tgz")
+                                          cls.bundle_name + ".tgz")
 
         if not os.path.isfile(cls.bundle_fixture):
-            print "Making a bundle fixture for testing."
-
-            here = os.path.abspath(os.path.split(__file__)[0])
-            fixture_dir = os.path.join(here, 'fixtures')
-            app_name = "app"
-
-            # force rename the bundle
-            app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_name)
-
-            if os.path.isdir(app_dir):
-                shutil.rmtree(app_dir)
-
-            shutil.copytree(os.path.join(fixture_dir, app_name),
-                            app_dir)
-            bundle_name, code_revision = bundle.bundle_app(
-                app_name,
-                force_bundle_name=bundle_name)
-
-            bundle_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR,
-                                      app_name,
-                                      bundle_name)
-
-            tarball_name = bundle.zip_and_upload_bundle(app_name,
-                                                        bundle_name,
-                                                        bundle_storage_local)
-
-            print "Created bundle fixture in %s" % tarball_name
-
-            # after upload, delete the dir where bundle was created
-            shutil.rmtree(bundle_dir)
+            create_test_bundle_in_local_storage()
 
     def check_can_eventually_load(self, url, pagetext_fragment):
         """

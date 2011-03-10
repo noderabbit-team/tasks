@@ -1,4 +1,5 @@
 from dz.tasklib import (nginx,
+                        bundle_storage_local,
                         taskconfig,
                         utils)
 from dz.tasklib.tests.dztestcase import DZTestCase
@@ -9,6 +10,7 @@ import os
 class NginxTestCase(DZTestCase):
 
     def setUp(self):
+
         self.app_id = "test_nginx_001"
         self.bundle_name = "bundle_test_nginx_001-2011blah"
 
@@ -44,14 +46,15 @@ class NginxTestCase(DZTestCase):
                                           self.app_id)
         self.assertFalse(os.path.isfile(expected_site_file))
 
-
         self.assertEqual(len(self.local_privileged_cmds), 0)
 
-        nginx.update_local_proxy_config(self.app_id,
-                                        self.bundle_name,
-                                        self.appservers,
-                                        self.virtual_hostnames,
-                                        self.site_media_map)
+        nginx.update_local_proxy_config(
+            self.app_id,
+            self.bundle_name,
+            self.appservers,
+            self.virtual_hostnames,
+            self.site_media_map,
+            bundle_storage_engine=nginx.SKIP_BUNDLE_INSTALL)
 
         self.assertEqual(len(self.local_privileged_cmds), 1)
         self.assertEqual(self.local_privileged_cmds[0], ["kick_nginx"])
@@ -59,9 +62,6 @@ class NginxTestCase(DZTestCase):
         self.assertTrue(os.path.isfile(expected_site_file))
 
         file_content = file(expected_site_file).read()
-        file_lines = file_content.splitlines()
-
-        #print file_content
 
         self.assertTrue(len(file_content) > 0, "doh, conf file appears empty")
 
@@ -69,15 +69,57 @@ class NginxTestCase(DZTestCase):
             upstream_line = "server %s:%d" % (host_ip, host_port)
             self.assertTrue(upstream_line in file_content)
 
+    def test_downloads_bundle_when_new(self):
+        """
+        Test that serving a bundle downloads it (so static media are on
+        disk).
+        """
+        # first just make the bundle and ensure it's in local storage
+        cust_dir = self.makeDir()
+        self.patch(taskconfig, "NR_CUSTOMER_DIR", cust_dir)
+
+        bundle_name = "bundle_test_deploy_app_2011-fixture"
+        app_id = "test_deploy_app"
+        bundle_in_storage = os.path.join(taskconfig.NR_CUSTOMER_DIR,
+                                         "bundle_storage_local",
+                                         bundle_name + ".tgz")
+
+        self.assertFalse(os.path.isfile(bundle_in_storage))
+
+        from test_deploy import create_test_bundle_in_local_storage
+        bundle_tgz_name = create_test_bundle_in_local_storage()
+
+        self.assertTrue(os.path.isfile(bundle_in_storage))
+        self.assertTrue(bundle_in_storage.endswith(bundle_tgz_name))
+
+        bundle_dir = os.path.join(cust_dir, app_id, bundle_name)
+
+        self.assertFalse(os.path.isdir(bundle_dir))
+
+        # ok, now serve it
+        nginx.update_local_proxy_config(
+            app_id,
+            bundle_name,
+            self.appservers,
+            self.virtual_hostnames,
+            self.site_media_map,
+            bundle_storage_engine=bundle_storage_local)
+
+        self.assertTrue(os.path.isdir(bundle_dir))
+
+
+
     def test_static_media_mapping(self):
         expected_site_file = os.path.join(taskconfig.NGINX_SITES_ENABLED_DIR,
                                           self.app_id)
 
-        nginx.update_local_proxy_config(self.app_id,
-                                        self.bundle_name,
-                                        self.appservers,
-                                        self.virtual_hostnames,
-                                        self.site_media_map)
+        nginx.update_local_proxy_config(
+            self.app_id,
+            self.bundle_name,
+            self.appservers,
+            self.virtual_hostnames,
+            self.site_media_map,
+            bundle_storage_engine=nginx.SKIP_BUNDLE_INSTALL)
 
         file_content = file(expected_site_file).read()
         # print file_content
@@ -109,11 +151,13 @@ class NginxTestCase(DZTestCase):
             nginx.remove_local_proxy_config(self.app_id)
 
         # now create
-        nginx.update_local_proxy_config(self.app_id,
-                                        self.bundle_name,
-                                        self.appservers,
-                                        self.virtual_hostnames,
-                                        self.site_media_map)
+        nginx.update_local_proxy_config(
+            self.app_id,
+            self.bundle_name,
+            self.appservers,
+            self.virtual_hostnames,
+            self.site_media_map,
+            bundle_storage_engine=nginx.SKIP_BUNDLE_INSTALL)
         self.assertTrue(os.path.isfile(expected_site_file))
 
         self.assertEqual(len(self.local_privileged_cmds), 1)

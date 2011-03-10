@@ -100,7 +100,8 @@ class TasksTestCase(DZTestCase):
         src = path.join(here, 'fixtures', 'app')
         dest = path.join(self.dir, 'app')
         shutil.copytree(src, dest)
-        utils.local('(cd %s; git init; git add -A; git commit -m test)' % path.join(dest, 'src'))
+        utils.local('(cd %s; git init; git add -A; git commit -m test)' %
+                    path.join(dest, 'src'))
 
         (bundle_name, code_revision) = bundle.bundle_app('app')
         bundle_dir = path.join(self.dir, 'app', bundle_name)
@@ -110,6 +111,21 @@ class TasksTestCase(DZTestCase):
         self.assertTrue(code_revision.startswith("commit "))
         self.assertTrue(path.isdir(bundle_dir))
         self.assertTrue(path.isfile(path.join(bundle_dir, "zoombuild.cfg")))
+        self.assertTrue(path.isdir(path.join(bundle_dir, "user-src")))
+
+        # test the user-repo link is right
+        self.assertTrue(path.islink(path.join(bundle_dir, "user-repo")))
+        # the app fixture has a base_python_package of mysite, so:
+        self.assertFalse(path.isfile(path.join(bundle_dir,
+                                               "user-src",
+                                               "urls.py")))
+        self.assertTrue(path.isfile(path.join(bundle_dir,
+                                              "user-src",
+                                              "mysite",
+                                              "urls.py")))
+        self.assertTrue(path.isfile(path.join(bundle_dir,
+                                              "user-repo",
+                                              "urls.py")))
 
         # don't include the python executable
         self.assertFalse(path.isfile(path.join(bundle_dir, "bin", "python")))

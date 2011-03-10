@@ -54,7 +54,13 @@ class DatabaseInfo(dict):
 
 
 def _get_conn():
-    """Get a database connection, using the existing one if exists."""
+    """
+    Get a database connection, using the existing one if exists.
+
+    TODO: clean this up so that the connection can get closed when we're
+    done with it. Otherwise the connection to template1 stays open and
+    prevents the creation of any additional databases!
+    """
     if not hasattr(_get_conn, "_conn"):
         conn_string = ("dbname=%(initial_db)s user=%(username)s" %
                        taskconfig.DATABASE_SUPERUSER)
