@@ -187,8 +187,10 @@ def local_privileged(cmdargs):
 
 def _is_running_on_ec2():
     """Make a guess at whether we're running on ec2."""
-    kernel_version = local("uname -r")
-    return "virtual" in kernel_version
+    if not hasattr(_is_running_on_ec2, "_cached"):
+        kernel_version = local("uname -r")
+        _is_running_on_ec2._cached = "virtual" in kernel_version
+    return _is_running_on_ec2._cached
 
 
 def node_meta(field):
@@ -198,7 +200,6 @@ def node_meta(field):
         f.close()
         return value
     except Exception, e:
-        kernel_version = local("uname -r")
         if _is_running_on_ec2():
             raise InfrastructureException(
                 "Unknown metadata requested: %s.\nException: %s" % (
