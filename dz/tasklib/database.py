@@ -61,9 +61,11 @@ def _get_conn():
     done with it. Otherwise the connection to template1 stays open and
     prevents the creation of any additional databases!
     """
-    if not hasattr(_get_conn, "_conn"):
+    if not(hasattr(_get_conn, "_conn")) or _get_conn._conn.closed:
         conn_string = ("dbname=%(initial_db)s user=%(username)s" %
                        taskconfig.DATABASE_SUPERUSER)
+
+        print "DB Connection: %s" % conn_string
 
         if "password" in taskconfig.DATABASE_SUPERUSER:
             conn_string += (" password=%(password)s" %
@@ -113,8 +115,15 @@ def get_or_create_database(app_id):
 
     try:
         cur.execute("CREATE DATABASE %s" % db_name)
-    except psycopg2.ProgrammingError:
-        pass
+
+    except psycopg2.OperationalError, e:
+        # database cannot be created, this is a problem. raise it.
+        raise e
+
+    except psycopg2.ProgrammingError, e:
+        # database already exists, not a problem.
+        print e
+
     else:
         created = True
         db_password = ""
@@ -126,7 +135,10 @@ def get_or_create_database(app_id):
                     """ % (
                 db_username, db_password))
 
-    cur.close()
+    finally:
+        cur.close()
+        conn.close()
+
     #conn.close() #### TODO #### Need to actually call this. Otherwise
     # the connection sits around, and no new databases can be created
     # because the template1 connection remains open! Then you get:

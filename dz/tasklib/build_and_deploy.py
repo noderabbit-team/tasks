@@ -6,6 +6,7 @@ from dz.tasklib import (utils,
                         common_steps,
                         bundle,
                         bundle_storage,
+                        bundle_storage_local,
                         placement)
 from dz.tasks import database, deploy, nginx
 
@@ -243,10 +244,16 @@ def update_front_end_proxy(zoomdb, opts):
 
 def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
                      use_subtasks=True,
-                     bundle_storage_engine=bundle_storage,
+                     bundle_storage_engine=None,
                      post_build_hooks=None,
                      ):
     app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
+
+    if bundle_storage_engine is None:
+        if taskconfig.DEFAULT_BUNDLE_STORAGE_ENGINE == "bundle_storage_local":
+            bundle_storage_engine = bundle_storage_local
+        else:
+            bundle_storage_engine = bundle_storage
 
     opts = {
         "APP_ID": app_id,

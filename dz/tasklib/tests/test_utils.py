@@ -45,7 +45,8 @@ class UtilsTestCase(DZTestCase):
         Creating a virtualenv
         """
         utils.make_virtualenv(path.join(self.dir, 'vm'))
-        self.assertTrue(path.exists(path.join(self.dir, 'vm', 'bin', 'python')))
+        self.assertTrue(path.exists(path.join(
+                    self.dir, 'vm', 'bin', 'python')))
 
     def test_install_requirements(self):
         """
@@ -54,9 +55,14 @@ class UtilsTestCase(DZTestCase):
         utils.make_virtualenv(path.join(self.dir))
         utils.install_requirements(['importlib'], self.dir)
         fpath = path.join(self.dir, taskconfig.NR_PIP_REQUIREMENTS_FILENAME)
+        logpath = path.join(self.dir, "dz-pip.log")
         self.assertTrue(path.exists(fpath))
         contents = open(fpath, 'r').read()
         self.assertEquals(contents, 'importlib')
+
+        self.assertTrue(path.exists(logpath))
+        log_contents = open(logpath, 'r').read()
+        self.assertTrue("Successfully installed importlib" in log_contents)
 
     def test_install_requirements_failure(self):
         """
@@ -78,7 +84,8 @@ class UtilsTestCase(DZTestCase):
         """
         utils.make_virtualenv(self.dir)
         utils.add_to_pth(['/foo'], self.dir)
-        pthfname = path.join(utils.get_site_packages(self.dir), taskconfig.NR_PTH_FILENAME)
+        pthfname = path.join(utils.get_site_packages(self.dir),
+                             taskconfig.NR_PTH_FILENAME)
         pthfile = open(pthfname, 'r')
         self.assertEqual('/foo', pthfile.read().strip())
 
