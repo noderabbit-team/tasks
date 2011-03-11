@@ -134,6 +134,8 @@ def get_or_create_database(app_id):
                        NOCREATEROLE PASSWORD '%s';
                     """ % (
                 db_username, db_password))
+
+    finally:
         cur.close()
         conn.close()
 
