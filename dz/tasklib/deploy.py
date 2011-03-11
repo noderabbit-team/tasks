@@ -184,7 +184,7 @@ def start_serving_bundle(app_id, bundle_name):
         bundle_name=bundle_name,
         bundle_runner=os.path.join(bundle_dir, "thisbundle.py"),
         bundle_dir=bundle_dir,
-        bundle_user=app_id,
+        bundle_user="dztasks",  # TODO: app_id users
         port=port_to_use)
 
     _kick_supervisor()
