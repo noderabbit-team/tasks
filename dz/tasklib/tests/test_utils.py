@@ -140,7 +140,7 @@ class UtilsTestCase(DZTestCase):
         self.assertEqual(utils.node_meta("role"), "myrole")
 
     def test_get_internal_ip(self):
-        self.assertEqual(utils.get_internal_ip(), "127.0.0.1")
+        self.assertTrue(utils.get_internal_ip() in ["127.0.0.1", "127.0.1.1"])
         self.assertTrue("\n" not in utils.get_internal_ip())
         # no crazy comcast dns masking html garbage, plz
         self.assertTrue("<" not in utils.get_internal_ip())
