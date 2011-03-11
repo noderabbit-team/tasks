@@ -134,8 +134,9 @@ def get_or_create_database(app_id):
                        NOCREATEROLE PASSWORD '%s';
                     """ % (
                 db_username, db_password))
+        cur.close()
+        conn.close()
 
-    cur.close()
     #conn.close() #### TODO #### Need to actually call this. Otherwise
     # the connection sits around, and no new databases can be created
     # because the template1 connection remains open! Then you get:
