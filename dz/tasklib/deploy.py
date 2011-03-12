@@ -93,6 +93,36 @@ def managepy_command(app_id, bundle_name, command, nonzero_exit_ok=False):
     return result
 
 
+def managepy_shell(app_id, bundle_name, some_python_code):
+    app_dir, bundle_dir = utils.app_and_bundle_dirs(app_id, bundle_name)
+
+    if not os.path.isdir(bundle_dir):
+        raise utils.InfrastructureException(
+            "This server doesn't seem to have the requested app bundle " +
+            "currently deployed: app=%s, bundle=%s." % (app_id, bundle_name))
+
+    procargs = [os.path.join(bundle_dir, "thisbundle.py"),
+                "shell", "--plain"]
+
+    stdout, stderr, proc = utils.subproc(procargs,
+                                         stdin_string=some_python_code,
+                                         redir_stderr_to_stdout=True)
+
+    assert stderr is None, "Expected nothing on stderr due to redirect"
+
+    result = stdout
+
+    if proc.returncode != 0:
+        raise RuntimeError(
+            (("Nonzero return code %d from manage.py shell script:"
+              "\n%s\n\nOutput of script was:\n") % (
+                    proc.returncode,
+                    some_python_code)) +
+            result)
+
+    return result
+
+
 def _is_port_open(port):
     """Test whether the given port is open for listening."""
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

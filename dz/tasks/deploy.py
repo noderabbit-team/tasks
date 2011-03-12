@@ -23,6 +23,12 @@ def managepy_command(app_id, bundle_name, command, nonzero_exit_ok=False):
                                    nonzero_exit_ok)
 
 
+@task(name="managepy_shell",
+      queue="__QUEUE_MUST_BE_SPECIFIED_DYNAMICALLY__")
+def managepy_shell(app_id, bundle_name, some_python_code):
+    return deploy.managepy_shell(app_id, bundle_name, some_python_code)
+
+
 @task_inject_zoomdb(name="user_manage_py_command", queue="appserver")
 def user_manage_py_command(job_id, zoomdb, job_params):
     app_id = job_params["app_id"]
@@ -55,6 +61,35 @@ def user_manage_py_command(job_id, zoomdb, job_params):
 
     zoomdb.log(step_label,
                zoomdb.LOG_STEP_END)
+
+
+@task_inject_zoomdb(name="user_manage_py_shell", queue="appserver")
+def user_manage_py_shell(job_id, zoomdb, job_params):
+    app_id = job_params["app_id"]
+    deployment_id = job_params["deployment_id"]
+    some_python_code = job_params["parameter"]
+
+    worker = zoomdb.get_project_worker_by_id(deployment_id)
+    bundle = zoomdb.get_bundle(worker.bundle_id)
+
+    step_label = "Running code under 'manage.py shell' on worker %s" % (
+        worker.server_instance_id)
+
+    async_result = managepy_shell.apply_async(
+        args=[app_id,
+              bundle.bundle_name,
+              some_python_code],
+        queue="appserver:" + worker.server_instance_id)
+
+    zoomdb.log(step_label,
+               zoomdb.LOG_STEP_BEGIN)
+
+    cmd_output = async_result.wait()
+    zoomdb.log("Command output:\n" + cmd_output)
+
+    zoomdb.log(step_label,
+               zoomdb.LOG_STEP_END)
+
 
 
 @task_inject_zoomdb(name="undeploy", queue="build")
