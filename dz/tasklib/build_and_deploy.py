@@ -1,6 +1,5 @@
 from dz.tasklib import taskconfig
 import os
-import socket
 
 from dz.tasklib import (utils,
                         common_steps,
