@@ -115,13 +115,17 @@ class ZoomDatabaseTest(MockerTestCase):
         self.assertEqual(self.soup.dz2_appserverdeployment.count(), 0)
         self.assertEqual(len(self.zoom_db.get_project_workers()), 0)
 
-        self.zoom_db.add_worker(bundle_id,
-                                instance_id,
-                                server_ip,
-                                server_port)
+        worker = self.zoom_db.add_worker(bundle_id,
+                                         instance_id,
+                                         server_ip,
+                                         server_port)
 
         self.assertEqual(self.soup.dz2_appserverdeployment.count(), 1)
         self.assertEqual(len(self.zoom_db.get_project_workers()), 1)
+        self.assertEqual(worker.id, 1)
+
+        same_worker = self.zoom_db.get_project_worker_by_id(1)
+        self.assertEqual(same_worker, worker)
 
         worker_deployment_record = list(
             self.soup.dz2_appserverdeployment.all())[0]

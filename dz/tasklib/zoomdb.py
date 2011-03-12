@@ -179,6 +179,14 @@ class ZoomDatabase(object):
                 self._soup.dz2_appserverdeployment.project_id ==
                 self.get_project_id()))
 
+    def get_project_worker_by_id(self, deployment_id):
+        """Get an AppServerDeployment record matching the given id."""
+        return self._soup.dz2_appserverdeployment.filter(
+            self._soup.dz2_appserverdeployment.project_id ==
+            self.get_project_id()).filter(
+            self._soup.dz2_appserverdeployment.id ==
+            deployment_id).one()
+
     def get_job(self):
         """Get the Job row."""
         if not hasattr(self, "_job"):
