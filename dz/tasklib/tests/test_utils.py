@@ -40,6 +40,16 @@ class UtilsTestCase(DZTestCase):
         self.assertEqual(stderr, "")
         self.assertEqual(p.returncode, 0)
 
+    def test_subproc_passing_stdin(self):
+        """
+        Test our subproc() function's ability to take a provided string as
+        stdin.
+        """
+        stdout, stderr, p = utils.subproc("cat", stdin_string="hello world")
+        self.assertEqual(stdout, "hello world")
+        self.assertEqual(stderr, "")
+        self.assertEqual(p.returncode, 0)
+
     def test_make_virtualenv(self):
         """
         Creating a virtualenv

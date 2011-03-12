@@ -5,8 +5,8 @@ import os
 import socket
 import subprocess
 import sys
-import urllib
 import ConfigParser
+import tempfile
 
 import taskconfig
 
@@ -45,7 +45,8 @@ def local(command, capture=True):
     return out
 
 
-def subproc(command, null_stdin=True):
+def subproc(command, null_stdin=True, stdin_string=None,
+            redir_stderr_to_stdout=False):
     """
     Run a command locally, using the subprocess module and optionally
     providing a closed stdin filehandle.
@@ -55,17 +56,39 @@ def subproc(command, null_stdin=True):
     error if the underlying command fails. Therefore, you probably want to
     use check p.returncode to verify the command exited successfully.
 
+    :param stdin_string: if provided, sends the given string on stdin to the
+    subprocess.
+
     :returns: stdout, stderr, p: output strings and Popen obj of the command.
     """
     p_args = dict(shell=isinstance(command, basestring),
                   stdout=subprocess.PIPE,
                   stderr=subprocess.PIPE)
 
-    if null_stdin:
+    tempfile_name = None
+
+    if stdin_string:
+        # must be written to a temp file (or at least something with a
+        # filehandle) so can redirect.
+        (fd, tempfile_name) = tempfile.mkstemp(prefix='tmp_subproc')
+        f = file(tempfile_name, "w")
+        f.write(stdin_string)
+        f.close()
+
+        p_args["stdin"] = file(tempfile_name)
+
+    elif null_stdin:
         p_args["stdin"] = open("/dev/null")
 
+    if redir_stderr_to_stdout:
+        p_args["stderr"] = subprocess.STDOUT
+
+    #print "subprocess.Popen(%r, %r)" % (command, p_args)
     p = subprocess.Popen(command, **p_args)
     (stdout, stderr) = p.communicate()
+
+    if tempfile_name:
+        os.remove(tempfile_name)
 
     return stdout, stderr, p
 
