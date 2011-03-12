@@ -23,6 +23,40 @@ def managepy_command(app_id, bundle_name, command, nonzero_exit_ok=False):
                                    nonzero_exit_ok)
 
 
+@task_inject_zoomdb(name="user_manage_py_command", queue="appserver")
+def user_manage_py_command(job_id, zoomdb, job_params):
+    app_id = job_params["app_id"]
+    deployment_id = job_params["deployment_id"]
+
+    # parameter must be split into a list to ensure the parts inside
+    # are passed as separate args to the thisbundle.py script -- if
+    # passed as a string, this would run under a shell and be insecure!
+    parameters = job_params["parameter"].split()
+
+    worker = zoomdb.get_project_worker_by_id(deployment_id)
+    bundle = zoomdb.get_bundle(worker.bundle_id)
+
+    step_label = "Running 'manage.py %s' on worker %s" % (
+        " ".join(parameters),
+        worker.server_instance_id)
+
+    async_result = managepy_command.apply_async(
+        args=[app_id,
+              bundle.bundle_name,
+              parameters],
+        kwargs=dict(nonzero_exit_ok=True),
+        queue="appserver:" + worker.server_instance_id)
+
+    zoomdb.log(step_label,
+               zoomdb.LOG_STEP_BEGIN)
+
+    cmd_output = async_result.wait()
+    zoomdb.log("Command output:\n" + cmd_output)
+
+    zoomdb.log(step_label,
+               zoomdb.LOG_STEP_END)
+
+
 @task_inject_zoomdb(name="undeploy", queue="build")
 def undeploy(job_id, zoomdb, job_params):
     """
