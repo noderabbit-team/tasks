@@ -29,6 +29,14 @@ class ExternalServiceException(Exception):
     pass
 
 
+class ProjectConfigurationException(Exception):
+    """
+    Exception indicating a problem resulting from misconfiguration by the
+    end user.
+    """
+    pass
+
+
 def local(command, capture=True):
     """
     Run a command locally.

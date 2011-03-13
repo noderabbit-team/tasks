@@ -3,7 +3,8 @@ This module contains common steps that may appear in multiple different
 tasks.
 """
 
-from dz.tasklib import taskconfig
+from dz.tasklib import (taskconfig,
+                        utils)
 import os
 
 
@@ -33,4 +34,9 @@ def checkout_code(zoomdb, opts):
         zoomdb.log("Cloning your repository.")
         cmd = ["git", "clone", repourl, "."]
 
-    zoomdb.logsys(cmd)
+    output, stderr, p = utils.subproc(cmd)
+    if p.returncode != 0:
+        raise utils.ProjectConfigurationException(
+            "Error updating code from repository %s:\n%s" % (
+                repourl, stderr))
+    zoomdb.log(cmd)
