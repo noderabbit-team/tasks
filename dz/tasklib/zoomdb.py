@@ -47,36 +47,6 @@ class ZoomDatabase(object):
         """
         self._soup.flush()
 
-    def logsys(self, cmd, null_stdin=True):
-        """Run the provided command (using utils.subproc) and log the
-        results. Intended for use from tasks only.
-
-        If cmd is a string, it will be run through a shell. Otherwise,
-        it is assumed to be a list and not run in shell mode.
-
-        If null_stdin is true (the default), pass in a pre-closed FH as the
-        subprocess' stdin. That'll mean that when the subprocess tries to
-        read from stdin, it will get an EOF and possibly fail. That sounds
-        bad, but is actually what we want because we can't be there to type
-        a password or answer some prompt, and it's better to fail rapidly
-        with logging than to get hung waiting for a nonpresent user to type
-        something.
-        """
-
-        print "* logsys running command: %r" % cmd
-
-        stdout, stderr, p = utils.subproc(cmd, null_stdin=null_stdin)
-
-        print "* logsys completed command: %r" % cmd
-        print "* logsys STDOUT: %r" % stdout
-        print "* logsys STDERR: %r" % stderr
-        print "* logsys return code: %r" % p.returncode
-        print "* logsys closed file handles."
-
-        msg = "Executed: %r\n== STDOUT ==\n%r== STDERR ==\n%r\n== end ==" % (
-            cmd, stdout, stderr)
-        self.log(msg)
-
     def add_bundle(self, bundle_name, code_revision=None):
         """
         Store the app's bundle location (assuming this zoomdb's job has an
