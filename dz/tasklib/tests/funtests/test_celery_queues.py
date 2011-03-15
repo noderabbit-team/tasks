@@ -42,10 +42,11 @@ class CeleryQueuesTestCase(unittest.TestCase):
                              stderr=subprocess.PIPE)
         output, errors = p.communicate()
         if len(output):
-            print "It looks like an instance of celeryd is already running",
-            print "locally. You should kill it before attempting to run",
-            print "the celery queues test suite, which assumes no other",
-            print "concurrent celeryd processes."
+            sys.stderr.write(
+                "It looks like an instance of celeryd is already running"
+                "locally. You should kill it before attempting to run"
+                "the celery queues test suite, which assumes no other"
+                "concurrent celeryd processes.\n")
             sys.exit()
 
         print "Starting celeryd..."
