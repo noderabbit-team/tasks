@@ -36,12 +36,14 @@ def checkout_code(zoomdb, opts):
             zoomdb.log("Cloning your repository.")
             cmd = ["git", "clone", repourl, "."]
 
+        zoomdb.log("Running %s..." % " ".join(cmd))
         output, stderr, p = utils.subproc(cmd)
         if p.returncode != 0:
             raise utils.ProjectConfigurationException(
-                "Error updating code from repository %s:\n%s" % (
-                    repourl, stderr))
-        zoomdb.log("Running %s..." % " ".join(cmd))
+                "Error updating code from repository %s:\n%s\n%s" % (
+                    repourl, output, stderr))
+        else:
+            zoomdb.log("Command output:\n%s\n%s" % (output, stderr))
 
     finally:
         os.chdir(cur_dir)
