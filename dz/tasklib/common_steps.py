@@ -18,8 +18,6 @@ def checkout_code(zoomdb, opts):
     if not os.path.exists(d):
         os.makedirs(d)
 
-    os.chdir(d)
-
     if source_code_url.startswith(taskconfig.TEST_REPO_URL_PREFIX):
         repourl = os.path.join(taskconfig.TEST_REPO_DIR,
                                source_code_url[len(
@@ -27,16 +25,23 @@ def checkout_code(zoomdb, opts):
     else:
         repourl = source_code_url
 
-    if os.path.exists(".git"):
-        zoomdb.log("Updating code from repository.")
-        cmd = ["git", "pull"]
-    else:
-        zoomdb.log("Cloning your repository.")
-        cmd = ["git", "clone", repourl, "."]
+    cur_dir = os.getcwd()
+    try:
+        os.chdir(d)
 
-    output, stderr, p = utils.subproc(cmd)
-    if p.returncode != 0:
-        raise utils.ProjectConfigurationException(
-            "Error updating code from repository %s:\n%s" % (
-                repourl, stderr))
-    zoomdb.log(cmd)
+        if os.path.exists(".git"):
+            zoomdb.log("Updating code from repository.")
+            cmd = ["git", "pull"]
+        else:
+            zoomdb.log("Cloning your repository.")
+            cmd = ["git", "clone", repourl, "."]
+
+        output, stderr, p = utils.subproc(cmd)
+        if p.returncode != 0:
+            raise utils.ProjectConfigurationException(
+                "Error updating code from repository %s:\n%s" % (
+                    repourl, stderr))
+        zoomdb.log(cmd)
+
+    finally:
+        os.chdir(cur_dir)
