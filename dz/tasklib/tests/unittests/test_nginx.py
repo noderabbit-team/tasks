@@ -159,6 +159,22 @@ class NginxTestCase(DZTestCase):
                                      "something") + "/;"
                         in flattened_contents)
 
+    def test_admin_media(self):
+        """
+        Test that django admin media is served in the right place.
+        """
+        self.assertTrue(taskconfig.DZ_ADMIN_MEDIA["url_path"].endswith("/"))
+        file_content = self._do_update_and_get_site_conf_contents()
+        flattened_contents = [" ".join(x.strip().split())
+                              for x in file_content.split('}\n')]
+        self.assertTrue("location %s { alias %s/;" % (
+                taskconfig.DZ_ADMIN_MEDIA["url_path"],
+                os.path.join(taskconfig.NR_CUSTOMER_DIR,
+                             self.app_id,
+                             self.bundle_name,
+                             taskconfig.DZ_ADMIN_MEDIA["bundle_file_path"]))
+                        in flattened_contents)
+
     def test_fail_when_no_appservers(self):
         """
         Test that >0 appservers must be provided.

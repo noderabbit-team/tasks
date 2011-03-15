@@ -56,6 +56,10 @@ def update_local_proxy_config(app_id, bundle_name,
     sme = [dict(url_path=url_path,
                 alias_dest=_make_full_path(file_path),
                 ) for url_path, file_path in site_media_map.items()]
+    sme.append(dict(url_path=taskconfig.DZ_ADMIN_MEDIA["url_path"],
+                    alias_dest=os.path.join(
+                bundle_dir,
+                taskconfig.DZ_ADMIN_MEDIA["bundle_file_path"])))
 
     # NOTE THE SLASHES::::
     # location /static/ {

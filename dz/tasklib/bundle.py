@@ -146,7 +146,8 @@ def bundle_app(app_id, force_bundle_name=None):
     utils.render_tpl_to_file(
         'bundle/settings.py.tmpl',
         os.path.join(bundle_dir, 'dz_settings.py'),
-        dz_settings=buildconfig_info["django_settings_module"])
+        dz_settings=buildconfig_info["django_settings_module"],
+        admin_media_prefix=taskconfig.DZ_ADMIN_MEDIA["url_path"])
 
     return bundle_name, code_revision
 

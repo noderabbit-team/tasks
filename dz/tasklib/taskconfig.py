@@ -51,6 +51,12 @@ DEFAULT_BUNDLE_STORAGE_ENGINE = "bundle_storage"  # override to use
                                                   # "bundle_storage_local"
                                                   # in development
 
+DZ_ADMIN_MEDIA = {
+    "url_path": "/_dz/admin_media/",
+    "bundle_file_path":
+        "lib/python2.6/site-packages/django/contrib/admin/media",
+    }
+
 try:
     from local_taskconfig import *
 except ImportError:

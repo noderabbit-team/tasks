@@ -164,8 +164,10 @@ class TasksTestCase(DZTestCase):
         settings = path.join(bundle_dir, 'dz_settings.py')
         # Imported from their settings file
         self.assertTrue(path.isfile(settings))
-        line = open(settings, 'r').readline()
-        self.assertTrue('mysite.settings' in line)
+        lines = [x.strip() for x in open(settings, 'r').readlines()]
+        self.assertTrue('from mysite.settings import *' in lines)
+        self.assertTrue("ADMIN_MEDIA_PREFIX = '%s'" % (
+                taskconfig.DZ_ADMIN_MEDIA["url_path"]) in lines)
 
     def test_check_repo(self):
         """

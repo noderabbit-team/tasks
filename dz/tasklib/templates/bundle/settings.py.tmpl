@@ -3,6 +3,7 @@ import os
 
 MEDIA_ROOT = os.environ['CONFIG_WRITABLE_ROOT'] + '/static'
 MEDIA_URL = '/static/'
+ADMIN_MEDIA_PREFIX = '{{admin_media_prefix}}'
 DATABASE_ENGINE = 'postgresql_psycopg2'
 DATABASE_NAME = os.environ['CONFIG_PG_DBNAME']
 DATABASE_USER = os.environ['CONFIG_PG_USER']
@@ -20,3 +21,4 @@ DATABASES = {
         'PORT': '',
     }
 }
+
