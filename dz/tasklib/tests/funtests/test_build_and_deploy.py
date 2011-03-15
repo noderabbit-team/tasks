@@ -41,8 +41,8 @@ class BuildAndDeployTestcase(DZTestCase):
         src_url = "git://github.com/shimon/djangotutorial.git"
 
         here = path.abspath(path.split(__file__)[0])
-        app_fixture = path.join(here, 'fixtures', 'app')
-        django_tarball = path.join(here, 'fixtures', 'Django-1.2.5.tar.gz')
+        app_fixture = path.join(here, '../fixtures', 'app')
+        django_tarball = path.join(here, '../fixtures', 'Django-1.2.5.tar.gz')
         zcfg_fixture = path.join(app_fixture, "zoombuild.cfg")
 
         zoombuild_cfg_content = file(zcfg_fixture).read()

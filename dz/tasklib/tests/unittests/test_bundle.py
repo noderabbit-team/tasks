@@ -97,7 +97,7 @@ class TasksTestCase(DZTestCase):
         self.mocker.replay()
 
         here = path.abspath(path.split(__file__)[0])
-        src = path.join(here, 'fixtures', 'app')
+        src = path.join(here, '../fixtures', 'app')
         dest = path.join(self.dir, 'app')
         shutil.copytree(src, dest)
         utils.local('(cd %s; git init; git add -A; git commit -m test)' %
@@ -176,7 +176,7 @@ class TasksTestCase(DZTestCase):
         zoomdb = StubZoomDB()
         app_id = "p001"
         here = path.abspath(path.split(__file__)[0])
-        tarball_path = path.join(here, 'fixtures', 'repo.tar.gz')
+        tarball_path = path.join(here, '../fixtures', 'repo.tar.gz')
         tmp_repo_dir = self.makeDir()
         utils.local("tar xvzf %s -C %s" % (tarball_path, tmp_repo_dir))
         src_url = path.join(tmp_repo_dir, "repo")

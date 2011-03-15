@@ -142,7 +142,7 @@ class UtilsTestCase(DZTestCase):
         self.assertEqual(node_role, "localhost")
 
         here = path.abspath(path.split(__file__)[0])
-        test_fixture_meta = path.join(here, 'fixtures', 'node_meta')
+        test_fixture_meta = path.join(here, '../fixtures', 'node_meta')
         self.patch(taskconfig, "NODE_META_DATA_DIR", test_fixture_meta)
 
         self.assertEqual(utils.node_meta("instance_id"), "i-12345")
@@ -150,6 +150,9 @@ class UtilsTestCase(DZTestCase):
         self.assertEqual(utils.node_meta("role"), "myrole")
 
     def test_get_internal_ip(self):
+        """
+        Test getting this computer's "internal" IP address.
+        """
         self.assertTrue(utils.get_internal_ip() in ["127.0.0.1", "127.0.1.1"])
         self.assertTrue("\n" not in utils.get_internal_ip())
         # no crazy comcast dns masking html garbage, plz
@@ -157,7 +160,8 @@ class UtilsTestCase(DZTestCase):
 
     def test_parse_zoombuild(self):
         here = path.abspath(path.split(__file__)[0])
-        test_fixture_cfg = path.join(here, 'fixtures', 'app', 'zoombuild.cfg')
+        test_fixture_cfg = path.join(here, '../fixtures',
+                                     'app', 'zoombuild.cfg')
 
         result = utils.parse_zoombuild(test_fixture_cfg)
 
@@ -165,7 +169,8 @@ class UtilsTestCase(DZTestCase):
 
     def test_parse_site_media_map(self):
         here = path.abspath(path.split(__file__)[0])
-        test_fixture_cfg = path.join(here, 'fixtures', 'app', 'zoombuild.cfg')
+        test_fixture_cfg = path.join(here, '../fixtures',
+                                     'app', 'zoombuild.cfg')
         zcfg = utils.parse_zoombuild(test_fixture_cfg)
 
         input_text = zcfg["site_media_map"]

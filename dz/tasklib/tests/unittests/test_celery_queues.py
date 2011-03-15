@@ -12,7 +12,7 @@ import sys
 
 os.environ["CELERY_CONFIG_MODULE"] = "celeryconfig_testing"
 
-import tasks_for_testing
+from dz.tasklib.tests import tasks_for_testing
 
 from celery.task import control
 

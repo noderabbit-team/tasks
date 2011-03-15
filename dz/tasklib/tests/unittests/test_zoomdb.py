@@ -18,6 +18,7 @@ class ZoomDatabaseTest(MockerTestCase):
         ddl = open(
             os.path.join(
                 os.path.dirname(__file__),
+                "../fixtures",
                 "dz2-simplified.sql")).read().split(";")
 
         for statement in ddl:

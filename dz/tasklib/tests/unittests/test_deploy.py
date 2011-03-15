@@ -25,7 +25,7 @@ def create_test_bundle_in_local_storage():
     bundle_name = "bundle_test_deploy_app_2011-fixture"
 
     here = os.path.abspath(os.path.split(__file__)[0])
-    fixture_dir = os.path.join(here, 'fixtures')
+    fixture_dir = os.path.join(here, '../fixtures')
     app_name = "test_deploy_app"
 
     # force rename the bundle
@@ -38,7 +38,7 @@ def create_test_bundle_in_local_storage():
 
     zcfg_path = os.path.join(app_dir, "zoombuild.cfg")
     zcfg_content = file(zcfg_path).read()
-    django_tarball = os.path.join(here, 'fixtures', 'Django-1.2.5.tar.gz')
+    django_tarball = os.path.join(fixture_dir, 'Django-1.2.5.tar.gz')
     zcfg_content = zcfg_content.replace(
         "pip_reqs: Django==1.2.5", "pip_reqs: %s" % django_tarball)
 

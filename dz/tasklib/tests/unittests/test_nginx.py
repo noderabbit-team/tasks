@@ -127,12 +127,18 @@ class NginxTestCase(DZTestCase):
         return file(expected_site_file).read()
 
     def test_static_media_mapping(self):
+        """
+        Test static media dir aliases in nginx conf.
+        """
         file_content = self._do_update_and_get_site_conf_contents()
         # print file_content
         for url_path, file_path in self.site_media_map.items():
             self.assertTrue(("location %s" % url_path) in file_content)
 
     def test_file_path_variables(self):
+        """
+        Test the {SITE_PACKAGES} and {SRC_PACKAGES} variables.
+        """
         file_content = self._do_update_and_get_site_conf_contents()
         flattened_contents = [" ".join(x.strip().split())
                               for x in file_content.split('}\n')]
