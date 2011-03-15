@@ -13,6 +13,7 @@ from dz.tasklib import (taskconfig,
 
 SKIP_BUNDLE_INSTALL = object()
 
+
 def _get_nginx_conffile(app_id):
     return os.path.join(taskconfig.NGINX_SITES_ENABLED_DIR,
                         app_id)
@@ -35,13 +36,25 @@ def update_local_proxy_config(app_id, bundle_name,
     if bundle_storage_engine is not SKIP_BUNDLE_INSTALL:
         deploy.install_app_bundle_static(app_id, bundle_name,
                                          bundle_storage_engine)
+    file_path_vars = {
+        "{SITE_PACKAGES}": os.path.join(bundle_dir,
+                                        "lib/python2.6/site-packages"),
+        "{SRC_PACKAGES}": os.path.join(bundle_dir, "src"),
+        }
+    default_file_path_base = os.path.join(bundle_dir, "user-repo")
+
+    def _make_full_path(original_file_path):
+        for varname, pathbase in file_path_vars.items():
+            if original_file_path.startswith(varname):
+                rest = original_file_path[len(varname):]
+                rest = rest.lstrip("/")
+                return os.path.join(pathbase, rest)
+
+        return os.path.join(default_file_path_base,
+                            original_file_path)
 
     sme = [dict(url_path=url_path,
-                bundle_dir=bundle_dir,
-                file_path=file_path,
-                alias_dest=os.path.join(bundle_dir,
-                                        "user-repo",
-                                        file_path.lstrip("/")),
+                alias_dest=_make_full_path(file_path),
                 ) for url_path, file_path in site_media_map.items()]
 
     # NOTE THE SLASHES::::

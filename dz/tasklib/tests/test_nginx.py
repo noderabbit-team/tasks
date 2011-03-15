@@ -25,7 +25,12 @@ class NginxTestCase(DZTestCase):
             ]
 
         self.site_media_map = {"/static/": "/path/to/static",
-                               "/otherstatic/": "/somewhere/else"}
+                               "/otherstatic/": "/somewhere/else",
+                               "/media/somepackage":
+                                   "{SITE_PACKAGES}/somepackage/media",
+                               "/media/srcpackage":
+                                   "{SRC_PACKAGES}/something",
+                               }
 
         self.nginx_dir = self.makeDir()
         self.patch(taskconfig, "NGINX_SITES_ENABLED_DIR", self.nginx_dir)
@@ -107,9 +112,7 @@ class NginxTestCase(DZTestCase):
 
         self.assertTrue(os.path.isdir(bundle_dir))
 
-
-
-    def test_static_media_mapping(self):
+    def _do_update_and_get_site_conf_contents(self):
         expected_site_file = os.path.join(taskconfig.NGINX_SITES_ENABLED_DIR,
                                           self.app_id)
 
@@ -121,10 +124,34 @@ class NginxTestCase(DZTestCase):
             self.site_media_map,
             bundle_storage_engine=nginx.SKIP_BUNDLE_INSTALL)
 
-        file_content = file(expected_site_file).read()
+        return file(expected_site_file).read()
+
+    def test_static_media_mapping(self):
+        file_content = self._do_update_and_get_site_conf_contents()
         # print file_content
         for url_path, file_path in self.site_media_map.items():
             self.assertTrue(("location %s" % url_path) in file_content)
+
+    def test_file_path_variables(self):
+        file_content = self._do_update_and_get_site_conf_contents()
+        flattened_contents = [" ".join(x.strip().split())
+                              for x in file_content.split('}\n')]
+
+        self.assertTrue("location /media/somepackage { alias " +
+                        os.path.join(taskconfig.NR_CUSTOMER_DIR,
+                                     self.app_id,
+                                     self.bundle_name,
+                                     "lib/python2.6/site-packages",
+                                     "somepackage/media") + "/;"
+                        in flattened_contents)
+
+        self.assertTrue("location /media/srcpackage { alias " +
+                        os.path.join(taskconfig.NR_CUSTOMER_DIR,
+                                     self.app_id,
+                                     self.bundle_name,
+                                     "src",
+                                     "something") + "/;"
+                        in flattened_contents)
 
     def test_fail_when_no_appservers(self):
         """
