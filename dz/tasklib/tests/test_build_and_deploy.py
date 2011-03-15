@@ -2,6 +2,7 @@ from os import path
 import os
 import urllib
 import httplib
+from psycopg2 import ProgrammingError
 
 from dz.tasklib import (build_and_deploy,
                         bundle_storage_local,
@@ -27,8 +28,11 @@ class BuildAndDeployTestcase(DZTestCase):
         # TODO: instead of just manually throwing away DB stuff, add a
         # destroy_project_data function that could be user-accessible in
         # case a user ever wants to throw away their DB and start over.
-        database.drop_database(self.app_id)
-        database.drop_user(self.app_id)
+        try:
+            database.drop_database(self.app_id)
+            database.drop_user(self.app_id)
+        except ProgrammingError:  # probably indicates DB/user doesn't exist
+            pass
 
     def test_build_and_deploy(self):
         """Invoke the build and deploy task."""
