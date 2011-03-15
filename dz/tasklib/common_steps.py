@@ -41,7 +41,7 @@ def checkout_code(zoomdb, opts):
             raise utils.ProjectConfigurationException(
                 "Error updating code from repository %s:\n%s" % (
                     repourl, stderr))
-        zoomdb.log(cmd)
+        zoomdb.log("Running %s..." % " ".join(cmd))
 
     finally:
         os.chdir(cur_dir)

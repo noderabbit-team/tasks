@@ -53,7 +53,7 @@ CREATE TABLE "dz2_appserverdeployment" (
     "id" INTEGER NOT NULL PRIMARY KEY,
     "project_id" integer NOT NULL, -- REFERENCES "dz2_project" ("id") DEFERRABLE INITIALLY DEFERRED,
     "bundle_id" integer NOT NULL, -- REFERENCES "dz2_appbundle" ("id") DEFERRABLE INITIALLY DEFERRED,
-    "server_ip" inet NOT NULL,
+    "server_ip" varchar(16) NOT NULL, -- was: inet NOT NULL,
     "server_port" integer CHECK ("server_port" >= 0) NOT NULL,
     "server_instance_id" varchar(32) NOT NULL,
     "creation_date" timestamp with time zone NOT NULL,
