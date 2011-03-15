@@ -2,8 +2,6 @@
 Frontend for deployment-related celery tasks.
 """
 
-import datetime
-
 from celery.task import task
 from dz.tasklib import deploy
 from dz.tasks.decorators import task_inject_zoomdb
