@@ -16,9 +16,11 @@ def deploy_to_appserver(app_id, bundle_name, appserver_name, dbinfo):
 
 @task(name="managepy_command",
       queue="__QUEUE_MUST_BE_SPECIFIED_DYNAMICALLY__")
-def managepy_command(app_id, bundle_name, command, nonzero_exit_ok=False):
+def managepy_command(app_id, bundle_name, command,
+                     nonzero_exit_ok=False,
+                     return_exit_code=False):
     return deploy.managepy_command(app_id, bundle_name, command,
-                                   nonzero_exit_ok)
+                                   nonzero_exit_ok, return_exit_code)
 
 
 @task(name="managepy_shell",
@@ -48,14 +50,21 @@ def user_manage_py_command(job_id, zoomdb, job_params):
         args=[app_id,
               bundle.bundle_name,
               parameters],
-        kwargs=dict(nonzero_exit_ok=True),
+        kwargs=dict(nonzero_exit_ok=True,
+                    return_exit_code=True),
         queue="appserver:" + worker.server_instance_id)
 
     zoomdb.log(step_label,
                zoomdb.LOG_STEP_BEGIN)
 
-    cmd_output = async_result.wait()
+    exit_code, cmd_output = async_result.wait()
     zoomdb.log("Command output:\n" + cmd_output)
+
+    if exit_code != 0:
+        zoomdb.log("Warning: the command returned a non-zero exit code, "
+                   "indicating a possible error in executing your management "
+                   "command. The return value was %d." % exit_code,
+                   log_type=zoomdb.LOG_WARN)
 
     zoomdb.log(step_label,
                zoomdb.LOG_STEP_END)

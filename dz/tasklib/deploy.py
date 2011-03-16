@@ -67,7 +67,8 @@ def install_app_bundle_static(app_id, bundle_name,
                               static_only=True)
 
 
-def managepy_command(app_id, bundle_name, command, nonzero_exit_ok=False):
+def managepy_command(app_id, bundle_name, command, nonzero_exit_ok=False,
+                     return_exit_code=False):
     app_dir, bundle_dir = utils.app_and_bundle_dirs(app_id, bundle_name)
 
     if not os.path.isdir(bundle_dir):
@@ -90,7 +91,10 @@ def managepy_command(app_id, bundle_name, command, nonzero_exit_ok=False):
                                                               command)) +
             result)
 
-    return result
+    if return_exit_code:
+        return proc.returncode, result
+    else:
+        return result
 
 
 def managepy_shell(app_id, bundle_name, some_python_code):
