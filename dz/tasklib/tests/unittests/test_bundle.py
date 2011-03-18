@@ -91,10 +91,12 @@ class TasksTestCase(DZTestCase):
         """
         self.patch(taskconfig, "NR_CUSTOMER_DIR", self.dir)
 
-        install_requirements = self.mocker.replace(
-            "dz.tasklib.utils.install_requirements")
-        install_requirements(ANY, MATCH(os.path.isdir))
-        self.mocker.replay()
+        # install_requirements = self.mocker.replace(
+        #     "dz.tasklib.utils.install_requirements")
+        # install_requirements(["Django==1.2.5"], MATCH(os.path.isdir),
+        #                      logsuffix="-django")
+        # install_requirements(ANY, MATCH(os.path.isdir))
+        # self.mocker.replay()
 
         here = path.abspath(path.split(__file__)[0])
         src = path.join(here, '../fixtures', 'app')

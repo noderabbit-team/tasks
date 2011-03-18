@@ -124,7 +124,7 @@ def make_virtualenv(path):
     local("virtualenv  --python=/usr/bin/python %s" % path)
 
 
-def install_requirements(reqs, path):
+def install_requirements(reqs, path, logsuffix=None):
     """
     Given a ``path`` to a virtualenv, install the given ``reqs``.
 
@@ -137,7 +137,7 @@ def install_requirements(reqs, path):
     reqfile.close()
     pip = os.path.join(path, 'bin', 'pip')
 
-    logfile = os.path.join(path, "dz-pip.log")
+    logfile = os.path.join(path, "dz-pip%s.log" % (logsuffix or ""))
 
     # run pip, store log in the target environment for debugging
     output, stderr, p = subproc("%s install --log=%s -r %s" % (

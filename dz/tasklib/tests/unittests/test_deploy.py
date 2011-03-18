@@ -39,8 +39,9 @@ def create_test_bundle_in_local_storage():
     zcfg_path = os.path.join(app_dir, "zoombuild.cfg")
     zcfg_content = file(zcfg_path).read()
     django_tarball = os.path.join(fixture_dir, 'Django-1.2.5.tar.gz')
-    zcfg_content = zcfg_content.replace(
-        "pip_reqs: Django==1.2.5", "pip_reqs: %s" % django_tarball)
+    # we don't use pip_reqs any more
+    # zcfg_content = zcfg_content.replace(
+    #     "pip_reqs: Django==1.2.5", "pip_reqs: %s" % django_tarball)
 
     faster_zcfg = file(zcfg_path, "w")
     faster_zcfg.write(zcfg_content)

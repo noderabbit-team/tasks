@@ -126,13 +126,19 @@ def bundle_app(app_id, force_bundle_name=None):
         utils.add_to_pth([os.path.join('user-src', bpp_as_path)],
                          bundle_dir, relative=True)
 
+    # first install the selected Django version
+    # TODO: pull the pip line based on the entry in zoombuild.cfg.
+    utils.install_requirements(["Django==1.2.5"], bundle_dir,
+                               logsuffix="-django")
+
     # install requirements
     reqs = utils.assemble_requirements(
         files=[l.strip() for l in
                buildconfig_info["requirements_files"].splitlines()],
         lines=[l.strip() for l in
                buildconfig_info["extra_requirements"].splitlines()],
-        basedir=repo_link)
+        basedir=repo_link,
+        ignore_keys="django")
     utils.install_requirements(reqs, bundle_dir)
 
     # Remove the python executable, we don't use it
