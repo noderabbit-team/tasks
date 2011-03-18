@@ -10,6 +10,10 @@ import tempfile
 
 import taskconfig
 
+from pip.req import parse_requirements, InstallRequirement, RequirementSet
+from pip.exceptions import InstallationError
+from pip.locations import build_prefix, src_prefix
+
 tpl_env = Environment(loader=PackageLoader('dz.tasklib'))
 
 
@@ -18,7 +22,6 @@ class InfrastructureException(Exception):
     Exception indicating a problem in DjangoZoom's infrastructure, probably
     preventing the user from completing a successful deployment. :(
     """
-    pass
 
 
 class ExternalServiceException(Exception):
@@ -26,7 +29,6 @@ class ExternalServiceException(Exception):
     Exception indicating a problem outside of DjangoZoom, such as failure
     to fetch an externally-hosted required module.
     """
-    pass
 
 
 class ProjectConfigurationException(Exception):
@@ -34,7 +36,6 @@ class ProjectConfigurationException(Exception):
     Exception indicating a problem resulting from misconfiguration by the
     end user.
     """
-    pass
 
 
 def local(command, capture=True):
@@ -149,6 +150,83 @@ def install_requirements(reqs, path):
     print "=== output from pip ==="
     print output
     print "=== end of output from pip ==="
+
+
+def assemble_requirements(lines=None, files=None, basedir=None,
+                          ignore_keys=None):
+    """
+    Assemble a list of requirements lines based on the provided files
+    (relative to the provided base directory) and the provided lines.
+    """
+    args_ok = not(files) or basedir
+
+    assert args_ok, ("If the files parameter is provided to "
+                     "assemble_requirements, the basedir "
+                     "parameter must also be provided.")
+
+    class FakePipOptions(object):
+        skip_requirements_regex = None
+        default_vcs = None
+
+    monolithic_reqs = []
+
+    for filename in (files or []):
+        try:
+            file_reqs = list(parse_requirements(os.path.join(basedir,
+                                                             filename),
+                                                options=FakePipOptions()))
+        except IOError, e:
+            raise ProjectConfigurationException(
+                "Couldn't read requirements from your repo in file %s:\n%s" % (
+                    filename, str(e)))
+
+        for req in file_reqs:
+            req.comes_from = req.comes_from.replace(basedir, "<repo>")
+            monolithic_reqs.append(req)
+
+    if lines:
+        for line in lines:
+            try:
+                req = InstallRequirement.from_line(
+                    line,
+                    comes_from="<djangozoom-web>")
+                monolithic_reqs.append(req)
+            except InstallationError, e:
+                raise ProjectConfigurationException(
+                    "The requirement line %r cannot be installed: %s" % (
+                        line, str(e)))
+            except ValueError, e:
+                raise ProjectConfigurationException(
+                    "The requirement line %r is invalid: %s" % (
+                        line, str(e)))
+
+    result = []
+
+    trial_requirementset = RequirementSet(
+        build_dir=build_prefix, src_dir=src_prefix, download_dir=None)
+
+    ignore_set = set([i.lower() for i in (ignore_keys or [])])
+
+    for r in monolithic_reqs:
+        if r.req:
+            if r.req.key in ignore_set:
+                continue
+
+            #print "SAW REQ: %s (%s)" % (str(r.req), r.req.key)
+            result.append(str(r.req))
+            # adding reqs to a reqset gives us pip's duplication-determination
+            # abilities!
+            try:
+                trial_requirementset.add_requirement(r)
+            except InstallationError, e:
+                raise ProjectConfigurationException(
+                    "The requirement %s is not acceptable to pip: %s" % (
+                        str(r), str(e)))
+        else:
+            raise ValueError("Unexpected requirement entry: %r (%s)" % (r, r))
+            #yield str(req.url)
+
+    return result
 
 
 def add_to_pth(paths, vpath, relative=False):
@@ -270,7 +348,9 @@ def parse_zoombuild(buildcfg):
         'django_settings_module',
         'site_media_map',
         'additional_python_path_dirs',
-        'pip_reqs',
+        #'pip_reqs',
+        'requirements_files',
+        'extra_requirements',
         ]
 
     result = {}

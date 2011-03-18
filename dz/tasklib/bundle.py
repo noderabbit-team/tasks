@@ -67,9 +67,6 @@ def bundle_app(app_id, force_bundle_name=None):
                     os.path.join(bundle_dir,
                                  "zoombuild.cfg"))
 
-    # Write install requirements
-    utils.install_requirements(buildconfig_info["pip_reqs"], bundle_dir)
-
     # Check what version of the code we've got
     code_revision, stderr, p = utils.subproc("(cd %s; git log -n 1)" %
                                              appsrcdir)
@@ -129,15 +126,14 @@ def bundle_app(app_id, force_bundle_name=None):
         utils.add_to_pth([os.path.join('user-src', bpp_as_path)],
                          bundle_dir, relative=True)
 
-    # SR 3/8/11 ...what were we trying to do here? I don't get it...
-    # # Copy static directories to a better location
-    #
-    # for line in buildconfig_info["site_media_map"].splitlines():
-    #     static, _ = line.strip().split()
-    #     from_static = os.path.join(appsrcdir, static)
-    #     to_static = os.path.join(bundle_dir, static)
-    #     if os.path.isdir(from_static):
-    #         shutil.copytree(from_static, to_static)
+    # install requirements
+    reqs = utils.assemble_requirements(
+        files=[l.strip() for l in
+               buildconfig_info["requirements_files"].splitlines()],
+        lines=[l.strip() for l in
+               buildconfig_info["extra_requirements"].splitlines()],
+        basedir=repo_link)
+    utils.install_requirements(reqs, bundle_dir)
 
     # Remove the python executable, we don't use it
     os.remove(os.path.join(bundle_dir, "bin", "python"))

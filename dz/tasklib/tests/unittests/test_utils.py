@@ -1,3 +1,4 @@
+import re
 import sys
 import shutil
 import tempfile
@@ -8,9 +9,14 @@ from dz.tasklib import taskconfig
 from dz.tasklib import utils
 from dz.tasklib.tests.dztestcase import DZTestCase
 
+
 class UtilsTestCase(DZTestCase):
     def setUp(self):
         self.dir = tempfile.mkdtemp()
+        here = path.abspath(path.split(__file__)[0])
+        self.fixtures_dir = path.join(here, '../fixtures')
+        self.test_req_tarball = path.join(self.fixtures_dir,
+                                          "Django-1.2.5.tar.gz")
 
     def test_run(self):
         """
@@ -63,16 +69,16 @@ class UtilsTestCase(DZTestCase):
         Tests that we can install pip requirements
         """
         utils.make_virtualenv(path.join(self.dir))
-        utils.install_requirements(['importlib'], self.dir)
+        utils.install_requirements([self.test_req_tarball], self.dir)
         fpath = path.join(self.dir, taskconfig.NR_PIP_REQUIREMENTS_FILENAME)
         logpath = path.join(self.dir, "dz-pip.log")
         self.assertTrue(path.exists(fpath))
         contents = open(fpath, 'r').read()
-        self.assertEquals(contents, 'importlib')
+        self.assertEquals(contents, self.test_req_tarball)
 
         self.assertTrue(path.exists(logpath))
         log_contents = open(logpath, 'r').read()
-        self.assertTrue("Successfully installed importlib" in log_contents)
+        self.assertTrue("Successfully installed Django\n" in log_contents)
 
     def test_install_requirements_failure(self):
         """
@@ -177,7 +183,7 @@ class UtilsTestCase(DZTestCase):
 
         self.assertEqual(len(input_text.splitlines()), 2)
         self.assertTrue("static static" in input_text)
-        self.assertTrue("foo bar" in input_text)
+        self.assertTrue("foo {SITE_PACKAGES}/foo" in input_text)
 
         smm = utils.parse_site_media_map(input_text)
         self.assertTrue(isinstance(smm, dict))
@@ -189,6 +195,71 @@ class UtilsTestCase(DZTestCase):
             self.assertFalse(url_path.startswith("//"))
             self.assertFalse(url_path.endswith("//"))
 
-        self.assertEqual(smm["/foo/"], "bar")
+        self.assertEqual(smm["/foo/"], "{SITE_PACKAGES}/foo")
         self.assertEqual(smm["/static/"], "static")
         self.assertEqual(len(smm), 2)
+
+    def test_assemble_requirements(self):
+        req_lines = utils.assemble_requirements()
+        self.assertEqual(len(req_lines), 0)
+
+        with self.assertRaises(AssertionError):
+            # should crash if no basedir specified
+            utils.assemble_requirements(files=["foo"])
+
+        req_fixtures_dir = path.join(self.fixtures_dir, 'requirements')
+        req_files = ["launchpad.txt", "project.txt"]
+        req_lines = utils.assemble_requirements(
+            basedir=req_fixtures_dir,
+            files=req_files,
+            lines=["somepkga", "somepkgb"])
+
+        self.assertTrue("somepkga" in req_lines)
+        self.assertTrue("somepkgb" in req_lines)
+        # from project.txt:
+        self.assertTrue("simplejson==2.1.1" in req_lines)
+        # from base.txt:
+        self.assertTrue("django-timezones==0.2.dev1" in req_lines)
+
+        # test that invalid requirements raise an error
+        with self.assertRaises(utils.ProjectConfigurationException):
+            utils.assemble_requirements(lines=[""])
+
+        # test that invalid syntax raises an error
+        with self.assertRaises(utils.ProjectConfigurationException):
+            utils.assemble_requirements(lines=["<>"])
+
+        # now test that duplicate requirements raise an error
+        with self.assertRaises(utils.ProjectConfigurationException):
+            utils.assemble_requirements(
+            basedir=req_fixtures_dir,
+            files=req_files,
+            lines=["Django==0.96"])
+
+        # now test that passing an "ignore" key prevents matching requirements
+        # from entering the result. And also that it's case sensitive!
+        req_lines = utils.assemble_requirements(
+            basedir=req_fixtures_dir,
+            files=req_files,
+            ignore_keys=["DJANGO"])
+        is_django = re.compile(r"^django\b", re.IGNORECASE)
+        for line in req_lines:
+            # have to do some special crap to avoid matching
+            # django-debug-toolbar etc.
+            self.assertFalse(
+                is_django.match(line.replace("django-", "django_")),
+                "Seems like django is in here: %s" % line)
+
+        # and test we're not ignoring too much
+        req_lines_unignored = utils.assemble_requirements(
+            basedir=req_fixtures_dir,
+            files=req_files,
+            ignore_keys=None)
+        self.assertEqual(len(req_lines) + 1, len(req_lines_unignored))
+
+        # test that pointing at a nonexistent file raises a
+        # ProjectConfigurationException
+        with self.assertRaises(utils.ProjectConfigurationException):
+            utils.assemble_requirements(
+                basedir=req_fixtures_dir,
+                files=['notafile'])
