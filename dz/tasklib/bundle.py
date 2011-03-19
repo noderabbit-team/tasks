@@ -126,9 +126,17 @@ def bundle_app(app_id, force_bundle_name=None):
         utils.add_to_pth([os.path.join('user-src', bpp_as_path)],
                          bundle_dir, relative=True)
 
-    # first install the selected Django version
-    # TODO: pull the pip line based on the entry in zoombuild.cfg.
-    utils.install_requirements(["Django==1.2.5"], bundle_dir,
+    # First install the selected Django version based on zoombuild.cfg,
+    # and use a local tarball if possible.
+    djver = taskconfig.DJANGO_VERSIONS[buildconfig_info['django_version']]
+    ver_tarball = os.path.join(taskconfig.DJANGO_TARBALLS_DIR,
+                               djver["tarball"])
+
+    if os.path.isfile(ver_tarball):
+        django_req = ver_tarball
+    else:
+        django_req = djver["pip_line"]
+    utils.install_requirements([django_req], bundle_dir,
                                logsuffix="-django")
 
     # install requirements
