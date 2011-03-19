@@ -1,7 +1,7 @@
 from dz.tasklib import (taskconfig,
                         bundle_storage,
                         bundle_storage_local)
-from dz.tasklib.tests.dztestcase import DZTestCase
+from dz.tasklib.tests.dztestcase import DZTestCase, requires_internet
 
 import os
 import tempfile
@@ -39,6 +39,7 @@ class BundleStorageTestCase(DZTestCase):
             # Getting a deleted bundle should raise an exception.
             storage_engine.get(bundlename)
 
+    @requires_internet
     def test_s3_storage_engine(self):
         """Test S3-based bundle storage."""
         return self._test_put_get_delete_bundle(bundle_storage)

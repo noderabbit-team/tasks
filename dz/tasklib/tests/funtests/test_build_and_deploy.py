@@ -11,7 +11,7 @@ from dz.tasklib import (build_and_deploy,
                         taskconfig,
                         utils)
 from dz.tasklib.tests.stub_zoomdb import StubZoomDB
-from dz.tasklib.tests.dztestcase import DZTestCase
+from dz.tasklib.tests.dztestcase import DZTestCase, requires_internet
 
 
 class BuildAndDeployTestcase(DZTestCase):
@@ -34,6 +34,7 @@ class BuildAndDeployTestcase(DZTestCase):
         except ProgrammingError:  # probably indicates DB/user doesn't exist
             pass
 
+    @requires_internet
     def test_build_and_deploy(self):
         """Invoke the build and deploy task."""
         zoomdb = StubZoomDB()

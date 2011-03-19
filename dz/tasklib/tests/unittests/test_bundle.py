@@ -18,7 +18,7 @@ from dz.tasklib import (taskconfig,
                         check_repo,
                         bundle_storage)
 from dz.tasklib.tests.stub_zoomdb import StubZoomDB
-from dz.tasklib.tests.dztestcase import DZTestCase
+from dz.tasklib.tests.dztestcase import DZTestCase, requires_internet
 
 
 class TasksTestCase(DZTestCase):
@@ -38,6 +38,7 @@ class TasksTestCase(DZTestCase):
         logger.setLevel(level)
         return output
 
+    @requires_internet
     def test_upload_bundle(self):
         """Archive and upload a bundle."""
         self.capture_logging("boto")
@@ -85,6 +86,7 @@ class TasksTestCase(DZTestCase):
         entries.sort()
         self.assertEqual(names, entries)
 
+    @requires_internet
     def test_build_bundle(self):
         """
         Build a bundle!
