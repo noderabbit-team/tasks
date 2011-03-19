@@ -223,7 +223,8 @@ def assemble_requirements(lines=None, files=None, basedir=None,
                     "The requirement %s is not acceptable to pip: %s" % (
                         str(r), str(e)))
         else:
-            raise ValueError("Unexpected requirement entry: %r (%s)" % (r, r))
+            raise ProjectConfigurationException(
+                "Unexpected requirement entry: %r (%s)" % (r, r))
             #yield str(req.url)
 
     return result
@@ -351,6 +352,7 @@ def parse_zoombuild(buildcfg):
         #'pip_reqs',
         'requirements_files',
         'extra_requirements',
+        'django_version',
         ]
 
     result = {}
