@@ -140,7 +140,8 @@ def install_requirements(reqs, path, logsuffix=None):
     logfile = os.path.join(path, "dz-pip%s.log" % (logsuffix or ""))
 
     # run pip, store log in the target environment for debugging
-    output, stderr, p = subproc("%s install --log=%s -r %s" % (
+    # see http://jacobian.org/writing/when-pypi-goes-down/ for info about PyPi mirrors
+    output, stderr, p = subproc("%s install --use-mirrors --log=%s -r %s" % (
             pip, logfile, fname))
     if p.returncode != 0:
         raise ExternalServiceException((
