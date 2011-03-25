@@ -10,6 +10,7 @@ from dz.tasklib.common_steps import checkout_code
 def get_settings_files(zoomdb, repodir):
     settings_files = []
     py_files = []
+    requirements_files = []
 
     for root, dirnames, filenames in os.walk(repodir):
         for fn in filenames:
@@ -34,10 +35,14 @@ def get_settings_files(zoomdb, repodir):
             if fn.endswith(".py"):
                 py_files.append(repo_filepath)
 
+            elif (fn.endswith("requirements.txt") or
+                  ("requirements/" in repo_filepath and fn.endswith(".txt"))):
+                requirements_files.append(repo_filepath)
+
     # sort settings_files by shortest-first
     settings_files.sort(key=lambda x: len(x[0]))
 
-    return (settings_files, py_files)
+    return (settings_files, py_files, requirements_files)
 
 
 def extract_string_setting(parsetree, setting_name):
@@ -194,7 +199,9 @@ def guess_from_settings(zoomdb, path, parsetree, py_files,
 def inspect_code_settings(zoomdb, opts):
     CO_DIR = opts["CO_DIR"]
 
-    (settings_files, py_files) = get_settings_files(zoomdb, CO_DIR)
+    (settings_files, py_files, requirements_files) = \
+                     get_settings_files(zoomdb, CO_DIR)
+    requirements_file_names = "\n".join(requirements_files)
 
     os.chdir(CO_DIR)
 
@@ -211,6 +218,12 @@ def inspect_code_settings(zoomdb, opts):
         for g in guesses:
             have_some_guesses = True
             zoomdb.add_config_guess(**g)
+
+        if len(guesses):  # add a requirements_file_names guess
+            zoomdb.add_config_guess(field="requirements_file_names",
+                                    value=requirements_file_names,
+                                    is_primary=is_primary,
+                                    basis=path)
 
     if have_some_guesses:
         # if we made any successful guesses at all, let's also guess a title
