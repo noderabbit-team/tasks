@@ -38,7 +38,7 @@ def create_test_bundle_in_local_storage():
 
     zcfg_path = os.path.join(app_dir, "zoombuild.cfg")
     zcfg_content = file(zcfg_path).read()
-    django_tarball = os.path.join(fixture_dir, 'Django-1.2.5.tar.gz')
+    # django_tarball = os.path.join(fixture_dir, 'Django-1.2.5.tar.gz')
     # we don't use pip_reqs any more
     # zcfg_content = zcfg_content.replace(
     #     "pip_reqs: Django==1.2.5", "pip_reqs: %s" % django_tarball)
@@ -269,9 +269,13 @@ class DeployTestCase(DZTestCase):
         """
         Test taking down a deployed bundle.
         """
+        app_dir, bundle_dir = utils.app_and_bundle_dirs(self.app_id,
+                                                        self.bundle_name)
         self._install_my_bundle()
         (instance_id, node_name, host_ip, host_port) = \
             deploy.start_serving_bundle(self.app_id, self.bundle_name)
+
+        self.assertTrue(os.path.isdir(bundle_dir))
 
         self.check_can_eventually_load(
             "http://%s:%s" % (host_ip, host_port),
@@ -289,6 +293,8 @@ class DeployTestCase(DZTestCase):
                         also_update_proxies=False)
 
         self.assertTrue(deploy._is_port_open(host_port))
+        #self.assertFalse(os.path.isdir(app_dir))
+        self.assertFalse(os.path.isdir(bundle_dir))
 
     def test_undeploy_nonexistent(self):
         """

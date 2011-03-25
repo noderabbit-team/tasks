@@ -11,6 +11,7 @@
 """
 import datetime
 import os
+import shutil
 import socket
 
 from dz.tasklib import (bundle_storage,
@@ -260,6 +261,11 @@ def stop_serving_bundle(app_id, bundle_name):
 
 def undeploy(zoomdb, app_id, bundle_ids, use_subtasks=True,
              also_update_proxies=True):
+    """Given an app_id and list of bundle names, undeploy those bundles.
+
+    :param bundle_ids: Database IDs of bundles to undeploy. If None, all
+    bundles for this app will be undeployed.
+    """
     matching_deployments = zoomdb.search_workers(app_id, bundle_ids,
                                                  active=True)
 
@@ -280,6 +286,9 @@ def undeploy(zoomdb, app_id, bundle_ids, use_subtasks=True,
                 dep.server_port]
 
         if use_subtasks:
+            # TODO: this looks like it needs an apply_async in here -
+            # might be untested; bugs may reveal themselves once invoked
+            # via web app.
             droptasks.append(
                 dz.tasks.deploy.undeploy_from_appserver(
                         args=args,
@@ -291,6 +300,7 @@ def undeploy(zoomdb, app_id, bundle_ids, use_subtasks=True,
             dep.deactivation_date = datetime.datetime.utcnow()
             zoomdb.flush()
 
+    # if using subtasks, wait for the async tasks to finish
     if use_subtasks:
         for dep, dt in zip(matching_deployments, droptasks):
             result = dt.wait()
@@ -353,3 +363,9 @@ def undeploy_from_appserver(zoomdb, app_id, bundle_id,
              "stopped.")
             % (app_id, bundle_id, bundle.bundle_name,
                appserver_instance_id, appserver_port, num_stopped))
+
+    app_dir, bundle_dir = utils.app_and_bundle_dirs(app_id,
+                                                    bundle.bundle_name)
+    if os.path.isdir(bundle_dir):
+        zoomdb.log("Removing old bundle from %s." % bundle_dir)
+        shutil.rmtree(bundle_dir)
