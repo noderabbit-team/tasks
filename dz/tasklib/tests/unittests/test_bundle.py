@@ -197,11 +197,18 @@ class TasksTestCase(DZTestCase):
                                              ".git")),
                         "no .git dir inside src dir")
 
-        self.assertEqual(len(zoomdb.config_guesses), 4)
+        self.assertEqual(len(zoomdb.config_guesses), 5)
 
-        def is_one_expected_guess(g):
-            return (g["field"] == "additional_python_path_dirs"
-                    and g["value"] == "version2\nversion2/voo2do")
+        def has_one_guess(field, value):
+            matches = [g for g in zoomdb.config_guesses
+                       if g["field"] == field and g["value"] == value]
 
-        self.assertEqual(len(filter(is_one_expected_guess,
-                                    zoomdb.config_guesses)), 1)
+            return len(matches) == 1
+
+        self.assertTrue(has_one_guess("additional_python_path_dirs",
+                                      "version2\nversion2/voo2do"))
+
+        self.assertTrue(has_one_guess(
+            "requirements_file_names",
+            "\n".join(["requirements.txt",
+                       "version2/voo2do/requirements/base.txt"])))

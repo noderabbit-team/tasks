@@ -117,6 +117,8 @@ def make_virtualenv(path):
     """
     Generate a virtual env
 
+    NOTE: installing distribute requires access to PyPI! That sucks.
+
     :param path: The full path to the virtualenv directory
     """
     # specifying the system python means it's OK if we're running inside a
@@ -133,7 +135,7 @@ def install_requirements(reqs, path, logsuffix=None):
     """
     fname = os.path.join(path, taskconfig.NR_PIP_REQUIREMENTS_FILENAME)
     reqfile = open(fname, "w")
-    reqfile.writelines(reqs)
+    reqfile.writelines([r.strip() + "\n" for r in reqs])
     reqfile.close()
     pip = os.path.join(path, 'bin', 'pip')
 
@@ -141,6 +143,7 @@ def install_requirements(reqs, path, logsuffix=None):
 
     # run pip, store log in the target environment for debugging
     # see http://jacobian.org/writing/when-pypi-goes-down/ for info about PyPi mirrors
+    #  --use-mirrors  ## removed because the ubuntu pip doesn't support this
     output, stderr, p = subproc("%s install --log=%s -r %s" % (
             pip, logfile, fname))
     if p.returncode != 0:

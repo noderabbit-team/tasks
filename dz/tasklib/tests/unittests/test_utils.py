@@ -1,8 +1,6 @@
 import re
-import sys
 import shutil
 import tempfile
-import unittest
 from os import path
 
 from dz.tasklib import taskconfig
@@ -74,7 +72,7 @@ class UtilsTestCase(DZTestCase):
         logpath = path.join(self.dir, "dz-pip.log")
         self.assertTrue(path.exists(fpath))
         contents = open(fpath, 'r').read()
-        self.assertEquals(contents, self.test_req_tarball)
+        self.assertEquals(contents.strip(), self.test_req_tarball)
 
         self.assertTrue(path.exists(logpath))
         log_contents = open(logpath, 'r').read()
@@ -93,6 +91,26 @@ class UtilsTestCase(DZTestCase):
                              "the requirement BULLSHIT-REQ") in e.message)
         else:
             self.fail("ExternalServiceException not raised")
+
+    def test_install_multiple_requirements(self):
+        """
+        Tests that multiple requirements are properly installed and not
+        concatenated onto one gigantic line.
+        """
+        utils.make_virtualenv(path.join(self.dir))
+        utils.install_requirements([self.test_req_tarball,
+                                    self.test_req_tarball,
+                                    ], self.dir)
+        fpath = path.join(self.dir, taskconfig.NR_PIP_REQUIREMENTS_FILENAME)
+        logpath = path.join(self.dir, "dz-pip.log")
+        self.assertTrue(path.exists(fpath))
+        contents = open(fpath, 'r').read()
+        self.assertEquals(contents.strip(), "\n".join([self.test_req_tarball,
+                                                       self.test_req_tarball]))
+
+        self.assertTrue(path.exists(logpath))
+        log_contents = open(logpath, 'r').read()
+        self.assertTrue("Successfully installed Django\n" in log_contents)
 
     def test_add_to_pth(self):
         """
