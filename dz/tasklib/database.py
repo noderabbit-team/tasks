@@ -134,6 +134,9 @@ def get_or_create_database(app_id):
                        NOCREATEROLE PASSWORD '%s';
                     """ % (
                 db_username, db_password))
+                
+        # Change database owner to app's username
+        cur.execute("ALTER DATABASE %s OWNER TO %s;" % (db_name, db_username))
 
     finally:
         cur.close()
