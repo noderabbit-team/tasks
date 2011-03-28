@@ -1,0 +1,4 @@
+# -i/--index-url and --extra-index-url produce nearly equivalent behavior in dz
+-i http://dist.pinaxproject.com/dev/
+-e git+git://github.com/natea/feincms.git#egg=feincms
+http://github.com/acdha/django-sugar/tarball/master#egg=django-sugar

@@ -172,12 +172,20 @@ def assemble_requirements(lines=None, files=None, basedir=None,
         skip_requirements_regex = None
         default_vcs = None
 
+    class FakePipFinder(object):
+        def __init__(self):
+            self.find_links = []
+            self.index_urls = []
+    finder = FakePipFinder()
+
     monolithic_reqs = []
 
     for filename in (files or []):
         try:
-            file_reqs = list(parse_requirements(os.path.join(basedir,
-                                                             filename),
+            filepath = os.path.join(basedir, filename)
+            file_reqs = list(parse_requirements(filepath,
+                                                comes_from=filename,
+                                                finder=finder,
                                                 options=FakePipOptions()))
         except IOError, e:
             raise ProjectConfigurationException(
@@ -190,6 +198,8 @@ def assemble_requirements(lines=None, files=None, basedir=None,
 
     if lines:
         for line in lines:
+            if not line.strip():
+                continue  # skip blank lines
             try:
                 req = InstallRequirement.from_line(
                     line,
@@ -216,8 +226,11 @@ def assemble_requirements(lines=None, files=None, basedir=None,
             if r.req.key in ignore_set:
                 continue
 
-            #print "SAW REQ: %s (%s)" % (str(r.req), r.req.key)
-            result.append(str(r.req))
+            if r.editable:
+                req_line = "-e %s" % r.url
+            else:
+                req_line = str(r.req)
+            result.append(req_line)
             # adding reqs to a reqset gives us pip's duplication-determination
             # abilities!
             try:
@@ -227,11 +240,25 @@ def assemble_requirements(lines=None, files=None, basedir=None,
                     "The requirement %s is not acceptable to pip: %s" % (
                         str(r), str(e)))
         else:
-            raise ProjectConfigurationException(
-                "Unexpected requirement entry: %r (%s)" % (r, r))
-            #yield str(req.url)
+            if not r.url:
+                raise ProjectConfigurationException(
+                    "Unexpected requirement entry has neither .req nor "
+                    ".url: %r (%s)" % (r, r))
+            else:
+                result.append(str(r.url))
 
-    return result
+    pip_finder_options = []
+    # We may need this in the future, but for now let's ignore --find-links
+    # because I don't really know what it does and I'm not sure that we need
+    # it.
+    #
+    # for link in finder.find_links:
+    #     pip_finder_options.append("--find-links %s" % link)
+
+    for url in finder.index_urls:
+        pip_finder_options.append("--extra-index-url=%s" % url)
+
+    return pip_finder_options + result
 
 
 def add_to_pth(paths, vpath, relative=False):

@@ -239,9 +239,8 @@ class UtilsTestCase(DZTestCase):
         # from base.txt:
         self.assertTrue("django-timezones==0.2.dev1" in req_lines)
 
-        # test that invalid requirements raise an error
-        with self.assertRaises(utils.ProjectConfigurationException):
-            utils.assemble_requirements(lines=[""])
+        # test that a blank line yields no requirements
+        self.assertEqual(len(utils.assemble_requirements(lines=[""])), 0)
 
         # test that invalid syntax raises an error
         with self.assertRaises(utils.ProjectConfigurationException):
@@ -281,3 +280,28 @@ class UtilsTestCase(DZTestCase):
             utils.assemble_requirements(
                 basedir=req_fixtures_dir,
                 files=['notafile'])
+
+    def test_assemble_requirements_tricky(self):
+        """
+        Test assembling "tricky" requirements line:
+        - URLs to tarballs (#65)
+        - source eggs
+        - --extra-index-url (#64)
+        - etc.....
+        """
+        req_fixtures_dir = path.join(self.fixtures_dir, 'requirements')
+        tricky_reqs = path.join(req_fixtures_dir, "tricky.txt")
+
+        req_lines = utils.assemble_requirements(files=[tricky_reqs],
+                                                basedir=req_fixtures_dir)
+
+        lines_to_check = [
+            "-e git+git://github.com/natea/feincms.git#egg=feincms",
+            ("http://github.com/acdha/django-sugar/tarball/master"
+             "#egg=django-sugar"),
+            "--extra-index-url=http://dist.pinaxproject.com/dev/"]
+
+        for line in lines_to_check:
+            self.assertTrue(line in req_lines)
+
+        self.assertTrue(len(lines_to_check) == len(req_lines))
