@@ -36,6 +36,7 @@ def get_settings_files(zoomdb, repodir):
                 py_files.append(repo_filepath)
 
             elif (fn.endswith("requirements.txt") or
+                  (fn.startswith("requirements") and fn.endswith(".txt")) or
                   ("requirements/" in repo_filepath and fn.endswith(".txt"))):
                 requirements_files.append(repo_filepath)
 
