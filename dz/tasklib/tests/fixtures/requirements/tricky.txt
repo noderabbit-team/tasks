@@ -2,3 +2,5 @@
 -i http://dist.pinaxproject.com/dev/
 -e git+git://github.com/natea/feincms.git#egg=feincms
 http://github.com/acdha/django-sugar/tarball/master#egg=django-sugar
+--find-links=http://pypi.pinaxproject.com
+--find-links=http://pypi2.pinaxproject.com

@@ -248,13 +248,12 @@ def assemble_requirements(lines=None, files=None, basedir=None,
                 result.append(str(r.url))
 
     pip_finder_options = []
-    # We may need this in the future, but for now let's ignore --find-links
-    # because I don't really know what it does and I'm not sure that we need
-    # it.
-    #
-    # for link in finder.find_links:
-    #     pip_finder_options.append("--find-links %s" % link)
 
+    # find-links tells pip to crawl links under a page.
+    for link in finder.find_links:
+        pip_finder_options.append("--find-links=%s" % link)
+
+    # extra-index-url tells pip to check this index in addition to pypi.
     for url in finder.index_urls:
         pip_finder_options.append("--extra-index-url=%s" % url)
 
