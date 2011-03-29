@@ -144,7 +144,8 @@ class ZoomDatabase(object):
         return result
 
     def get_project_workers(self):
-        """Get all AppServerDeployments for this job's project."""
+        """Get all AppServerDeployments for this job's project.
+        Note that this includes inactive deployments."""
         return list(self._soup.dz2_appserverdeployment.filter(
                 self._soup.dz2_appserverdeployment.project_id ==
                 self.get_project_id()))
@@ -187,11 +188,15 @@ class ZoomDatabase(object):
         self._soup.session.commit()
 
     def get_project_virtual_hosts(self):
-        """Get virtual hostname strings for this project. Always includes at 
+        """Get virtual hostname strings for this project. Always includes at
         least the one canonical vhost name."""
         canonical_vhost_name = \
             taskconfig.CANONICAL_VIRTUAL_HOST_FORMAT % (
             taskconfig.PROJECT_SYSID_FORMAT % self.get_project_id())
 
-        # TODO: query the DB for matching VirtualHostname records
-        return [canonical_vhost_name]
+        # query the DB for matching VirtualHostname records
+        vhosts = self._soup.dz2_virtualhostname.filter(
+            self._soup.dz2_virtualhostname.project_id ==
+            self.get_project_id())
+
+        return [canonical_vhost_name] + [vh.hostname for vh in vhosts]

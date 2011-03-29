@@ -136,7 +136,7 @@ class DeployTestCase(DZTestCase):
             self.dbinfo,
             bundle_storage_engine=bundle_storage_local)
 
-    def test_deploy_and_undeploy(self):
+    def test_deploy_bundle(self):
         """
         Test the deploy_app_bundle function.
         """
@@ -161,7 +161,7 @@ class DeployTestCase(DZTestCase):
 
         main_runner = os.path.join(bundle_dir, "thisbundle.py")
 
-        print "---> RUNNABLE! %s <---" % main_runner
+        #print "---> RUNNABLE! %s <---" % main_runner
 
         # supress fabric freakout for this test
         import fabric.state

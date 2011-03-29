@@ -207,14 +207,11 @@ def run_post_build_hooks(zoomdb, opts):
 
 def update_front_end_proxy(zoomdb, opts):
     """
-    Effectively have
-    Nginx config stored in /etc/nginx/sites-available
-
     Generate config template for site, note location of app servers as proxy
     backend.  Reload nginx.
 
     Nginx examples for this are in the chef nginx recipe.
-    
+
     When running locally in dev, you must make sure whatever user runs celeryd
     has write permission to /etc/nginx/sites-enabled
     $ sudo chgrp nateaune /etc/nginx/sites-enabled/

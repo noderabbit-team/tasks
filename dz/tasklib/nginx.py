@@ -97,3 +97,27 @@ def remove_local_proxy_config(app_id):
 
     os.remove(site_conf_filename)
     utils.local_privileged(["kick_nginx"])
+
+
+def find_deployments(zoomdb, opts):
+    deployments = zoomdb.search_workers()
+    opts["APPSERVERS"] = [(d.server_ip, d.server_port) for d in deployments]
+
+
+def update_proxy_configuration(zoomdb, opts):
+    if len(opts["APPSERVERS"]) == 0:
+        zoomdb.log("This project has not yet been deployed. Your hostnames "
+                   "will become available at your first deployment.")
+
+    else:
+        virtual_hostnames = zoomdb.get_project_virtual_hosts()
+        zoomdb.log("Your project will be accessible via the following "
+                   "hostnames: " + ", ".join(virtual_hostnames))
+
+
+def update_hostnames(zoomdb):
+    opts = {}
+    utils.run_steps(zoomdb, opts, (
+        find_deployments,
+        update_proxy_configuration,
+        ))

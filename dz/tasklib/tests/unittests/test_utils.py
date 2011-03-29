@@ -299,7 +299,10 @@ class UtilsTestCase(DZTestCase):
             "-e git+git://github.com/natea/feincms.git#egg=feincms",
             ("http://github.com/acdha/django-sugar/tarball/master"
              "#egg=django-sugar"),
-            "--extra-index-url=http://dist.pinaxproject.com/dev/"]
+            "--extra-index-url=http://dist.pinaxproject.com/dev/",
+            "--find-links=http://pypi.pinaxproject.com",
+            "--find-links=http://pypi2.pinaxproject.com",
+            ]
 
         for line in lines_to_check:
             self.assertTrue(line in req_lines)

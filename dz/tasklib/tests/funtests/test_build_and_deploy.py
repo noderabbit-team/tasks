@@ -43,23 +43,17 @@ class BuildAndDeployTestcase(DZTestCase):
 
         here = path.abspath(path.split(__file__)[0])
         app_fixture = path.join(here, '../fixtures', 'app')
-        django_tarball = path.join(here, '../fixtures', 'Django-1.2.5.tar.gz')
         zcfg_fixture = path.join(app_fixture, "zoombuild.cfg")
 
         zoombuild_cfg_content = file(zcfg_fixture).read()
 
-        # cut out the Django requirement - we don't want to download and
-        # upload that!
-        zoombuild_cfg_content = zoombuild_cfg_content.replace(
-            "pip_reqs: Django==1.2.5", "pip_reqs: %s" % django_tarball)
-        self.assertTrue("Django==" not in zoombuild_cfg_content,
-                        "Expected to remove Django version from " +
-                        "zoombuild.cfg for test speedup. Contents:\n" +
-                        zoombuild_cfg_content)
-
         self.assertFalse(zoomdb.is_flushed)
         self.assertEqual(len(zoomdb.get_all_bundles()), 0)
         self.assertEqual(len(zoomdb.get_project_workers()), 0)
+
+        self.assertEqual(len(zoomdb.get_project_virtual_hosts()), 1)
+        zoomdb.test_vhosts = ["awesomesite.com", "foo.co.br"]
+        self.assertEqual(len(zoomdb.get_project_virtual_hosts()), 3)
 
         deployed_addresses = build_and_deploy.build_and_deploy(
             zoomdb, self.app_id, src_url,
@@ -109,9 +103,9 @@ class BuildAndDeployTestcase(DZTestCase):
             self.assertTrue("No polls are available." in polls_src)
 
         # now check the nginx service
-        host = zoomdb.get_project_virtual_hosts()[0]
+        hosts = zoomdb.get_project_virtual_hosts()
 
-        def get_via_nginx(urlpath):
+        def get_via_nginx(host, urlpath):
             conn = httplib.HTTPConnection("127.0.0.1")
             conn.putrequest("GET", urlpath, skip_host=True)
             conn.putheader("Host", host)
@@ -120,17 +114,20 @@ class BuildAndDeployTestcase(DZTestCase):
             res_src = res.read()
             return res_src
 
-        page_src = get_via_nginx("/polls/")
-        self.assertTrue("No polls are available." in page_src,
-                        "Couldn't find polls text in "
-                        "page src (%r)." % page_src)
+        # ensure each hostname works!
+        for host in hosts:
+            page_src = get_via_nginx(host, "/polls/")
+            self.assertTrue("No polls are available." in page_src,
+                            "Couldn't find polls text in "
+                            "page src (%r) on host %s." % (
+                                page_src, host))
 
         # for nginx to serve static files, the cust dir has to be
         # world-read/executable. This should be the default on the
         # proxy server ONLY.
         os.chmod(self.dir, 0755)
 
-        image_src = get_via_nginx("/static/img/polls.jpg")
+        image_src = get_via_nginx(hosts[0], "/static/img/polls.jpg")
         local_image_file = os.path.join(app_fixture,
                                         "src", "static", "polls.jpg")
         self.assertEqual(image_src, file(local_image_file).read())

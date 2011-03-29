@@ -21,3 +21,8 @@ def update_proxy_conf(job_id, zoomdb, app_id, bundle_name,
 @task_inject_zoomdb(name="update_proxy_conf", queue="frontend_proxy")
 def remove_proxy_conf(job_id, zoomdb, app_id):
     nginx.remove_local_proxy_config(app_id)
+
+
+@task_inject_zoomdb(name="update_hostnames", queue="frontend_proxy")
+def update_hostnames(job_id, zoomdb, job_params):
+    nginx.update_hostnames(zoomdb)

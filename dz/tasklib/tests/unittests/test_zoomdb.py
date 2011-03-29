@@ -256,3 +256,15 @@ class ZoomDatabaseTest(MockerTestCase):
         expected = ["%s.djangozoom.net" % proj_id]
 
         self.assertEqual(self.zoom_db.get_project_virtual_hosts(), expected)
+
+        self.soup.dz2_virtualhostname.insert(
+            id=1, hostname="foo.com",
+            project_id=self.zoom_db.get_project_id())
+        self.soup.dz2_virtualhostname.insert(
+            id=2, hostname="bar.com",
+            project_id=self.zoom_db.get_project_id())
+
+        get_vh = self.zoom_db.get_project_virtual_hosts()
+        get_vh.sort()
+        expected = ["bar.com", "foo.com", "%s.djangozoom.net" % proj_id]
+        self.assertEqual(get_vh, expected)
