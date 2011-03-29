@@ -1,5 +1,6 @@
 from builder import check_repo, build_and_deploy
 from deploy import user_manage_py_command, user_manage_py_shell
+from nginx import update_hostnames
 
 def monkey_patch_celery_db_models_Task():
     """

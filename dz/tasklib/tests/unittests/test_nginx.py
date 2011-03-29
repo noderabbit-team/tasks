@@ -3,6 +3,7 @@ from dz.tasklib import (nginx,
                         taskconfig,
                         utils)
 from dz.tasklib.tests.dztestcase import DZTestCase
+from dz.tasklib.tests.stub_zoomdb import StubZoomDB
 
 import os
 
@@ -218,3 +219,25 @@ class NginxTestCase(DZTestCase):
 
         self.assertEqual(len(self.local_privileged_cmds), 2)
         self.assertEqual(self.local_privileged_cmds[1], ["kick_nginx"])
+
+    def test_update_hostnames(self):
+        """
+        Test the update_hostnames task.
+        """
+
+        # first test that when we have no deployments, nothing happens.
+        zoomdb = StubZoomDB()
+        nginx.update_hostnames(zoomdb)
+
+        self.assertTrue(any("has not yet been deployed" in x[0]
+                            for x in zoomdb.logs))
+
+        # but that's certainly not the goal when we DO have deployments.
+        zoomdb = StubZoomDB()
+        zoomdb.add_worker(1, 1, "1.2.3.4", 12345)
+        nginx.update_hostnames(zoomdb)
+
+        self.assertFalse(any("has not yet been deployed" in x[0]
+                             for x in zoomdb.logs))
+        self.assertTrue(any("project will be accessible via" in x[0]
+                            for x in zoomdb.logs))
