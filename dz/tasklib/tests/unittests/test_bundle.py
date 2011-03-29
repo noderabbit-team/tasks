@@ -173,6 +173,23 @@ class TasksTestCase(DZTestCase):
         self.assertTrue("ADMIN_MEDIA_PREFIX = '%s'" % (
                 taskconfig.DZ_ADMIN_MEDIA["url_path"]) in lines)
 
+        # ensure we've predefined and redefined our settings
+        MR_line = ("MEDIA_ROOT = os.environ['CONFIG_WRITABLE_ROOT'] "
+                   "+ '/static'")
+
+        try:
+            first_MR = lines.index(MR_line)
+            first_import = lines.index("from mysite.settings import *",
+                                       first_MR)
+            last_MR = lines.index(MR_line, first_import)
+        except ValueError:
+            print "Couldn't find something I expected in dz_settings."
+            raise
+
+        self.assertTrue(first_MR < first_import < last_MR)
+
+
+
     def test_check_repo(self):
         """
         Check repo and make guesses!
