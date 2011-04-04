@@ -1,7 +1,7 @@
 from fabric.api import local as fab_local
 from fabric.state import connections
 from jinja2 import PackageLoader, Environment
-from cStringIO import StringIO
+from StringIO import StringIO  # important: cStringIO causes weird parse errors
 import os
 import socket
 import subprocess
