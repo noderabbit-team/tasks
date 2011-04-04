@@ -217,7 +217,9 @@ def update_front_end_proxy(zoomdb, opts):
     $ sudo chgrp nateaune /etc/nginx/sites-enabled/
     $ sudo chmod g+w /etc/nginx/sites-enabled/
     """
-    appservers = opts["DEPLOYED_ADDRESSES"]  # (host,port) format
+    # (instance_id, node_name, host_ip, host_port) format
+    appservers = opts["DEPLOYED_ADDRESSES"]
+
     virtual_hostnames = zoomdb.get_project_virtual_hosts()
 
     zcfg = utils.parse_zoombuild(os.path.join(opts["APP_DIR"],
