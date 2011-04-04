@@ -42,8 +42,8 @@ def deploy_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
     install_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
                        bundle_storage_engine=bundle_storage)
 
-    port = start_serving_bundle(app_id, bundle_name)
-    return port
+    # result is a (instance_id, node_name, host_ip, port_to_use)
+    return start_serving_bundle(app_id, bundle_name)
 
 
 def install_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
@@ -266,8 +266,7 @@ def undeploy(zoomdb, app_id, bundle_ids, use_subtasks=True,
     :param bundle_ids: Database IDs of bundles to undeploy. If None, all
     bundles for this app will be undeployed.
     """
-    matching_deployments = zoomdb.search_workers(app_id, bundle_ids,
-                                                 active=True)
+    matching_deployments = zoomdb.search_workers(bundle_ids, active=True)
 
     if len(matching_deployments) == 0:
         raise utils.InfrastructureException(
