@@ -144,6 +144,10 @@ def install_requirements(reqs, path, logsuffix=None):
     # run pip, store log in the target environment for debugging
     # see http://jacobian.org/writing/when-pypi-goes-down/ for info about PyPi mirrors
     #  --use-mirrors  ## removed because the ubuntu pip doesn't support this
+    # test to see if --download-cache is supported in the version of pip that we have installed
+    #output, stderr, p = subproc("%s install --download-cache=~/.pip-cache --log=%s -r %s" % (
+    #        pip, logfile, fname))
+
     output, stderr, p = subproc("%s install --log=%s -r %s" % (
             pip, logfile, fname))
     if p.returncode != 0:
