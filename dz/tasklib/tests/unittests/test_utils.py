@@ -191,6 +191,15 @@ class UtilsTestCase(DZTestCase):
 
         self.assertEqual(result["base_python_package"], "mysite")
 
+    def test_parse_zoombuild_string(self):
+        here = path.abspath(path.split(__file__)[0])
+        test_fixture_cfg = path.join(here, '../fixtures',
+                                     'app', 'zoombuild.cfg')
+        cfg_content = file(test_fixture_cfg).read()
+        result = utils.parse_zoombuild_string(cfg_content)
+        self.assertEqual(result["base_python_package"], "mysite")
+        self.assertEqual(result, utils.parse_zoombuild(test_fixture_cfg))
+
     def test_parse_site_media_map(self):
         here = path.abspath(path.split(__file__)[0])
         test_fixture_cfg = path.join(here, '../fixtures',

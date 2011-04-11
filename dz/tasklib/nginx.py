@@ -8,6 +8,7 @@ import shutil
 
 from dz.tasklib import (taskconfig,
                         bundle_storage,
+                        bundle_storage_local,
                         deploy,
                         utils)
 
@@ -21,7 +22,14 @@ def _get_nginx_conffile(app_id):
 
 def update_local_proxy_config(app_id, bundle_name,
                               appservers, virtual_hostnames, site_media_map,
-                              bundle_storage_engine=bundle_storage):
+                              bundle_storage_engine=None):
+
+    if bundle_storage_engine is None:
+        if taskconfig.DEFAULT_BUNDLE_STORAGE_ENGINE == "bundle_storage_local":
+            bundle_storage_engine = bundle_storage_local
+        else:
+            bundle_storage_engine = bundle_storage
+
     site_conf_filename = _get_nginx_conffile(app_id)
 
     if len(appservers) == 0:
@@ -97,3 +105,66 @@ def remove_local_proxy_config(app_id):
 
     os.remove(site_conf_filename)
     utils.local_privileged(["kick_nginx"])
+
+
+def find_deployments(zoomdb, opts):
+    deployments = zoomdb.search_workers()
+    opts["APPSERVERS"] = deployments
+
+
+def update_proxy_configuration(zoomdb, opts):
+    if len(opts["APPSERVERS"]) == 0:
+        zoomdb.log("This project has not yet been deployed. Your hostnames "
+                   "will become available at your first deployment.")
+
+    else:
+        virtual_hostnames = zoomdb.get_project_virtual_hosts()
+        zoomdb.log("Your project will be accessible via the following "
+                   "hostnames: " + ", ".join(virtual_hostnames))
+
+        bundle_ids = set([d.bundle_id for d in opts["APPSERVERS"]])
+        max_bundle_id = max(bundle_ids)
+
+        bundle = zoomdb.get_bundle(max_bundle_id)
+
+        if len(bundle_ids) > 1:
+            zoomdb.log("Multiple active bundles appear to be deployed; "
+                       "pointing hostnames at bundle %d (%s)." % (
+                           bundle.id, bundle.bundle_name),
+                       log_type=zoomdb.WARN)
+
+        # deployments must be in (instance_id, node_name, host_ip, host_port)
+        # format, but node_name is not actually used so it's OK we ignore it.
+        deployments = [(d.server_instance_id,
+                        "NODE_NAME_IGNORED",
+                        d.server_ip, d.server_port)
+                       for d in opts["APPSERVERS"]]
+
+        args = [zoomdb._job_id, opts["APP_ID"], bundle.bundle_name,
+                deployments,
+                virtual_hostnames, opts["SITE_MEDIA_MAP"]]
+
+        import dz.tasks.nginx  # local import to avoid circularity
+
+        if opts["USE_SUBTASKS"]:
+            res = dz.tasks.nginx.update_proxy_conf.apply_async(args=args)
+            res.wait()
+        else:
+            dz.tasks.nginx.update_proxy_conf(*args)
+
+        zoomdb.log("Updated proxy server configuration. Your project is now "
+                   "available from the following URLs: " +
+                   ", ".join(virtual_hostnames))
+
+
+def update_hostnames(zoomdb, app_id, zoombuild_cfg_content, use_subtasks=True):
+    zcfg = utils.parse_zoombuild_string(zoombuild_cfg_content)
+    site_media_map = utils.parse_site_media_map(zcfg.get("site_media_map", ""))
+
+    opts = {"APP_ID": app_id,
+            "SITE_MEDIA_MAP": site_media_map,
+            "USE_SUBTASKS": use_subtasks}
+    utils.run_steps(zoomdb, opts, (
+        find_deployments,
+        update_proxy_configuration,
+        ))

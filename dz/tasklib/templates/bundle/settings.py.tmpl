@@ -1,24 +1,6 @@
-from {{ dz_settings }} import *
 import os
+{% include 'bundle/_settings_overrides.py.tmpl' %}
 
-MEDIA_ROOT = os.environ['CONFIG_WRITABLE_ROOT'] + '/static'
-MEDIA_URL = '/static/'
-ADMIN_MEDIA_PREFIX = '{{admin_media_prefix}}'
-DATABASE_ENGINE = 'postgresql_psycopg2'
-DATABASE_NAME = os.environ['CONFIG_PG_DBNAME']
-DATABASE_USER = os.environ['CONFIG_PG_USER']
-DATABASE_PASSWORD = os.environ['CONFIG_PG_PASSWORD']
-DATABASE_HOST = os.environ['CONFIG_PG_HOST']
-DATABASE_PORT = ''
+from {{ dz_settings }} import *
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.environ['CONFIG_PG_DBNAME'],
-        'USER': os.environ['CONFIG_PG_USER'],
-        'PASSWORD': os.environ['CONFIG_PG_PASSWORD'],
-        'HOST': os.environ['CONFIG_PG_HOST'],
-        'PORT': '',
-    }
-}
-
+{% include 'bundle/_settings_overrides.py.tmpl' %}

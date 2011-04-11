@@ -3,6 +3,7 @@ from dz.tasklib import (nginx,
                         taskconfig,
                         utils)
 from dz.tasklib.tests.dztestcase import DZTestCase
+from dz.tasklib.tests.stub_zoomdb import StubZoomDB
 
 import os
 
@@ -218,3 +219,51 @@ class NginxTestCase(DZTestCase):
 
         self.assertEqual(len(self.local_privileged_cmds), 2)
         self.assertEqual(self.local_privileged_cmds[1], ["kick_nginx"])
+
+    def test_update_hostnames(self):
+        """
+        Test the update_hostnames task.
+        """
+
+        zoomdb = StubZoomDB()
+        here = os.path.abspath(os.path.split(__file__)[0])
+        test_fixture_cfg = os.path.join(here, '../fixtures',
+                                        'app', 'zoombuild.cfg')
+        zoombuild_cfg_content = file(test_fixture_cfg).read()
+
+        expected_site_file = os.path.join(taskconfig.NGINX_SITES_ENABLED_DIR,
+                                          self.app_id)
+
+        self.assertFalse(os.path.isfile(expected_site_file))
+
+        # first test that when we have no deployments, nothing happens.
+        nginx.update_hostnames(zoomdb, self.app_id, zoombuild_cfg_content,
+                               use_subtasks=False)
+
+        self.assertTrue(any("has not yet been deployed" in x[0]
+                            for x in zoomdb.logs))
+        self.assertFalse(os.path.isfile(expected_site_file))
+
+        # but that's certainly not the goal when we DO have deployments.
+        zoomdb = StubZoomDB()
+        zoomdb.add_worker(1, 1, "1.2.3.4", 12345)
+
+        # and add a vhost
+        zoomdb.test_vhosts = ["mycompany.com", "www.mycompany.com"]
+        nginx.update_hostnames(zoomdb, self.app_id, zoombuild_cfg_content,
+                               use_subtasks=False)
+
+        self.assertFalse(any("has not yet been deployed" in x[0]
+                             for x in zoomdb.logs))
+        self.assertTrue(any("project will be accessible via" in x[0]
+                            for x in zoomdb.logs))
+
+        self.assertTrue(os.path.isfile(expected_site_file))
+        file_content = file(expected_site_file).read()
+        linesplit_contents = [" ".join(x.strip().split())
+                              for x in file_content.split('\n')]
+
+        vhost_line = "server_name test-p00000001.djangozoom.net %s ;" % (
+            " ".join(zoomdb.test_vhosts))
+
+        self.assertTrue(vhost_line in linesplit_contents)

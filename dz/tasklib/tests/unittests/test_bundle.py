@@ -6,7 +6,7 @@ import tarfile
 import logging
 from StringIO import StringIO
 
-from mocker import ANY, MATCH
+# from mocker import ANY, MATCH
 
 from boto.s3.connection import S3Connection
 from os import path
@@ -172,6 +172,27 @@ class TasksTestCase(DZTestCase):
         self.assertTrue('from mysite.settings import *' in lines)
         self.assertTrue("ADMIN_MEDIA_PREFIX = '%s'" % (
                 taskconfig.DZ_ADMIN_MEDIA["url_path"]) in lines)
+
+        # ensure we've predefined and redefined our settings
+        settings_override_line = "DATABASE_ENGINE = 'postgresql_psycopg2'"
+        import_line = "from mysite.settings import *"
+
+        # check that things are in there before we try to check their
+        # ordering
+        self.assertTrue(settings_override_line in lines, lines)
+        self.assertTrue(import_line in lines, lines)
+
+        try:
+            first_settings = lines.index(settings_override_line)
+            first_import = lines.index(import_line, first_settings)
+            last_settings = lines.index(settings_override_line, first_import)
+        except ValueError:
+            print "Couldn't find something I expected in dz_settings."
+            raise
+
+        self.assertTrue(first_settings < first_import < last_settings)
+
+
 
     def test_check_repo(self):
         """

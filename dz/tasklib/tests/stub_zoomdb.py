@@ -1,5 +1,5 @@
 from dz.tasklib.zoomdb import ZoomDatabase
-
+from dz.tasklib import taskconfig
 
 class MockProject(object):
     owner = 0
@@ -45,6 +45,7 @@ class StubZoomDB(ZoomDatabase):
         self.is_flushed = False
         self.bundles = []
         self.workers = []
+        self.test_vhosts = []
         self._job_id = 1
 
     def flush(self):
@@ -85,11 +86,14 @@ class StubZoomDB(ZoomDatabase):
     def get_project_workers(self):
         return self.workers
 
-    def search_workers(self, app_id, bundle_names=None, active=True):
+    def search_workers(self, bundle_ids=None, active=True):
         return self.workers
 
     def get_project_virtual_hosts(self):
         """Use special identifiers for test vhost names so we don't conflict
         with hosts that may already exist on the test system."""
-        super_vhosts = super(StubZoomDB, self).get_project_virtual_hosts()
-        return ["test-" + v for v in super_vhosts]
+        canonical_vhost_name = \
+            taskconfig.CANONICAL_VIRTUAL_HOST_FORMAT % (
+            taskconfig.PROJECT_SYSID_FORMAT % self.get_project_id())
+
+        return ["test-%s" % canonical_vhost_name] + self.test_vhosts

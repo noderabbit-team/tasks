@@ -256,3 +256,49 @@ class ZoomDatabaseTest(MockerTestCase):
         expected = ["%s.djangozoom.net" % proj_id]
 
         self.assertEqual(self.zoom_db.get_project_virtual_hosts(), expected)
+
+        self.soup.dz2_virtualhostname.insert(
+            id=1, hostname="foo.com",
+            project_id=self.zoom_db.get_project_id())
+        self.soup.dz2_virtualhostname.insert(
+            id=2, hostname="bar.com",
+            project_id=self.zoom_db.get_project_id())
+
+        get_vh = self.zoom_db.get_project_virtual_hosts()
+        get_vh.sort()
+        expected = ["bar.com", "foo.com", "%s.djangozoom.net" % proj_id]
+        self.assertEqual(get_vh, expected)
+
+    def test_get_vhosts_includes_dz(self):
+        """Test that getting project vhosts includes a hostname based on
+        the hostname_slug field in the project."""
+        p = self.zoom_db.get_project()
+
+        # start off with only the auto-assigned vhost.
+        self.assertEqual(len(self.zoom_db.get_project_virtual_hosts()), 1,
+                         self.zoom_db.get_project_virtual_hosts())
+
+        # now add a hostname slug
+        slug = "slug-%d" % random.randint(1000, 9999)
+        slug_hostname = "%s.%s" % (slug, taskconfig.CUSTOMER_DNS_ROOT_DOMAIN)
+        p.hostname_slug = slug
+        self.zoom_db.flush()
+        self.assertEqual(len(self.zoom_db.get_project_virtual_hosts()), 2,
+                         self.zoom_db.get_project_virtual_hosts())
+        self.assertTrue(slug_hostname in
+                        self.zoom_db.get_project_virtual_hosts())
+
+    def test_get_vhosts_wildcard(self):
+        """Test that wildcard virtualhostname records generate the proper
+        entries in get_project_virtual_hosts()."""
+        self.soup.dz2_virtualhostname.insert(
+            id=1, hostname="foo.com",
+            project_id=self.zoom_db.get_project_id(),
+            is_wildcard=True)
+        get_vh = self.zoom_db.get_project_virtual_hosts()
+        get_vh.sort()
+        proj_id = taskconfig.PROJECT_SYSID_FORMAT % \
+            self.zoom_db.get_project_id()
+        expected = ["*.foo.com", "foo.com", "%s.djangozoom.net" % proj_id]
+        self.assertEqual(get_vh, expected, "expecting %r but got %r" % (
+            expected, get_vh))
