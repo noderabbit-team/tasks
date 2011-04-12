@@ -194,9 +194,21 @@ class ZoomDatabase(object):
             taskconfig.CANONICAL_VIRTUAL_HOST_FORMAT % (
             taskconfig.PROJECT_SYSID_FORMAT % self.get_project_id())
 
+        result = [canonical_vhost_name]
+
+        project = self.get_project()
+        if project.hostname_slug:
+            result.append("%s.%s" % (project.hostname_slug,
+                                     taskconfig.CUSTOMER_DNS_ROOT_DOMAIN))
+
         # query the DB for matching VirtualHostname records
         vhosts = self._soup.dz2_virtualhostname.filter(
             self._soup.dz2_virtualhostname.project_id ==
             self.get_project_id())
 
-        return [canonical_vhost_name] + [vh.hostname for vh in vhosts]
+        for vh in vhosts:
+            if vh.is_wildcard:
+                result.append("*.%s" % vh.hostname)
+            result.append(vh.hostname)
+
+        return result

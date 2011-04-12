@@ -1,6 +1,7 @@
 from fabric.api import local as fab_local
 from fabric.state import connections
 from jinja2 import PackageLoader, Environment
+from StringIO import StringIO  # important: cStringIO causes weird parse errors
 import os
 import socket
 import subprocess
@@ -144,6 +145,10 @@ def install_requirements(reqs, path, logsuffix=None):
     # run pip, store log in the target environment for debugging
     # see http://jacobian.org/writing/when-pypi-goes-down/ for info about PyPi mirrors
     #  --use-mirrors  ## removed because the ubuntu pip doesn't support this
+    # test to see if --download-cache is supported in the version of pip that we have installed
+    #output, stderr, p = subproc("%s install --download-cache=~/.pip-cache --log=%s -r %s" % (
+    #        pip, logfile, fname))
+
     output, stderr, p = subproc("%s install --log=%s -r %s" % (
             pip, logfile, fname))
     if p.returncode != 0:
@@ -363,17 +368,11 @@ def get_internal_ip():
     return socket.gethostbyname(socket.gethostname())
 
 
-def parse_zoombuild(buildcfg):
+def _parse_zoombuild_from_configparser(config):
     """
-    Parse and validate a :file:`zoombuild.cfg`.
-
-    A example can be found in ``tests/fixtures/app/zoombuild.cfg``.
-
-    :param buildcfg: Absolute path to config file
+    Test for validity and extract a configuration dict from a ConfigParser
+    object that has already been initialized.
     """
-    config = ConfigParser.RawConfigParser()
-    config.read(buildcfg)
-
     required_settings = [
         'base_python_package',
         'django_settings_module',
@@ -395,6 +394,29 @@ def parse_zoombuild(buildcfg):
         raise ValueError("Sorry, couldn't find %r in 'project'." % buildcfg)
 
     return result
+
+def parse_zoombuild(buildcfg):
+    """
+    Parse and validate a :file:`zoombuild.cfg`.
+
+    A example can be found in ``tests/fixtures/app/zoombuild.cfg``.
+
+    :param buildcfg: Absolute path to config file
+    """
+    config = ConfigParser.RawConfigParser()
+    config.read(buildcfg)
+    return _parse_zoombuild_from_configparser(config)
+
+
+def parse_zoombuild_string(buildcfg_string):
+    """
+    Like parse_zoombuild, but takes a string config input instead of a file
+    path.
+    """
+    buildcfg_fp = StringIO(buildcfg_string)
+    config = ConfigParser.RawConfigParser()
+    config.readfp(buildcfg_fp)
+    return _parse_zoombuild_from_configparser(config)
 
 
 def get_and_extract_bundle(bundle_name, app_dir, bundle_storage_engine):

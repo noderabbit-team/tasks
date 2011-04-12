@@ -12,13 +12,15 @@ CREATE TABLE "dz2_project" (
     "db_host" varchar(100),
     "db_name" varchar(30),
     "db_username" varchar(30),
-    "db_password" varchar(30)
+    "db_password" varchar(30),
+    "hostname_slug" varchar(63) UNIQUE
 )
 ;
 CREATE TABLE "dz2_virtualhostname" (
     "id" INTEGER NOT NULL PRIMARY KEY,
     "project_id" integer NOT NULL,
-    "hostname" varchar(253) NOT NULL UNIQUE
+    "hostname" varchar(253) NOT NULL UNIQUE,
+    "is_wildcard" boolean NOT NULL DEFAULT 0 -- need to use 0 not FALSE because sqlite has no actual boolean type
 )
 ;
 CREATE TABLE "dz2_appbundle" (
