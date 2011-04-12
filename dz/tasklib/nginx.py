@@ -131,7 +131,7 @@ def update_proxy_configuration(zoomdb, opts):
             zoomdb.log("Multiple active bundles appear to be deployed; "
                        "pointing hostnames at bundle %d (%s)." % (
                            bundle.id, bundle.bundle_name),
-                       log_type=zoomdb.WARN)
+                       log_type=zoomdb.LOG_WARN)
 
         # deployments must be in (instance_id, node_name, host_ip, host_port)
         # format, but node_name is not actually used so it's OK we ignore it.
