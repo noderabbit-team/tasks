@@ -1,0 +1,55 @@
+#!/bin/sh
+
+USERNAME=$1
+CUSTDIR=/cust/$USERNAME
+
+if [ -z "$USERNAME" ]; then
+    echo Error: a username parameter is required.
+    exit 1
+fi
+
+# create projuser (and a group of the same name) if doesn't exist
+id $USERNAME > /dev/null 2>&1 || useradd --home-dir /nonexistent --no-create-home --no-log-init --user-group --shell /bin/false $USERNAME
+
+# create user's directory if not exists
+mkdir -p $CUSTDIR
+chown $USERNAME:$USERNAME $CUSTDIR
+
+# create a temp base dir for chroot
+TEMPDIR=`mktemp -d`
+
+# bind-mount OS stuff that should remain available to the lxc container
+BIND_DIRS="/usr /bin /lib /lib64 /etc"
+for bind_dir in $BIND_DIRS; do
+    mkdir -p $TEMPDIR$bind_dir
+    mount --bind $bind_dir $TEMPDIR$bind_dir
+    # Initial mount won't actually mount read-only, but we can change the
+    # fs to readonly on remounting.
+    mount -o remount,ro $TEMPDIR$bind_dir
+done
+
+# and bind-mount the customer dir
+mkdir -p $TEMPDIR$CUSTDIR
+mount --bind $CUSTDIR $TEMPDIR$CUSTDIR # not read-only this time
+
+# # copy just enough of /etc/passwd
+# mkdir $TEMPDIR/etc
+# grep -E "^(root|$USERNAME)": /etc/passwd > $TEMPDIR/etc/passwd
+# grep -E "^(root|$USERNAME)": /etc/group > $TEMPDIR/etc/group
+
+# chroot & launch subshell
+echo container subshell:
+chroot $TEMPDIR /bin/bash
+
+echo diagnostic subshell:
+bash
+
+# when done, clean up
+echo All done, cleaning up bind mounts and temp directory.
+for bind_dir in $BIND_DIRS; do
+    umount $TEMPDIR$bind_dir
+done
+
+umount $TEMPDIR$CUSTDIR
+
+rm -rf $TEMPDIR

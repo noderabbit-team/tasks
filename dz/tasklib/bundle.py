@@ -139,7 +139,14 @@ def bundle_app(app_id, force_bundle_name=None):
     utils.install_requirements([django_req], bundle_dir,
                                logsuffix="-django")
 
-    # install requirements
+    # This is where we've finished running code we trust (virtualenv, django,
+    # etc) and switch to running code provided or pointed to by the user. So
+    # let's chown everything to the app user.
+    utils.local_privileged(["project_chown",
+                            app_id,
+                            bundle_dir])
+
+    # install user-provided requirements
     reqs = utils.assemble_requirements(
         files=[l.strip() for l in
                buildconfig_info["requirements_files"].splitlines()],

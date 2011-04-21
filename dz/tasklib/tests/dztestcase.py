@@ -4,6 +4,7 @@ from functools import update_wrapper
 from mocker import MockerTestCase
 
 import os
+import pwd
 
 
 _missing = object()
@@ -26,6 +27,18 @@ class DZTestCase(MockerTestCase):
                 setattr(ob, attr, old_value)
 
         self.addCleanup(restore)
+
+    def assertFileOwnedBy(self, filename, username, msg=None):
+        """
+        Assert that the owner of <filename> is <username>.
+        """
+        file_owner_name = pwd.getpwuid(os.stat(filename).st_uid).pw_name
+        if not msg:
+            msg = ("File %s should be owned by %r, but is actually owned by "
+                   "%r.") % (filename,
+                             username,
+                             file_owner_name)
+        self.assertEqual(file_owner_name, username, msg)
 
 
 def requires_internet(test_func):
