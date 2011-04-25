@@ -317,7 +317,7 @@ def run_steps(zoomdb, opts, steps):
         zoomdb.log(nicename, zoomdb.LOG_STEP_END)
 
 
-def local_privileged(cmdargs):
+def local_privileged(cmdargs, return_details=False):
     assert isinstance(cmdargs, list)
     privileged_program = cmdargs.pop(0)
     assert "/" not in privileged_program, ("Privileged programs can only "
@@ -330,7 +330,10 @@ def local_privileged(cmdargs):
     fullcmd = ["sudo", privileged_program_path] + cmdargs
     print "Running local_privileged command: %r" % fullcmd
     stdout, stderr, p = subproc(fullcmd, null_stdin=True)
-    return stdout
+    if return_details:
+        return stdout, stderr, p
+    else:
+        return stdout
 
 
 def _is_running_on_ec2():

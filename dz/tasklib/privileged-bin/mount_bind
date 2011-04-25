@@ -1,0 +1,4 @@
+#!/bin/sh
+mkdir -p $2
+mount --bind $1 $2
+mount -o remount,ro $2

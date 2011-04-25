@@ -17,6 +17,8 @@ chown $USERNAME:$USERNAME $CUSTDIR
 
 # create a temp base dir for chroot
 TEMPDIR=`mktemp -d`
+chmod 755 $TEMPDIR  # this makes it possible for non-root users in the 
+# container to see the / dir, which turns out to be kind of important
 
 # bind-mount OS stuff that should remain available to the lxc container
 BIND_DIRS="/usr /bin /lib /lib64 /etc"
@@ -40,6 +42,8 @@ mount --bind $CUSTDIR $TEMPDIR$CUSTDIR # not read-only this time
 # chroot & launch subshell
 echo container subshell:
 chroot $TEMPDIR /bin/bash
+# from in here you can become the app user:
+# su - $USERNAME -c /bin/bash
 
 echo diagnostic subshell:
 bash
