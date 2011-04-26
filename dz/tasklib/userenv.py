@@ -3,6 +3,7 @@ import os
 import pwd
 import shutil
 import tempfile
+from cStringIO import StringIO
 
 CONTAINER_BIND_DIRS = ('/usr', '/bin', '/lib', '/lib64', '/etc')
 
@@ -11,6 +12,43 @@ class AlreadyDestroyed(Exception):
     """Indicates that this UE has already been destroyed and cannot be
     destroyed again."""
     pass
+
+
+class ErrorInsideEnvironment(Exception):
+    """Indicates an error running something inside the UserEnv."""
+    pass
+
+
+class UserEnvFile(object):
+    """
+    Behaves like a file object, but instead of being directly mapped to a file
+    it writes to that file from inside of a UserEnv.
+    """
+
+    def __init__(self, userenv, filename):
+        self.stringio = StringIO()
+        self.userenv = userenv
+        self.filename = filename
+
+    def read(self, *args, **kwargs):
+        self.stringio.read(*args, **kwargs)
+
+    def readlines(self, *args, **kwargs):
+        self.stringio.readlines(*args, **kwargs)
+
+    def write(self, *args, **kwargs):
+        self.stringio.write(*args, **kwargs)
+
+    def writelines(self, *args, **kwargs):
+        self.stringio.writelines(*args, **kwargs)
+
+    def seek(self, *args, **kwargs):
+        self.stringio.seek(*args, **kwargs)
+
+    def close(self):
+        self.userenv.write_string_to_file(self.stringio.getvalue(), self.filename)
+        self.userenv = None
+        self.stringio.close()
 
 
 class UserEnv(object):
@@ -30,7 +68,7 @@ class UserEnv(object):
         Ensure this UserEnv is ready to use, by creating any required system
         state such as users, containers, etc.
         """
-        self.container_dir = tempfile.mkdtemp(prefix='ctr-%s' % self.username)
+        self.container_dir = tempfile.mkdtemp(prefix='ctr-%s-' % self.username)
 
         # must be 755 for many in-container programs to work
         os.chmod(self.container_dir, 0755)
@@ -74,9 +112,16 @@ class UserEnv(object):
             ] + command_list,
             return_details=True)
 
+        if p.returncode != 0:
+            raise ErrorInsideEnvironment(("Command %r returned non-zero exit "
+                                          "code %r.\nSTDERR:\n%s\nSTDOUT:\n%s")
+                                         % (command_list,
+                                            p.returncode,
+                                            stderr, stdout))
+
         return stdout
 
-    def open(self, filename, mode):
+    def open(self, filename, mode="r"):
         """
         Work-alike function for the builtin python open(), but running
         within this user environment. Use this if you want to write a file
@@ -84,4 +129,36 @@ class UserEnv(object):
 
         :param filename: path to file within the container.
         """
-        pass
+        if mode == "w":
+            # create a temp file that, when closed, copies into the env.
+            return UserEnvFile(self, filename)
+
+        elif mode == "r":
+            # open the file as the env's user
+            (stdout, stderr, p) = utils.local_privileged([
+                "run_in_container", self.username, self.container_dir,
+                "cat", filename],
+                                                         return_details=True)
+            if p.returncode != 0:
+                raise OSError(stderr)
+
+            return StringIO(stdout)
+
+        else:
+            raise ValueError("UserEnv.open does not support mode %s." % mode)
+
+    def write_string_to_file(self, content, filename):
+        """
+        Write the provided content (a string) to the given filename
+        (relative to the userenv's home). File will be owned by the
+        userenv's user if it does not already exist.
+        """
+        (tmpfd, tmpfname) = tempfile.mkstemp(prefix="ctr-write-%s-" % self.username)
+        tmpf = open(tmpfname, "w")
+        tmpf.write(content)
+        tmpf.close()
+        utils.local_privileged(["move_into_container",
+                                self.username,
+                                self.container_dir,
+                                tmpfname,
+                                filename])
