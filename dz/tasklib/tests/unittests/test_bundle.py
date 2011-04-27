@@ -1,4 +1,5 @@
 import os
+import pwd
 import random
 import shutil
 import string
@@ -27,6 +28,13 @@ class TasksTestCase(DZTestCase):
         self.customer_directory = self.makeDir()
         self.app_dir = self.makeDir(dirname=self.customer_directory)
         self.dir = self.makeDir(dirname=self.app_dir)
+
+    def tearDown(self):
+        # chown everything under self.customer_directory to me
+        # so i can delete it
+        username = pwd.getpwuid(os.geteuid()).pw_name
+        utils.local_privileged(["project_chown", username,
+                                self.customer_directory])
 
     def capture_logging(self, log_name, level=logging.ERROR):
         output = StringIO()

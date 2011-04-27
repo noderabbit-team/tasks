@@ -18,6 +18,11 @@ class UtilsTestCase(DZTestCase):
         except userenv.AlreadyDestroyed:
             pass
 
+        try:
+            self.ue.undo_monkeypatch_pip_util_get_file_content()
+        except ValueError:
+            pass
+
     def test_init(self):
         """Test basic UE initialization."""
         self.assertEqual(self.ue.username, self.project_sysid)
@@ -87,3 +92,50 @@ class UtilsTestCase(DZTestCase):
         f.close()
         file_content = self.ue.subproc(["cat", filename])
         self.assertEqual(some_crap, file_content)
+
+    def test_pip_monkeypatch_application(self):
+        import pip.util
+
+        orig_gfc = pip.util.get_file_content
+
+        self.ue.monkeypatch_pip_util_get_file_content()
+        self.assertNotEqual(pip.util.get_file_content, orig_gfc)
+
+        # test that another import statement makes no difference
+        import pip.util
+        self.assertNotEqual(pip.util.get_file_content, orig_gfc)
+
+        self.ue.undo_monkeypatch_pip_util_get_file_content()
+        self.assertEqual(pip.util.get_file_content, orig_gfc)
+
+        # but only one undo
+        with self.assertRaises(ValueError):
+            self.ue.undo_monkeypatch_pip_util_get_file_content()
+
+    def test_pip_monkeypatch_behavior(self):
+        import pip.util
+
+        # test the behavior of the monkeypatch.
+        self.ue.monkeypatch_pip_util_get_file_content()
+        some_crap = str(random.randint(999999999999999999999999,
+                                       1999999999999999999999999))
+        filename = "/test_pip_monkeypatch.txt"
+        self.ue.write_string_to_file(some_crap, filename)
+
+        location, content = pip.util.get_file_content(filename, None)
+
+        self.assertEqual(location, filename)
+        self.assertEqual(content, some_crap)
+
+    def test_remove(self):
+        """
+        Test removing a file within the UE.
+        """
+        filename = "/test_remove.txt"
+        self.ue.write_string_to_file("hello world", filename)
+        self.ue.open(filename).read()  # should work
+
+        self.ue.remove(filename)
+
+        with self.assertRaises(OSError):
+            self.ue.open(filename).read()  # should fail

@@ -162,3 +162,74 @@ class UserEnv(object):
                                 self.container_dir,
                                 tmpfname,
                                 filename])
+
+    def remove(self, filename):
+        """
+        Remove a file inside of the userenv.
+        """
+        (stdout, stderr, p) = utils.local_privileged(
+            ["run_in_container", self.username, self.container_dir,
+             "rm", filename], return_details=True)
+
+        if p.returncode != 0:
+            raise OSError(stdout + "\n" + stderr)
+
+    def monkeypatch_pip_util_get_file_content(self):
+        """Apply a monkeypatch to replace pip.util.get_file_content with
+        an equivalent method that reads a file from inside this userenv."""
+        import pip.util
+
+        pip.util._ORIGINAL_get_file_content = pip.util.get_file_content
+
+        # pip.util globals/imports
+        import re
+        import urllib
+        import urllib2
+        from pip.exceptions import InstallationError
+
+        _scheme_re = re.compile(r'^(http|https|file):', re.I)
+        _url_slash_drive_re = re.compile(r'/*([a-z])\|', re.I)
+
+        def gfc_ue(url, comes_from=None):
+            """Gets the content of a file; it may be a filename, file: URL, or
+            http: URL.  Returns (location, content)"""
+            match = _scheme_re.search(url)
+            if match:
+                scheme = match.group(1).lower()
+                if (scheme == 'file' and comes_from
+                    and comes_from.startswith('http')):
+                    raise InstallationError(
+                        'Requirements file %s references URL %s, which is local'
+                        % (comes_from, url))
+                if scheme == 'file':
+                    path = url.split(':', 1)[1]
+                    path = path.replace('\\', '/')
+                    match = _url_slash_drive_re.match(path)
+                    if match:
+                        path = match.group(1) + ':' + path.split('|', 1)[1]
+                    path = urllib.unquote(path)
+                    if path.startswith('/'):
+                        path = '/' + path.lstrip('/')
+                    url = path
+                else:
+                    ## FIXME: catch some errors
+                    resp = urllib2.urlopen(url)
+                    return resp.geturl(), resp.read()
+
+            f = self.open(url) ### This is the only change from stock
+                               ### pip.util.get_file_content
+            content = f.read()
+            f.close()
+            return url, content
+
+        pip.util.get_file_content = gfc_ue
+
+    def undo_monkeypatch_pip_util_get_file_content(self):
+        """Undo the above monkeypatch."""
+        import pip.util
+
+        if not hasattr(pip.util, "_ORIGINAL_get_file_content"):
+            raise ValueError("Error: monkeypatch not present on pip.util")
+
+        pip.util.get_file_content = pip.util._ORIGINAL_get_file_content
+        del pip.util._ORIGINAL_get_file_content

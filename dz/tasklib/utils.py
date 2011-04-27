@@ -127,15 +127,20 @@ def make_virtualenv(path):
     local("virtualenv  --python=/usr/bin/python %s" % path)
 
 
-def install_requirements(reqs, path, logsuffix=None):
+def install_requirements(reqs, path, logsuffix=None, env=None):
     """
     Given a ``path`` to a virtualenv, install the given ``reqs``.
 
     :param reqs: A list of pip requirements
     :param path: A path to a virtualenv
+    :param env: A UserEnv object
     """
     fname = os.path.join(path, taskconfig.NR_PIP_REQUIREMENTS_FILENAME)
-    reqfile = open(fname, "w")
+    if env:
+        reqfile = env.open(fname, "w")
+    else:
+        reqfile = open(fname, "w")
+
     reqfile.writelines([r.strip() + "\n" for r in reqs])
     reqfile.close()
     pip = os.path.join(path, 'bin', 'pip')
@@ -149,8 +154,13 @@ def install_requirements(reqs, path, logsuffix=None):
     #output, stderr, p = subproc("%s install --download-cache=~/.pip-cache --log=%s -r %s" % (
     #        pip, logfile, fname))
 
-    output, stderr, p = subproc("%s install --log=%s -r %s" % (
-            pip, logfile, fname))
+    pipcmd = [pip, "install", "--log=%s" % logfile, "-r", fname]
+
+    if env:
+        output, stderr, p = env.subproc(pipcmd)
+    else:
+        output, stderr, p = subproc(pipcmd)
+
     if p.returncode != 0:
         raise ExternalServiceException((
                 "Error attempting to install requirements %r. "
@@ -162,7 +172,7 @@ def install_requirements(reqs, path, logsuffix=None):
 
 
 def assemble_requirements(lines=None, files=None, basedir=None,
-                          ignore_keys=None):
+                          ignore_keys=None, env=None):
     """
     Assemble a list of requirements lines based on the provided files
     (relative to the provided base directory) and the provided lines.
@@ -172,6 +182,10 @@ def assemble_requirements(lines=None, files=None, basedir=None,
     assert args_ok, ("If the files parameter is provided to "
                      "assemble_requirements, the basedir "
                      "parameter must also be provided.")
+
+    if env:
+        # have pip's code pull from within the env
+        env.monkeypatch_pip_util_get_file_content()
 
     class FakePipOptions(object):
         skip_requirements_regex = None
@@ -218,6 +232,10 @@ def assemble_requirements(lines=None, files=None, basedir=None,
                 raise ProjectConfigurationException(
                     "The requirement line %r is invalid: %s" % (
                         line, str(e)))
+
+    if env:
+        # unpatch
+        env.undo_monkeypatch_pip_util_get_file_content()
 
     result = []
 
@@ -293,10 +311,22 @@ def render_tpl_to_file(template, path, **kwargs):
 
     :param template: Template name; relative path
     :param path: Absolute path to file
+    :param env: A UserEnv object to use if not calling open() directly
     """
     tpl = tpl_env.get_template(template)
+
+    if "env" in kwargs:
+        env = kwargs.pop("env")
+    else:
+        env = None
+
     content = tpl.render(**kwargs)
-    f = open(path, 'w')
+
+    if env:
+        f = env.open(path, 'w')
+    else:
+        f = open(path, 'w')
+
     f.write(content)
     return content
 

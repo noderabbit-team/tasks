@@ -7,7 +7,8 @@ import subprocess
 from dz.tasklib import (taskconfig,
                         bundle_storage,
                         bundle_storage_local,
-                        utils)
+                        utils,
+                        userenv)
 
 
 def _ignore_vcs_files(srcdir, names):
@@ -146,6 +147,9 @@ def bundle_app(app_id, force_bundle_name=None):
                             app_id,
                             bundle_dir])
 
+    # and let's create the userenv!
+    ue = userenv.UserEnv(app_id)
+
     # install user-provided requirements
     reqs = utils.assemble_requirements(
         files=[l.strip() for l in
@@ -153,16 +157,20 @@ def bundle_app(app_id, force_bundle_name=None):
         lines=[l.strip() for l in
                buildconfig_info["extra_requirements"].splitlines()],
         basedir=repo_link,
-        ignore_keys="django")
-    utils.install_requirements(reqs, bundle_dir)
+        ignore_keys="django",
+        env=ue)
+
+    utils.install_requirements(reqs, bundle_dir, env=ue)
 
     # Remove the python executable, we don't use it
-    os.remove(os.path.join(bundle_dir, "bin", "python"))
+    ue.remove(os.path.join(bundle_dir, "bin", "python"))
+    #os.remove(os.path.join(bundle_dir, "bin", "python"))
 
     # Add settings file
     utils.render_tpl_to_file(
         'bundle/settings.py.tmpl',
         os.path.join(bundle_dir, 'dz_settings.py'),
+        env=ue,
         dz_settings=buildconfig_info["django_settings_module"],
         admin_media_prefix=taskconfig.DZ_ADMIN_MEDIA["url_path"])
 
