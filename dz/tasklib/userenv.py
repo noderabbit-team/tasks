@@ -77,11 +77,18 @@ class UserEnv(object):
         utils.local_privileged(["project_chown", self.username,
                                 self.container_dir])
 
-        # bind directories
+        # bind standard directories
         for dirname in CONTAINER_BIND_DIRS:
-            utils.local_privileged(["mount_bind", dirname,
+            utils.local_privileged(["mount_bind_readonly", dirname,
                                     os.path.join(self.container_dir,
                                                  dirname.lstrip("/"))])
+
+        # bind this customer's dir in READ-WRITE mode; ensuring it exists
+        if not os.path.isdir(self.cust_dir):
+            os.makedirs(self.cust_dir)
+        utils.local_privileged(["mount_bind_readwrite", self.cust_dir,
+                                os.path.join(self.container_dir,
+                                             self.cust_dir.lstrip("/"))])
 
     def destroy(self):
         if self.destroyed:
@@ -93,6 +100,10 @@ class UserEnv(object):
             utils.local_privileged(["umount",
                                     os.path.join(self.container_dir,
                                                  dirname.lstrip("/"))])
+        # and unbind cust dir
+        utils.local_privileged(["umount",
+                                os.path.join(self.container_dir,
+                                             self.cust_dir.lstrip("/"))])
         # chown to me
         utils.local_privileged(["project_chown",
                                 pwd.getpwuid(os.geteuid()).pw_name,
@@ -119,7 +130,7 @@ class UserEnv(object):
                                             p.returncode,
                                             stderr, stdout))
 
-        return stdout
+        return stdout, stderr, p
 
     def open(self, filename, mode="r"):
         """

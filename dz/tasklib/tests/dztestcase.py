@@ -1,5 +1,6 @@
 import sys
 from functools import update_wrapper
+from dz.tasklib import utils
 
 from mocker import MockerTestCase
 
@@ -39,6 +40,10 @@ class DZTestCase(MockerTestCase):
                              username,
                              file_owner_name)
         self.assertEqual(file_owner_name, username, msg)
+
+    def chown_to_me(self, path):
+        username = pwd.getpwuid(os.geteuid()).pw_name
+        utils.local_privileged(["project_chown", username, path])
 
 
 def requires_internet(test_func):

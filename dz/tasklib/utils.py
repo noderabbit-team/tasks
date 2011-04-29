@@ -156,6 +156,7 @@ def install_requirements(reqs, path, logsuffix=None, env=None):
 
     pipcmd = [pip, "install", "--log=%s" % logfile, "-r", fname]
 
+    # USERENV NEEDS TO INCLUDE /cust/appid dir
     if env:
         output, stderr, p = env.subproc(pipcmd)
     else:
@@ -328,6 +329,8 @@ def render_tpl_to_file(template, path, **kwargs):
         f = open(path, 'w')
 
     f.write(content)
+    f.close()
+    
     return content
 
 
@@ -363,6 +366,11 @@ def local_privileged(cmdargs, return_details=False):
     if return_details:
         return stdout, stderr, p
     else:
+        if p.returncode != 0:
+            raise ExternalServiceException((
+                "Error attempting to run LP command %r. "
+                "Output:\n %s\n%s") % (privileged_program, stdout, stderr))
+
         return stdout
 
 

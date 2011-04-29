@@ -145,6 +145,7 @@ class DeployTestCase(DZTestCase):
                                   self.bundle_name)
 
         if os.path.isdir(bundle_dir):
+            self.chown_to_me(bundle_dir)
             shutil.rmtree(bundle_dir)
 
         self._install_my_bundle()

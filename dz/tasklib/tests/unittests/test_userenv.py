@@ -1,6 +1,9 @@
-from dz.tasklib import userenv
+from dz.tasklib import (userenv,
+                        taskconfig,
+                        utils)
 from dz.tasklib.tests.dztestcase import DZTestCase
 from os import path
+import os
 import random
 
 
@@ -29,8 +32,8 @@ class UtilsTestCase(DZTestCase):
 
     def test_subproc(self):
         """Test that a subprocess runs as the env's user."""
-        self.assertEqual(self.ue.subproc(["whoami"]).strip(),
-                         self.ue.username)
+        stdout, stderr, p = self.ue.subproc(["whoami"])
+        self.assertEqual(stdout.strip(), self.ue.username)
 
     def test_subproc_nonzero(self):
         """Test that a failed subprocess causes an exception to be raised."""
@@ -40,10 +43,12 @@ class UtilsTestCase(DZTestCase):
     def test_chroot_isolation(self):
         """Test that only a limited set of directories are available thanks
         to chroot."""
-        self.assertEqual(self.ue.subproc(["pwd"]).strip(),
-                         "/")
-        self.assertEqual(sorted(self.ue.subproc(["ls"]).splitlines()),
-                         ['bin', 'etc', 'lib', 'lib64', 'usr'])
+        wd, _1, _2 = self.ue.subproc(["pwd"])
+        self.assertEqual(wd.strip(), "/")
+        ls, _1, _2 = self.ue.subproc(["ls"])
+        self.assertEqual(sorted(ls.splitlines()),
+                         sorted(['bin', 'etc', 'lib', 'lib64', 'usr',
+                                 taskconfig.NR_CUSTOMER_DIR.strip("/")]))
 
     def test_subproc_requires_list(self):
         """Test that subproc verifies that its command argument must be in
@@ -77,7 +82,7 @@ class UtilsTestCase(DZTestCase):
         some_crap = str(random.randint(999999999999999999999999,
                                        1999999999999999999999999))
         self.ue.write_string_to_file(some_crap, filename)
-        file_content = self.ue.subproc(["cat", filename])
+        file_content, _1, _2 = self.ue.subproc(["cat", filename])
         self.assertEqual(some_crap, file_content)
 
     def test_open_write(self):
@@ -90,7 +95,7 @@ class UtilsTestCase(DZTestCase):
                                        1999999999999999999999999))
         f.write(some_crap)
         f.close()
-        file_content = self.ue.subproc(["cat", filename])
+        file_content, _1, _2 = self.ue.subproc(["cat", filename])
         self.assertEqual(some_crap, file_content)
 
     def test_pip_monkeypatch_application(self):
@@ -139,3 +144,27 @@ class UtilsTestCase(DZTestCase):
 
         with self.assertRaises(OSError):
             self.ue.open(filename).read()  # should fail
+
+    def test_env_includes_cust_dir(self):
+        """
+        Test that env includes the current customer's directory.
+        """
+        some_crap = str(random.randint(999999999999999999999999,
+                                       1999999999999999999999999))
+        user_dir = path.join(taskconfig.NR_CUSTOMER_DIR, self.project_sysid)
+        fake_bundle_dir = path.join(user_dir, "testbundle")
+        if not path.isdir(fake_bundle_dir):
+            os.mkdir(fake_bundle_dir)
+        utils.local_privileged(["project_chown",
+                                self.project_sysid,
+                                fake_bundle_dir])
+
+        some_crap_filename = path.join(fake_bundle_dir, "test_" + some_crap)
+
+        self.ue.write_string_to_file(some_crap, some_crap_filename)
+
+        self.assertTrue(path.isfile(some_crap_filename),
+                        "Couldn't find %s in container" % some_crap_filename)
+
+        self.ue.subproc(["rm", some_crap_filename])
+        # note that we can't read the file, it's owned by app

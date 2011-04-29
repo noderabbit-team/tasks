@@ -14,6 +14,9 @@ class SecurityTestCase(DZTestCase):
         self.cust_dir = self.makeDir()
         self.patch(taskconfig, "NR_CUSTOMER_DIR", self.cust_dir)
 
+    def tearDown(self):
+        self.chown_to_me(self.cust_dir)
+
     def test_safe_build(self):
         """
         Test that build actions run under the proper user.

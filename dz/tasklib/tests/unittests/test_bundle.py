@@ -32,9 +32,7 @@ class TasksTestCase(DZTestCase):
     def tearDown(self):
         # chown everything under self.customer_directory to me
         # so i can delete it
-        username = pwd.getpwuid(os.geteuid()).pw_name
-        utils.local_privileged(["project_chown", username,
-                                self.customer_directory])
+        self.chown_to_me(self.customer_directory)
 
     def capture_logging(self, log_name, level=logging.ERROR):
         output = StringIO()
@@ -171,6 +169,10 @@ class TasksTestCase(DZTestCase):
         self.assertTrue(path.join(bundle_dir, 'user-src') in pth_contents)
         self.assertTrue(user_src_base_dir in pth_contents)
         self.assertEqual(len(pth_contents), 3)
+
+        ### UPDATE PERMS
+        # This is just so we can look into all the files that just got created.
+        self.chown_to_me(bundle_dir)
 
         # Added our settings file
         settings = path.join(bundle_dir, 'dz_settings.py')
