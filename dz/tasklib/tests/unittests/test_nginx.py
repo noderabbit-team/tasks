@@ -36,6 +36,7 @@ class NginxTestCase(DZTestCase):
         self.nginx_dir = self.makeDir()
         self.patch(taskconfig, "NGINX_SITES_ENABLED_DIR", self.nginx_dir)
 
+    def _mock_local_privileged(self):
         self.local_privileged_cmds = local_privileged_cmds = []
 
         # TODO: move this to only run in certain tests, as we now
@@ -53,6 +54,8 @@ class NginxTestCase(DZTestCase):
         expected_site_file = os.path.join(taskconfig.NGINX_SITES_ENABLED_DIR,
                                           self.app_id)
         self.assertFalse(os.path.isfile(expected_site_file))
+
+        self._mock_local_privileged()
 
         self.assertEqual(len(self.local_privileged_cmds), 0)
 
@@ -193,6 +196,7 @@ class NginxTestCase(DZTestCase):
         """
         Test removing proxy service for an app.
         """
+        self._mock_local_privileged()
 
         expected_site_file = os.path.join(taskconfig.NGINX_SITES_ENABLED_DIR,
                                           self.app_id)
