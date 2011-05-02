@@ -38,7 +38,9 @@ class NginxTestCase(DZTestCase):
 
         self.local_privileged_cmds = local_privileged_cmds = []
 
-        def mock_local_privileged(cmd):
+        # TODO: move this to only run in certain tests, as we now
+        # can't do a deploy with local_privileged broken.
+        def mock_local_privileged(cmd, return_details=False):
             print "Running mock utils.local_privileged(%r)..." % cmd
             local_privileged_cmds.append(cmd)
 

@@ -198,6 +198,10 @@ def zip_and_upload_bundle(app_id, bundle_name,
 
     try:
         current_dir = os.getcwd()
+
+        # change ownership in app_dir because it was built inside a container
+        utils.chown_to_me(app_dir)
+
         os.chdir(app_dir)
 
         try:
