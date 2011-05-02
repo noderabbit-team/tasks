@@ -42,8 +42,7 @@ class DZTestCase(MockerTestCase):
         self.assertEqual(file_owner_name, username, msg)
 
     def chown_to_me(self, path):
-        username = pwd.getpwuid(os.geteuid()).pw_name
-        utils.local_privileged(["project_chown", username, path])
+        utils.chown_to_me(path)
 
 
 def requires_internet(test_func):

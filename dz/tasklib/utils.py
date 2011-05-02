@@ -3,6 +3,7 @@ from fabric.state import connections
 from jinja2 import PackageLoader, Environment
 from StringIO import StringIO  # important: cStringIO causes weird parse errors
 import os
+import pwd
 import socket
 import subprocess
 import sys
@@ -513,3 +514,8 @@ def parse_site_media_map(site_media_map_text):
         result[_normalize_url_path(url_path)] = file_path
 
     return result
+
+
+def chown_to_me(path):
+    username = pwd.getpwuid(os.geteuid()).pw_name
+    local_privileged(["project_chown", username, path])
