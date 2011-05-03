@@ -5,6 +5,7 @@ from dz.tasklib.tests.dztestcase import DZTestCase
 from os import path
 import os
 import random
+import time
 
 
 class UtilsTestCase(DZTestCase):
@@ -61,6 +62,21 @@ class UtilsTestCase(DZTestCase):
         self.assertTrue(path.isdir(self.ue.container_dir))
         self.ue.destroy()
         self.assertFalse(path.isdir(self.ue.container_dir))
+
+    def test_cleanup_automatic(self):
+        """Test that when an env goes out of scope, its directory is deleted."""
+        x = userenv.UserEnv(self.project_sysid)
+        x_cdir = x.container_dir
+        self.assertTrue(path.isdir(x_cdir))
+        del x
+
+        num_attempts = 0
+        while True:
+            self.assertTrue(num_attempts < 10)
+            if not(path.isdir(x_cdir)):
+                break # test passes, no longer a dir
+            num_attempts += 1
+            time.sleep(1)
 
     def test_cleanup_too_much(self):
         """Test that an exception is raised if we try to destroy twice."""

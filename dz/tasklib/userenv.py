@@ -63,6 +63,14 @@ class UserEnv(object):
         self.destroyed = False
         self.initialize()
 
+    def __del__(self):
+        """
+        Destructor: when this object is no longer reachable, destroy the
+        env.
+        """
+        if not self.destroyed:
+            self.destroy()
+
     def initialize(self):
         """
         Ensure this UserEnv is ready to use, by creating any required system
