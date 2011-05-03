@@ -1,14 +1,16 @@
 from dz.tasklib import (taskconfig,
                         utils,
-                        bundle)
+                        bundle,
+                        deploy)
 from dz.tasklib.tests.dztestcase import DZTestCase
+from dz.tasklib.tests.unittests.test_deploy import DeployTestCase
 
 from os import path
 import os
 import shutil
 
 
-class SecurityTestCase(DZTestCase):
+class SetupSecurityTestCase(DZTestCase):
     def setUp(self):
         self.project_name = "app"
         self.cust_dir = self.makeDir()
@@ -34,3 +36,19 @@ class SecurityTestCase(DZTestCase):
 
         a_bundle_file = path.join(bundle_dir, "user-repo", "settings.py")
         self.assertFileOwnedBy(a_bundle_file, self.project_name)
+
+
+class DeploySecurityTestCase(DeployTestCase):
+    def test_safe_deploy(self):
+        """
+        Test that deployed code runs under the proper user.
+        """
+        self._install_my_bundle()
+        (instance_id, node_name, host_ip, host_port) = \
+            deploy.start_serving_bundle(self.app_id, self.bundle_name)
+        app_url = "http://%s:%d" % (host_ip, host_port)
+        security_result = self.check_can_eventually_load(
+            app_url,
+            "Welcome to the Django tutorial polls app")
+        self.assertTrue(security_result.startswith("SECURITY TEST RESULTS"))
+        

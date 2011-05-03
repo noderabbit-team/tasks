@@ -95,10 +95,15 @@ class DeployTestCase(DZTestCase):
         if not os.path.isfile(cls.bundle_fixture):
             create_test_bundle_in_local_storage()
 
-    def check_can_eventually_load(self, url, pagetext_fragment):
+    def check_can_eventually_load(self, url, pagetext_fragment=None):
         """
         Check that the given URL can be loaded, within a reasonable number
         of attempts, and that pagetext_fragment appears in the response.
+
+        If pagetext_fragment is None, then instead of testing that the
+        fragment exists in the page, we simply return the page contents once
+        loaded. (We fail only if the page does not load within the allowed
+        number of attempts.)
         """
         load_attempts = 0
 
@@ -109,8 +114,12 @@ class DeployTestCase(DZTestCase):
                         load_attempts))
             try:
                 pagetext = urllib.urlopen(url).read()
+                if pagetext_fragment is None:
+                    return pagetext
+
                 self.assertTrue(pagetext_fragment in pagetext)
                 break
+            
             except Exception, e:
                 load_attempts += 1
                 print "[attempt %d] Couldn't load %s: %s" % (

@@ -18,4 +18,6 @@ urlpatterns = patterns('',
     (r'^admin/', include(admin.site.urls)),
 
     (r'^polls/', include('mysite.polls.urls')),
+
+    url(r'^securitytest/$', 'securitytest.views.index'),
 )

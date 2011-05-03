@@ -1,0 +1,252 @@
+Build a bundle! ... ok
+Check repo and make guesses! ... ok
+Archive and upload a bundle. ... ok
+Test local bundle storage. ... ok
+Test S3-based bundle storage. ... ok
+Test checking out from a changed repo URL. ... ok
+Test attempting to checkout an invalid URL. ... ok
+Test the DatabaseInfo class. ... ok
+Create a new DB & user, ensure user can use only that DB, then drop. ... ok
+Ensure the bundle fixture file exists in local bundle storage. ... ok
+Test the deploy_app_bundle function. ... FAIL
+Ensure that all hell breaks loose if a deploy gets routed to the ... ok
+Test our portscanner. ... ok
+Test running a non-interactive manage.py command on a bundle. ... ERROR
+Test actually serving a deployed bundle, then taking it down. ... FAIL
+Test taking down a deployed bundle. ... ERROR
+Test undeploying something that doesn't actually exist. ... ok
+Creates a bundle for testing, and uploads it to the local storage. ... tar: bundle_test_deploy_app_2011-fixture/dz_settings.py: Cannot open: Permission denied
+tar: bundle_test_deploy_app_2011-fixture/noderabbit_requirements.txt: Cannot open: Permission denied
+tar: Exiting with failure status due to previous errors
+ERROR
+Test that django admin media is served in the right place. ... ok
+Test creating a new nginx config file for an app. ... ok
+Test that serving a bundle downloads it (so static media are on ... ERROR
+Test that >0 appservers must be provided. ... ok
+Test the {SITE_PACKAGES} and {SRC_PACKAGES} variables. ... ok
+Test removing proxy service for an app. ... ok
+Test static media dir aliases in nginx conf. ... ok
+Test the update_hostnames task. ... ok
+Test our simple placement function. ... ok
+Test that build actions run under the proper user. ... ok
+Test that only a limited set of directories are available thanks ... ok
+Test that when an env is destroyed, its directory is cleaned up. ... ok
+Test that an exception is raised if we try to destroy twice. ... ok
+Test that env includes the current customer's directory. ... ok
+Test basic UE initialization. ... ok
+Test reading a file within the userenv. ... ok
+Test writing a file within the userenv. ... ok
+test_pip_monkeypatch_application (dz.tasklib.tests.unittests.test_userenv.UtilsTestCase) ... ok
+test_pip_monkeypatch_behavior (dz.tasklib.tests.unittests.test_userenv.UtilsTestCase) ... ok
+Test removing a file within the UE. ... ok
+Test that a subprocess runs as the env's user. ... ok
+Test that a failed subprocess causes an exception to be raised. ... ok
+Test that subproc verifies that its command argument must be in ... ok
+Test the write_string_to_file function. ... ok
+Add a file to our pth file in site-packages ... ok
+Add relative paths to pth file ... ok
+test_assemble_requirements (dz.tasklib.tests.unittests.test_utils.UtilsTestCase) ... ok
+Test assembling "tricky" requirements line: ... ok
+Test getting this computer's "internal" IP address. ... ok
+Tests that multiple requirements are properly installed and not ... ok
+Tests that we can install pip requirements ... ok
+Tests pip failures don't cause the whole process to exit. ... ok
+Runs a privileged (setuid) external program. ... ok
+Creating a virtualenv ... ok
+test_node_metadata (dz.tasklib.tests.unittests.test_utils.UtilsTestCase) ... ok
+test_parse_site_media_map (dz.tasklib.tests.unittests.test_utils.UtilsTestCase) ... ok
+test_parse_zoombuild (dz.tasklib.tests.unittests.test_utils.UtilsTestCase) ... ok
+test_parse_zoombuild_string (dz.tasklib.tests.unittests.test_utils.UtilsTestCase) ... ok
+Render a template to a file. ... ok
+Tests our small wrapper around fabric's `run` ... ok
+Test our subproc() function, a convenience wrapper around ... ok
+Test our subproc() function's null_stdin functionality using the `cat` ... ok
+Test our subproc() function's ability to take a provided string as ... ok
+Verify adding a bundle location. ... ok
+Add a project configuration guess to the DB. ... ok
+Record addition of a worker for an appbundle in DB. ... ok
+Log a new AppBundle in the DB. ... ok
+Get bundle by ID ... ok
+Get the job associated with current zoomdb instance. ... ok
+Get the project associated with the current zoomdb instance's job. ... ok
+Test getting project virtual host names. ... ok
+Test that getting project vhosts includes a hostname based on ... ok
+Test that wildcard virtualhostname records generate the proper ... ok
+Verify that jobs can log to the database. ... ok
+test_long_commit_msg_truncation (dz.tasklib.tests.unittests.test_zoomdb.ZoomDatabaseTest) ... ok
+Modify a project and save changes. ... ok
+Test querying with search_workers. ... ok
+
+======================================================================
+ERROR: Test running a non-interactive manage.py command on a bundle.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/shimon/dev/noderabbit/lib/python2.6/site-packages/mocker.py", line 147, in test_method_wrapper
+    result = test_method()
+  File "/home/shimon/dev/noderabbit/tasks/dz/tasklib/tests/unittests/test_deploy.py", line 207, in test_managepy_cmd
+    "diffsettings")
+  File "/home/shimon/dev/noderabbit/tasks/dz/tasklib/deploy.py", line 93, in managepy_command
+    result)
+RuntimeError: Nonzero return code 1 from manage.py diffsettings:
+
+Traceback (most recent call last):
+  File "/cust/test_deploy_app/bundle_test_deploy_app_2011-fixture/thisbundle.py", line 52, in <module>
+    run_managepy()
+  File "/cust/test_deploy_app/bundle_test_deploy_app_2011-fixture/thisbundle.py", line 35, in run_managepy
+    import dz_settings as settings
+ImportError: No module named dz_settings
+
+
+======================================================================
+ERROR: Test taking down a deployed bundle.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/shimon/dev/noderabbit/lib/python2.6/site-packages/mocker.py", line 147, in test_method_wrapper
+    result = test_method()
+  File "/home/shimon/dev/noderabbit/tasks/dz/tasklib/tests/unittests/test_deploy.py", line 277, in test_undeploy
+    deploy.start_serving_bundle(self.app_id, self.bundle_name)
+  File "/home/shimon/dev/noderabbit/tasks/dz/tasklib/deploy.py", line 212, in start_serving_bundle
+    bundle_name))
+InfrastructureException: Redundant bundle service request: server localhost (hostname=adaptivelk) is already serving app_id test_deploy_app, bundle_name bundle_test_deploy_app_2011-fixture.
+-------------------- >> begin captured stdout << ---------------------
+(Not on a VM; faking metadata for name...)
+
+--------------------- >> end captured stdout << ----------------------
+
+======================================================================
+ERROR: Creates a bundle for testing, and uploads it to the local storage.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/shimon/dev/noderabbit/lib/python2.6/site-packages/nose/case.py", line 187, in runTest
+    self.test(*self.arg)
+  File "/home/shimon/dev/noderabbit/tasks/dz/tasklib/tests/unittests/test_deploy.py", line 65, in create_test_bundle_in_local_storage
+    shutil.rmtree(bundle_dir)
+  File "/usr/lib/python2.6/shutil.py", line 217, in rmtree
+    onerror(os.remove, fullname, sys.exc_info())
+  File "/usr/lib/python2.6/shutil.py", line 215, in rmtree
+    os.remove(fullname)
+OSError: [Errno 13] Permission denied: '/cust/test_deploy_app/bundle_test_deploy_app_2011-fixture/dz_settings.py'
+-------------------- >> begin captured stdout << ---------------------
+Making a bundle fixture for testing.
+[localhost] run: virtualenv  --python=/usr/bin/python /cust/test_deploy_app/bundle_test_deploy_app_2011-fixture
+=== output from pip ===
+Unpacking /cust/django/Django-1.2.5.tar.gz
+  Running setup.py egg_info for package from file:///cust/django/Django-1.2.5.tar.gz
+Installing collected packages: Django
+  Running setup.py install for Django
+    changing mode of build/scripts-2.6/django-admin.py from 644 to 755
+    changing mode of /cust/test_deploy_app/bundle_test_deploy_app_2011-fixture/bin/django-admin.py to 755
+Successfully installed Django
+Cleaning up...
+
+=== end of output from pip ===
+Running local_privileged command: ['sudo', '/home/shimon/dev/noderabbit/tasks/dz/tasklib/privileged-bin/project_chown', 'test_deploy_app', '/cust/test_deploy_app/bundle_test_deploy_app_2011-fixture']
+Running local_privileged command: ['sudo', '/home/shimon/dev/noderabbit/tasks/dz/tasklib/privileged-bin/project_chown', 'test_deploy_app', '/tmp/ctr-test_deploy_app-IggEd4']
+Running local_privileged command: ['sudo', '/home/shimon/dev/noderabbit/tasks/dz/tasklib/privileged-bin/mount_bind_readonly', '/usr', '/tmp/ctr-test_deploy_app-IggEd4/usr']
+Running local_privileged command: ['sudo', '/home/shimon/dev/noderabbit/tasks/dz/tasklib/privileged-bin/mount_bind_readonly', '/bin', '/tmp/ctr-test_deploy_app-IggEd4/bin']
+Running local_privileged command: ['sudo', '/home/shimon/dev/noderabbit/tasks/dz/tasklib/privileged-bin/mount_bind_readonly', '/lib', '/tmp/ctr-test_deploy_app-IggEd4/lib']
+Running local_privileged command: ['sudo', '/home/shimon/dev/noderabbit/tasks/dz/tasklib/privileged-bin/mount_bind_readonly', '/lib64', '/tmp/ctr-test_deploy_app-IggEd4/lib64']
+Running local_privileged command: ['sudo', '/home/shimon/dev/noderabbit/tasks/dz/tasklib/privileged-bin/mount_bind_readonly', '/etc', '/tmp/ctr-test_deploy_app-IggEd4/etc']
+Running local_privileged command: ['sudo', '/home/shimon/dev/noderabbit/tasks/dz/tasklib/privileged-bin/mount_bind_readwrite', '/cust/test_deploy_app', '/tmp/ctr-test_deploy_app-IggEd4/cust/test_deploy_app']
+Running local_privileged command: ['sudo', '/home/shimon/dev/noderabbit/tasks/dz/tasklib/privileged-bin/move_into_container', 'test_deploy_app', '/tmp/ctr-test_deploy_app-IggEd4', '/tmp/ctr-write-test_deploy_app-eBjShM', '/cust/test_deploy_app/bundle_test_deploy_app_2011-fixture/noderabbit_requirements.txt']
+Running local_privileged command: ['sudo', '/home/shimon/dev/noderabbit/tasks/dz/tasklib/privileged-bin/run_in_container', 'test_deploy_app', '/tmp/ctr-test_deploy_app-IggEd4', '/cust/test_deploy_app/bundle_test_deploy_app_2011-fixture/bin/pip', 'install', '--log=/cust/test_deploy_app/bundle_test_deploy_app_2011-fixture/dz-pip.log', '-r', '/cust/test_deploy_app/bundle_test_deploy_app_2011-fixture/noderabbit_requirements.txt']
+=== output from pip ===
+Cleaning up...
+
+=== end of output from pip ===
+Running local_privileged command: ['sudo', '/home/shimon/dev/noderabbit/tasks/dz/tasklib/privileged-bin/run_in_container', 'test_deploy_app', '/tmp/ctr-test_deploy_app-IggEd4', 'rm', '/cust/test_deploy_app/bundle_test_deploy_app_2011-fixture/bin/python']
+Running local_privileged command: ['sudo', '/home/shimon/dev/noderabbit/tasks/dz/tasklib/privileged-bin/move_into_container', 'test_deploy_app', '/tmp/ctr-test_deploy_app-IggEd4', '/tmp/ctr-write-test_deploy_app-SEFRz1', '/cust/test_deploy_app/bundle_test_deploy_app_2011-fixture/dz_settings.py']
+Created bundle fixture in bundle_test_deploy_app_2011-fixture.tgz
+
+--------------------- >> end captured stdout << ----------------------
+
+======================================================================
+ERROR: Test that serving a bundle downloads it (so static media are on
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/shimon/dev/noderabbit/lib/python2.6/site-packages/mocker.py", line 147, in test_method_wrapper
+    result = test_method()
+  File "/home/shimon/dev/noderabbit/tasks/dz/tasklib/tests/unittests/test_nginx.py", line 96, in test_downloads_bundle_when_new
+    bundle_tgz_name = create_test_bundle_in_local_storage()
+  File "/home/shimon/dev/noderabbit/tasks/dz/tasklib/tests/unittests/test_deploy.py", line 52, in create_test_bundle_in_local_storage
+    force_bundle_name=bundle_name)
+  File "/home/shimon/dev/noderabbit/tasks/dz/tasklib/bundle.py", line 163, in bundle_app
+    utils.install_requirements(reqs, bundle_dir, env=ue)
+  File "/home/shimon/dev/noderabbit/tasks/dz/tasklib/utils.py", line 161, in install_requirements
+    output, stderr, p = env.subproc(pipcmd)
+  File "/home/shimon/dev/noderabbit/tasks/dz/tasklib/userenv.py", line 124, in subproc
+    return_details=True)
+TypeError: mock_local_privileged() got an unexpected keyword argument 'return_details'
+-------------------- >> begin captured stdout << ---------------------
+Making a bundle fixture for testing.
+[localhost] run: virtualenv  --python=/usr/bin/python /tmp/tmpCm9Wf4/test_deploy_app/bundle_test_deploy_app_2011-fixture
+=== output from pip ===
+Unpacking /cust/django/Django-1.2.5.tar.gz
+  Running setup.py egg_info for package from file:///cust/django/Django-1.2.5.tar.gz
+Installing collected packages: Django
+  Running setup.py install for Django
+    changing mode of build/scripts-2.6/django-admin.py from 644 to 755
+    changing mode of /tmp/tmpCm9Wf4/test_deploy_app/bundle_test_deploy_app_2011-fixture/bin/django-admin.py to 755
+Successfully installed Django
+Cleaning up...
+
+=== end of output from pip ===
+Running mock utils.local_privileged(['project_chown', 'test_deploy_app', '/tmp/tmpCm9Wf4/test_deploy_app/bundle_test_deploy_app_2011-fixture'])...
+Running mock utils.local_privileged(['project_chown', 'test_deploy_app', '/tmp/ctr-test_deploy_app-73_Opk'])...
+Running mock utils.local_privileged(['mount_bind_readonly', '/usr', '/tmp/ctr-test_deploy_app-73_Opk/usr'])...
+Running mock utils.local_privileged(['mount_bind_readonly', '/bin', '/tmp/ctr-test_deploy_app-73_Opk/bin'])...
+Running mock utils.local_privileged(['mount_bind_readonly', '/lib', '/tmp/ctr-test_deploy_app-73_Opk/lib'])...
+Running mock utils.local_privileged(['mount_bind_readonly', '/lib64', '/tmp/ctr-test_deploy_app-73_Opk/lib64'])...
+Running mock utils.local_privileged(['mount_bind_readonly', '/etc', '/tmp/ctr-test_deploy_app-73_Opk/etc'])...
+Running mock utils.local_privileged(['mount_bind_readwrite', '/tmp/tmpCm9Wf4/test_deploy_app', '/tmp/ctr-test_deploy_app-73_Opk/tmp/tmpCm9Wf4/test_deploy_app'])...
+Running mock utils.local_privileged(['move_into_container', 'test_deploy_app', '/tmp/ctr-test_deploy_app-73_Opk', '/tmp/ctr-write-test_deploy_app-7RDqAw', '/tmp/tmpCm9Wf4/test_deploy_app/bundle_test_deploy_app_2011-fixture/noderabbit_requirements.txt'])...
+
+--------------------- >> end captured stdout << ----------------------
+
+======================================================================
+FAIL: Test the deploy_app_bundle function.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/shimon/dev/noderabbit/lib/python2.6/site-packages/mocker.py", line 147, in test_method_wrapper
+    result = test_method()
+  File "/home/shimon/dev/noderabbit/tasks/dz/tasklib/tests/unittests/test_deploy.py", line 161, in test_deploy_bundle
+    build_file, bundle_dir))
+AssertionError: Couldn't find noderabbit_requirements.txt in extracted bundle dir /cust/test_deploy_app/bundle_test_deploy_app_2011-fixture.
+-------------------- >> begin captured stdout << ---------------------
+Running local_privileged command: ['sudo', '/home/shimon/dev/noderabbit/tasks/dz/tasklib/privileged-bin/project_chown', 'shimon', '/cust/test_deploy_app/bundle_test_deploy_app_2011-fixture']
+
+--------------------- >> end captured stdout << ----------------------
+
+======================================================================
+FAIL: Test actually serving a deployed bundle, then taking it down.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/shimon/dev/noderabbit/lib/python2.6/site-packages/mocker.py", line 147, in test_method_wrapper
+    result = test_method()
+  File "/home/shimon/dev/noderabbit/tasks/dz/tasklib/tests/unittests/test_deploy.py", line 240, in test_start_serving_bundle
+    "Welcome to the Django tutorial polls app")
+  File "/home/shimon/dev/noderabbit/tasks/dz/tasklib/tests/unittests/test_deploy.py", line 109, in check_can_eventually_load
+    load_attempts))
+AssertionError: Could not load URL http://127.0.0.1:10003 after 10 attempts.
+-------------------- >> begin captured stdout << ---------------------
+[localhost] run: echo -e "reread
+update" | sudo /usr/bin/supervisorctl
+(Not on a VM; faking metadata for instance_id...)
+(Not on a VM; faking metadata for name...)
+[attempt 1] Couldn't load http://127.0.0.1:10003: [Errno socket error] [Errno 111] Connection refused
+[attempt 2] Couldn't load http://127.0.0.1:10003: 
+[attempt 3] Couldn't load http://127.0.0.1:10003: 
+[attempt 4] Couldn't load http://127.0.0.1:10003: 
+[attempt 5] Couldn't load http://127.0.0.1:10003: 
+[attempt 6] Couldn't load http://127.0.0.1:10003: 
+[attempt 7] Couldn't load http://127.0.0.1:10003: 
+[attempt 8] Couldn't load http://127.0.0.1:10003: 
+[attempt 9] Couldn't load http://127.0.0.1:10003: 
+[attempt 10] Couldn't load http://127.0.0.1:10003: 
+
+--------------------- >> end captured stdout << ----------------------
+
+----------------------------------------------------------------------
+Ran 75 tests in 57.929s
+
+FAILED (errors=4, failures=2)
