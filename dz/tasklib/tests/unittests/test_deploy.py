@@ -67,12 +67,10 @@ def create_test_bundle_in_local_storage():
     return tarball_name
 
 
-
-class DeployTestCase(DZTestCase):
+class AbstractDeployTestCase(DZTestCase):
     """
-    Test deployment tasks.
+    Abstract base class for test cases that rely on deploying our test bundle.
     """
-
     def setUp(self):
         self.customer_directory = taskconfig.NR_CUSTOMER_DIR
 
@@ -83,6 +81,12 @@ class DeployTestCase(DZTestCase):
                                             db_name="my_app_id",
                                             username="my_app_id",
                                             password="my_app_id_pass")
+
+    def tearDown(self):
+        """Ensure the test bundle is no longer served, cleaning up this
+        bundle from /etc/supervisor/conf.d."""
+        num_stopped = deploy.stop_serving_bundle(self.app_id, self.bundle_name)
+        print "tearDown stopped instances: %d" % num_stopped
 
     @classmethod
     def setUpClass(cls):
@@ -119,22 +123,14 @@ class DeployTestCase(DZTestCase):
 
                 self.assertTrue(pagetext_fragment in pagetext)
                 break
-            
+
             except Exception, e:
                 load_attempts += 1
                 print "[attempt %d] Couldn't load %s: %s" % (
                     load_attempts, url, str(e))
                 time.sleep(0.25)
 
-    def test_bundle_fixture_in_local_storage(self):
-        """
-        Ensure the bundle fixture file exists in local bundle storage.
-        """
-        self.assertTrue(os.path.isfile(self.__class__.bundle_fixture),
-                        "Need a bundle to test deploying - " +
-                        "run python dz/tasklib/tests/make_bundle_fixture.py")
-
-    def _install_my_bundle(self):
+    def install_my_bundle(self):
         """
         Convenience function used in several tests.
         """
@@ -144,6 +140,20 @@ class DeployTestCase(DZTestCase):
             self.appserver_name,
             self.dbinfo,
             bundle_storage_engine=bundle_storage_local)
+
+
+class DeployTestCase(AbstractDeployTestCase):
+    """
+    Test deployment tasks.
+    """
+
+    def test_bundle_fixture_in_local_storage(self):
+        """
+        Ensure the bundle fixture file exists in local bundle storage.
+        """
+        self.assertTrue(os.path.isfile(self.__class__.bundle_fixture),
+                        "Need a bundle to test deploying - " +
+                        "run python dz/tasklib/tests/make_bundle_fixture.py")
 
     def test_deploy_bundle(self):
         """
@@ -157,7 +167,7 @@ class DeployTestCase(DZTestCase):
             self.chown_to_me(bundle_dir)
             shutil.rmtree(bundle_dir)
 
-        self._install_my_bundle()
+        self.install_my_bundle()
         self.assertTrue(os.path.isdir(bundle_dir))
 
         for  build_file in ("noderabbit_requirements.txt",
@@ -208,7 +218,7 @@ class DeployTestCase(DZTestCase):
         """Test running a non-interactive manage.py command on a bundle."""
 
         # first ensure bundle has been deployed
-        self._install_my_bundle()
+        self.install_my_bundle()
 
         # now check to see that we can run commands
         diffsettings = deploy.managepy_command(self.app_id,
@@ -233,7 +243,7 @@ class DeployTestCase(DZTestCase):
         """
         Test actually serving a deployed bundle, then taking it down.
         """
-        self._install_my_bundle()
+        self.install_my_bundle()
         (instance_id, node_name, host_ip, host_port) = \
             deploy.start_serving_bundle(self.app_id, self.bundle_name)
 
@@ -281,7 +291,7 @@ class DeployTestCase(DZTestCase):
         """
         app_dir, bundle_dir = utils.app_and_bundle_dirs(self.app_id,
                                                         self.bundle_name)
-        self._install_my_bundle()
+        self.install_my_bundle()
         (instance_id, node_name, host_ip, host_port) = \
             deploy.start_serving_bundle(self.app_id, self.bundle_name)
 

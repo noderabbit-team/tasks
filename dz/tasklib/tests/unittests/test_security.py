@@ -3,10 +3,9 @@ from dz.tasklib import (taskconfig,
                         bundle,
                         deploy)
 from dz.tasklib.tests.dztestcase import DZTestCase
-from dz.tasklib.tests.unittests.test_deploy import DeployTestCase
+from dz.tasklib.tests.unittests.test_deploy import AbstractDeployTestCase
 
 from os import path
-import os
 import shutil
 
 
@@ -38,17 +37,37 @@ class SetupSecurityTestCase(DZTestCase):
         self.assertFileOwnedBy(a_bundle_file, self.project_name)
 
 
-class DeploySecurityTestCase(DeployTestCase):
+class DeploySecurityTestCase(AbstractDeployTestCase):
     def test_safe_deploy(self):
         """
         Test that deployed code runs under the proper user.
         """
-        self._install_my_bundle()
+        self.install_my_bundle()
         (instance_id, node_name, host_ip, host_port) = \
             deploy.start_serving_bundle(self.app_id, self.bundle_name)
-        app_url = "http://%s:%d" % (host_ip, host_port)
+        app_url = "http://%s:%d/securitytest/" % (host_ip, host_port)
         security_result = self.check_can_eventually_load(
-            app_url,
-            "Welcome to the Django tutorial polls app")
+            app_url)
         self.assertTrue(security_result.startswith("SECURITY TEST RESULTS"))
-        
+
+        # convert security lines into a dict
+        # EXAMPLE (a failing result):
+        """SECURITY TEST RESULTS
+whoami: shimon
+ls /: bin,boot,cdrom,cgroup,cust,dev,etc,home,initrd.img,initrd.img.old,lib,lib32,lib64,lost+found,media,mnt,opt,proc,root,sbin,selinux,srv,sys,tmp,usr,var,vmlinuz,vmlinuz.old
+        """
+
+        sec = {}
+        for line in security_result.splitlines()[1:]:
+            line = line.strip()
+            if not ": " in line:
+                continue
+            k, v = line.split(": ", 1)
+            sec[k] = v
+
+        self.assertEqual(sec["whoami"], self.app_id,
+                         ("Expected app to be running as %r, but actually "
+                          "is running as %r") % (self.app_id, sec["whoami"]))
+        self.assertEqual(sec["ls /"], ",".join(
+            sorted(['bin', 'etc', 'lib', 'lib64', 'usr',
+                    taskconfig.NR_CUSTOMER_DIR.strip("/")])))
