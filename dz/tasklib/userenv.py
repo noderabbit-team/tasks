@@ -1,7 +1,9 @@
-from dz.tasklib import (utils, taskconfig)
+from dz.tasklib import taskconfig
+from dz.tasklib import utils_essentials as utils
 import os
 import pwd
 import shutil
+import subprocess
 import tempfile
 from cStringIO import StringIO
 
@@ -140,6 +142,16 @@ class UserEnv(object):
 
         return stdout, stderr, p
 
+    def call(self, command_list):
+        """
+        Run a subprocess under this userenv, using this existing process'
+        STDOUT and STDERR (and null STDIN).
+        """
+        fullcmd = utils.privileged_program_cmd([
+            "run_in_container", self.username, self.container_dir,
+            ] + command_list)
+        return subprocess.call(fullcmd)
+
     def open(self, filename, mode="r"):
         """
         Work-alike function for the builtin python open(), but running
@@ -235,8 +247,8 @@ class UserEnv(object):
                     resp = urllib2.urlopen(url)
                     return resp.geturl(), resp.read()
 
-            f = self.open(url) ### This is the only change from stock
-                               ### pip.util.get_file_content
+            f = self.open(url)  # This is the only change from stock
+                                # pip.util.get_file_content
             content = f.read()
             f.close()
             return url, content

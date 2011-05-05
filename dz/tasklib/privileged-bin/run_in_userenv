@@ -1,0 +1,35 @@
+#!/usr/bin/python
+
+"""
+Usage: sudo run_in_userenv <username> <command>
+
+Creates a UserEnv for the provided user, runs the command, then destroys the
+UserEnv and exits.
+"""
+
+import os
+import sys
+
+# This script doesn't run under a virtualenv, but still needs some modules
+# out of dz.tasklib. So let's just manually put them on the python path.
+ROOT_PATH = os.path.abspath(os.path.dirname(__file__))
+DZ_PATH = os.path.join(ROOT_PATH, '..', '..', '..')
+#print "Adding to path: %s" % DZ_PATH
+sys.path.append(DZ_PATH)
+
+from dz.tasklib import userenv
+
+def main(args):
+    assert os.getuid() == 0, "run_in_userenv must be run as root"
+    assert len(args) >= 2, ("Usage: "
+                            "run_in_userenv <username> <command> [cmdargs]")
+    username = args[0]
+    cmdlist = args[1:]
+
+    ue = userenv.UserEnv(username)
+    result = ue.call(cmdlist)
+    ue.destroy()
+    sys.exit(result)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

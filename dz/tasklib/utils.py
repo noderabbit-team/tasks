@@ -8,13 +8,18 @@ import socket
 import subprocess
 import sys
 import ConfigParser
-import tempfile
 
 import taskconfig
 
 from pip.req import parse_requirements, InstallRequirement, RequirementSet
 from pip.exceptions import InstallationError
 from pip.locations import build_prefix, src_prefix
+
+# some functions have been moved to utils_essentials in order to allow them
+# to be used with no dependencies outside stdlib.
+from utils_essentials import (ExternalServiceException,
+                              subproc,
+                              local_privileged)
 
 tpl_env = Environment(loader=PackageLoader('dz.tasklib'))
 
@@ -23,13 +28,6 @@ class InfrastructureException(Exception):
     """
     Exception indicating a problem in DjangoZoom's infrastructure, probably
     preventing the user from completing a successful deployment. :(
-    """
-
-
-class ExternalServiceException(Exception):
-    """
-    Exception indicating a problem outside of DjangoZoom, such as failure
-    to fetch an externally-hosted required module.
     """
 
 
@@ -54,54 +52,6 @@ def local(command, capture=True):
         del connections[key]
 
     return out
-
-
-def subproc(command, null_stdin=True, stdin_string=None,
-            redir_stderr_to_stdout=False):
-    """
-    Run a command locally, using the subprocess module and optionally
-    providing a closed stdin filehandle.
-
-    Unlike the fabric-based `local` function also in this module, subproc()
-    will capture both stdout and stderr, and will not issue a warning or
-    error if the underlying command fails. Therefore, you probably want to
-    use check p.returncode to verify the command exited successfully.
-
-    :param stdin_string: if provided, sends the given string on stdin to the
-    subprocess.
-
-    :returns: stdout, stderr, p: output strings and Popen obj of the command.
-    """
-    p_args = dict(shell=isinstance(command, basestring),
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.PIPE)
-
-    tempfile_name = None
-
-    if stdin_string:
-        # must be written to a temp file (or at least something with a
-        # filehandle) so can redirect.
-        (fd, tempfile_name) = tempfile.mkstemp(prefix='tmp_subproc')
-        f = file(tempfile_name, "w")
-        f.write(stdin_string)
-        f.close()
-
-        p_args["stdin"] = file(tempfile_name)
-
-    elif null_stdin:
-        p_args["stdin"] = open("/dev/null")
-
-    if redir_stderr_to_stdout:
-        p_args["stderr"] = subprocess.STDOUT
-
-    #print "subprocess.Popen(%r, %r)" % (command, p_args)
-    p = subprocess.Popen(command, **p_args)
-    (stdout, stderr) = p.communicate()
-
-    if tempfile_name:
-        os.remove(tempfile_name)
-
-    return stdout, stderr, p
 
 
 def get_site_packages(vpath):
@@ -331,7 +281,7 @@ def render_tpl_to_file(template, path, **kwargs):
 
     f.write(content)
     f.close()
-    
+
     return content
 
 
@@ -349,30 +299,6 @@ def run_steps(zoomdb, opts, steps):
             os.chdir(cur_dir)
 
         zoomdb.log(nicename, zoomdb.LOG_STEP_END)
-
-
-def local_privileged(cmdargs, return_details=False):
-    assert isinstance(cmdargs, list)
-    privileged_program = cmdargs.pop(0)
-    assert "/" not in privileged_program, ("Privileged programs can only "
-                                           "be run from the designated "
-                                           "directory. Paths are not allowed.")
-
-    privileged_program_path = os.path.join(taskconfig.PRIVILEGED_PROGRAMS_PATH,
-                                           privileged_program)
-
-    fullcmd = ["sudo", privileged_program_path] + cmdargs
-    print "Running local_privileged command: %r" % fullcmd
-    stdout, stderr, p = subproc(fullcmd, null_stdin=True)
-    if return_details:
-        return stdout, stderr, p
-    else:
-        if p.returncode != 0:
-            raise ExternalServiceException((
-                "Error attempting to run LP command %r. "
-                "Output:\n %s\n%s") % (privileged_program, stdout, stderr))
-
-        return stdout
 
 
 def _is_running_on_ec2():
@@ -433,9 +359,10 @@ def _parse_zoombuild_from_configparser(config):
             result[s] = config.get('project', s)
 
     except ConfigParser.NoSectionError:
-        raise ValueError("Sorry, couldn't find %r in 'project'." % buildcfg)
+        raise ValueError("Sorry, couldn't find %r in 'project'." % s)
 
     return result
+
 
 def parse_zoombuild(buildcfg):
     """
