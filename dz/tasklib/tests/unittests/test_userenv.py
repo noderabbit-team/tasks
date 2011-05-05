@@ -48,7 +48,7 @@ class UtilsTestCase(DZTestCase):
         self.assertEqual(wd.strip(), "/")
         ls, _1, _2 = self.ue.subproc(["ls"])
         self.assertEqual(sorted(ls.splitlines()),
-                         sorted(['bin', 'etc', 'lib', 'lib64', 'usr',
+                         sorted(['bin', 'dev', 'etc', 'lib', 'lib64', 'usr',
                                  taskconfig.NR_CUSTOMER_DIR.strip("/")]))
 
     def test_subproc_requires_list(self):

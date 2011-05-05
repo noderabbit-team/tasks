@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 from cStringIO import StringIO
 
-CONTAINER_BIND_DIRS = ('/usr', '/bin', '/lib', '/lib64', '/etc')
+CONTAINER_BIND_DIRS = ('/usr', '/bin', '/lib', '/lib64', '/etc', '/dev')
 
 
 class AlreadyDestroyed(Exception):

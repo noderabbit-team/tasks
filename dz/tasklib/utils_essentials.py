@@ -82,6 +82,6 @@ def local_privileged(cmdargs, return_details=False):
         if p.returncode != 0:
             raise ExternalServiceException((
                 "Error attempting to run LP command %r. "
-                "Output:\n %s\n%s") % (privileged_program, stdout, stderr))
+                "Output:\n %s\n%s") % (cmdargs, stdout, stderr))
 
         return stdout

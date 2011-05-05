@@ -225,13 +225,25 @@ def start_serving_bundle(app_id, bundle_name):
                                                            port_to_use))
 
     app_dir, bundle_dir = utils.app_and_bundle_dirs(app_id, bundle_name)
+    # utils.render_tpl_to_file(
+    #     'deploy/supervisor_entry.conf',
+    #     config_filename,
+    #     bundle_name=bundle_name,
+    #     bundle_runner=os.path.join(bundle_dir, "thisbundle.py"),
+    #     bundle_dir=bundle_dir,
+    #     bundle_user="dztasks",  # TODO: app_id users
+    #     port=port_to_use)
+
+    ### TODO: bundle_runner should be something like:
+    # /home/shimon/dev/noderabbit/tasks/dz/tasklib/privileged-bin/run_in_userenv test_deploy_app /cust/test_deploy_app/bundle_test_deploy_app_2011-fixture/thisbundle.py _dz_wsgi 10010
+    
     utils.render_tpl_to_file(
         'deploy/supervisor_entry.conf',
         config_filename,
         bundle_name=bundle_name,
         bundle_runner=os.path.join(bundle_dir, "thisbundle.py"),
         bundle_dir=bundle_dir,
-        bundle_user="dztasks",  # TODO: app_id users
+        bundle_user="root",  # only to start the environment!
         port=port_to_use)
 
     _kick_supervisor()
