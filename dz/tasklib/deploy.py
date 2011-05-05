@@ -11,6 +11,7 @@
 """
 import datetime
 import os
+import pwd
 import shutil
 import socket
 
@@ -56,8 +57,13 @@ def install_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
                                      bundle_storage_engine)
 
     if not static_only:
+        utils.chown_to_me(bundle_dir)
         _write_deployment_config(os.path.join(bundle_dir, "thisbundle.py"),
                                  bundle_name, dbinfo)
+        utils.local_privileged(["project_chown", app_id, bundle_dir])
+        # bundle_owner_name = pwd.getpwuid(os.stat(bundle_dir).st_uid).pw_name
+        # if bundle_owner_name != app_id:
+        #     utils.local_privileged(["project_chown", app_id, bundle_dir])
 
 
 def install_app_bundle_static(app_id, bundle_name,
@@ -189,10 +195,10 @@ def start_serving_bundle(app_id, bundle_name):
     """
     Serve the given bundle under supervisor, and return the appserver info
     for where the service is running.
-    
-    If you are running locally as dev, you need to make sure the user 
+
+    If you are running locally as dev, you need to make sure the user
     running Celery has permissions to write to the /etc/supervisor/conf.d dir.
-    
+
     $ sudo chgrp nateaune /etc/supervisor/conf.d/
     $ sudo chmod g+w /etc/supervisor/conf.d/
 

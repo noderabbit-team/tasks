@@ -38,6 +38,17 @@ class SetupSecurityTestCase(DZTestCase):
 
 
 class DeploySecurityTestCase(AbstractDeployTestCase):
+
+    def test_chown_post_install(self):
+        """
+        Ensure that after a bundle is extracted it is owned by the app user.
+        """
+        self.install_my_bundle()
+        bundle_dir = path.join(self.customer_directory,
+                               self.app_id,
+                               self.bundle_name)
+        self.assertFileOwnedBy(bundle_dir, self.app_id)
+
     def test_safe_deploy(self):
         """
         Test that deployed code runs under the proper user.
