@@ -13,6 +13,7 @@ import shutil
 import time
 import urllib
 
+
 def create_test_bundle_in_local_storage():
     """
     Creates a bundle for testing, and uploads it to the local storage.
@@ -32,6 +33,7 @@ def create_test_bundle_in_local_storage():
     app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_name)
 
     if os.path.isdir(app_dir):
+        utils.chown_to_me(app_dir)
         shutil.rmtree(app_dir)
 
     shutil.copytree(os.path.join(fixture_dir, "app"), app_dir)
@@ -179,7 +181,12 @@ class DeployTestCase(AbstractDeployTestCase):
                             "Couldn't find %s in extracted bundle dir %s." % (
                     build_file, bundle_dir))
 
-        main_runner = os.path.join(bundle_dir, "thisbundle.py")
+        run_in_userenv = os.path.join(taskconfig.PRIVILEGED_PROGRAMS_PATH,
+                                      "run_in_userenv")
+        thisbundle = os.path.join(bundle_dir, "thisbundle.py")
+        main_runner = "sudo %s %s %s" % (run_in_userenv,
+                                         self.app_id,
+                                         thisbundle)
 
         #print "---> RUNNABLE! %s <---" % main_runner
 
@@ -194,7 +201,8 @@ class DeployTestCase(AbstractDeployTestCase):
             return utils.local((cmd + " 2>&1") % (main_runner,))
 
         #print "RUNNER HELP: %s" % runner_help
-        self.assertTrue("runserver" in get_managepy_output("%s help"))
+        help_output = get_managepy_output("%s help")
+        self.assertTrue("runserver" in help_output, help_output)
         try_installed_apps = get_managepy_output(
             'echo "import settings; ' +
             '[ __import__(a) for a in settings.INSTALLED_APPS ]" | ' +

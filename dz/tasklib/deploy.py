@@ -17,7 +17,8 @@ import socket
 
 from dz.tasklib import (bundle_storage,
                         taskconfig,
-                        utils)
+                        utils,
+                        userenv)
 
 
 def _write_deployment_config(outfilename, bundle_name, dbinfo):
@@ -88,7 +89,10 @@ def managepy_command(app_id, bundle_name, command, nonzero_exit_ok=False,
         procargs += command
     else:
         procargs.append(command)
-    stdout, stderr, proc = utils.subproc(procargs)
+
+    ue = userenv.UserEnv(app_id)
+    stdout, stderr, proc = ue.subproc(procargs, nonzero_exit_ok=True)
+    ue.destroy()
 
     result = stdout + "\n" + stderr
 
@@ -240,10 +244,12 @@ def start_serving_bundle(app_id, bundle_name):
     utils.render_tpl_to_file(
         'deploy/supervisor_entry.conf',
         config_filename,
+        run_in_userenv=os.path.join(taskconfig.PRIVILEGED_PROGRAMS_PATH,
+                                    "run_in_userenv"),
         bundle_name=bundle_name,
         bundle_runner=os.path.join(bundle_dir, "thisbundle.py"),
         bundle_dir=bundle_dir,
-        bundle_user="root",  # only to start the environment!
+        app_user=app_id,
         port=port_to_use)
 
     _kick_supervisor()
@@ -371,6 +377,7 @@ def undeploy_from_appserver(zoomdb, app_id, bundle_id,
                                                      appserver_instance_id))
 
     bundle = zoomdb.get_bundle(bundle_id)
+    
     num_stopped = stop_serving_bundle(app_id, bundle.bundle_name)
 
     if num_stopped != 1:
@@ -385,4 +392,5 @@ def undeploy_from_appserver(zoomdb, app_id, bundle_id,
                                                     bundle.bundle_name)
     if os.path.isdir(bundle_dir):
         zoomdb.log("Removing old bundle from %s." % bundle_dir)
+        utils.chown_to_me(bundle_dir)
         shutil.rmtree(bundle_dir)

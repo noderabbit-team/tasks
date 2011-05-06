@@ -80,5 +80,5 @@ ls /: bin,boot,cdrom,cgroup,cust,dev,etc,home,initrd.img,initrd.img.old,lib,lib3
                          ("Expected app to be running as %r, but actually "
                           "is running as %r") % (self.app_id, sec["whoami"]))
         self.assertEqual(sec["ls /"], ",".join(
-            sorted(['bin', 'etc', 'lib', 'lib64', 'usr',
+            sorted(['bin', 'dev', 'etc', 'lib', 'lib64', 'usr',
                     taskconfig.NR_CUSTOMER_DIR.strip("/")])))

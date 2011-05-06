@@ -8,6 +8,7 @@ UserEnv and exits.
 """
 
 import os
+import signal
 import sys
 
 # This script doesn't run under a virtualenv, but still needs some modules
@@ -27,9 +28,25 @@ def main(args):
     cmdlist = args[1:]
 
     ue = userenv.UserEnv(username)
-    result = ue.call(cmdlist)
-    ue.destroy()
-    sys.exit(result)
+
+    print "UserEnv manager running, pid %d." % os.getpid()
+
+    def signal_handler(signum, stackframe):
+        print "signal_handler got signal: %d" % signum
+        ue.cleanup_subprocs()
+        print "signal_handler cleaned subprocs"
+        ue.destroy()
+        print "signal_handler done"
+
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    try:
+        result = ue.call(cmdlist)
+        sys.exit(result)
+    finally:
+        ue.cleanup_subprocs()
+        if not ue.destroyed:
+            ue.destroy()
 
 if __name__ == "__main__":
     main(sys.argv[1:])

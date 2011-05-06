@@ -1,10 +1,12 @@
 from dz.tasklib import taskconfig
 from dz.tasklib import utils_essentials as utils
+import atexit
 import os
 import pwd
 import shutil
 import subprocess
 import tempfile
+import time
 from cStringIO import StringIO
 
 CONTAINER_BIND_DIRS = ('/usr', '/bin', '/lib', '/lib64', '/etc', '/dev')
@@ -64,6 +66,29 @@ class UserEnv(object):
         self.container_dir = None
         self.destroyed = False
         self.initialize()
+        self.subprocess_popens = subprocess_popens = set()
+
+        # We register an at_exit cleanup handler to terminate any possibly
+        # lingering child processes.
+        def cleanup():
+            for p in subprocess_popens:
+                if p.returncode is not None:
+                    continue  # already terminated.
+                print "UserEnv: Terminating child process %d..." % p.pid
+                p.terminate()
+                for second in range(5):
+                    if p.poll() is None:
+                        time.sleep(1)
+                if p.poll() is None:
+                    print ("UserEnv: Timed out; KILLING child process %d..." %
+                           p.pid)
+                    p.kill()
+
+        atexit.register(cleanup)
+        self._cleanup = cleanup
+
+    def cleanup_subprocs(self):
+        self._cleanup()
 
     def __del__(self):
         """
@@ -120,7 +145,7 @@ class UserEnv(object):
                                 self.container_dir])
         shutil.rmtree(self.container_dir)
 
-    def subproc(self, command_list):
+    def subproc(self, command_list, nonzero_exit_ok=False):
         """
         Run a subprocess under this userenv, and return the output.
         The command for the subprocess must be a list; the subprocess is not
@@ -133,7 +158,7 @@ class UserEnv(object):
             ] + command_list,
             return_details=True)
 
-        if p.returncode != 0:
+        if p.returncode != 0 and not(nonzero_exit_ok):
             raise ErrorInsideEnvironment(("Command %r returned non-zero exit "
                                           "code %r.\nSTDERR:\n%s\nSTDOUT:\n%s")
                                          % (command_list,
@@ -150,7 +175,15 @@ class UserEnv(object):
         fullcmd = utils.privileged_program_cmd([
             "run_in_container", self.username, self.container_dir,
             ] + command_list)
-        return subprocess.call(fullcmd)
+
+        p = subprocess.Popen(fullcmd)
+
+        # add p to self.subprocess_popens so it gets cleaned up if we exit
+        self.subprocess_popens.add(p)
+        result = p.wait()
+        self.subprocess_popens.remove(p)
+
+        return result
 
     def open(self, filename, mode="r"):
         """
@@ -184,7 +217,8 @@ class UserEnv(object):
         (relative to the userenv's home). File will be owned by the
         userenv's user if it does not already exist.
         """
-        (tmpfd, tmpfname) = tempfile.mkstemp(prefix="ctr-write-%s-" % self.username)
+        (tmpfd, tmpfname) = tempfile.mkstemp(prefix="ctr-write-%s-" %
+                                             self.username)
         tmpf = open(tmpfname, "w")
         tmpf.write(content)
         tmpf.close()
@@ -230,8 +264,8 @@ class UserEnv(object):
                 if (scheme == 'file' and comes_from
                     and comes_from.startswith('http')):
                     raise InstallationError(
-                        'Requirements file %s references URL %s, which is local'
-                        % (comes_from, url))
+                        ('Requirements file %s references URL %s, '
+                         'which is local') % (comes_from, url))
                 if scheme == 'file':
                     path = url.split(':', 1)[1]
                     path = path.replace('\\', '/')
