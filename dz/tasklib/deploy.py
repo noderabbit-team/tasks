@@ -159,8 +159,11 @@ def _kick_supervisor():
     utils.local('echo -e "reread\nupdate" | sudo /usr/bin/supervisorctl')
 
 
-def _get_active_bundles():
-    for filename in  os.listdir(taskconfig.SUPERVISOR_APP_CONF_DIR):
+def get_active_bundles():
+    if not os.path.isdir(taskconfig.SUPERVISOR_APP_CONF_DIR):
+        return
+
+    for filename in os.listdir(taskconfig.SUPERVISOR_APP_CONF_DIR):
         if ".port." in filename and filename.endswith(".conf"):
             app_and_bundle_name, bundle_port = \
                 filename[:-len(".conf")].rsplit(".port.", 1)
@@ -181,7 +184,7 @@ def _get_a_free_port():
     """Select a port for serving a new bundle."""
     max_used_port = taskconfig.APP_SERVICE_START_PORT
 
-    for active_bundle in _get_active_bundles():
+    for active_bundle in get_active_bundles():
         if active_bundle["port"] > max_used_port:
             max_used_port = active_bundle["port"]
 
@@ -211,7 +214,7 @@ def start_serving_bundle(app_id, bundle_name):
 
     # check that this bundle isn't already being served here - otherwise
     # supervisor will silently ignore the redundant config files!
-    for bun in _get_active_bundles():
+    for bun in get_active_bundles():
         if bun["app_id"] == app_id and bun["bundle_name"] == bundle_name:
             raise utils.InfrastructureException((
                     "Redundant bundle service request: server %s (hostname=%s)"
@@ -259,7 +262,7 @@ def stop_serving_bundle(app_id, bundle_name):
     """
     num_stopped = 0
 
-    for bundle in _get_active_bundles():
+    for bundle in get_active_bundles():
         if bundle["app_id"] == app_id and bundle["bundle_name"] == bundle_name:
             config_filename = os.path.join(taskconfig.SUPERVISOR_APP_CONF_DIR,
                                            bundle["filename"])
