@@ -154,6 +154,22 @@ class UtilsTestCase(DZTestCase):
         result = utils.local_privileged(["whoami"])
         self.assertEqual("root\n", result)
 
+    def test_local_privileged_nonexistent(self):
+        """
+        Test trying to run a program that doesn't actually exist in the
+        privileged-bin directory.
+        """
+        with self.assertRaises(AssertionError):
+            utils.local_privileged(["cat"])
+
+    def test_local_privileged_stdin_string(self):
+        """
+        Runs a privileged external program with a string passed in on stdin.
+        """
+        test_string = "Hello, privileged world!"
+        result = utils.local_privileged(["test_cat"], stdin_string=test_string)
+        self.assertEqual(test_string, result, result)
+
     def tearDown(self):
         shutil.rmtree(self.dir)
 

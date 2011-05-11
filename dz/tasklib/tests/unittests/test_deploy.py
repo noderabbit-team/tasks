@@ -247,6 +247,18 @@ class DeployTestCase(AbstractDeployTestCase):
             self.fail("I expected a RuntimeError to be raised from " +
                       "manage.py help, but didn't get one!")
 
+    def test_managepy_shell(self):
+        """Test running some python code through the manage.py shell."""
+        # first ensure bundle has been deployed
+        self.install_my_bundle()
+
+        # now check to see that we can run commands
+        output = deploy.managepy_shell(self.app_id,
+                                       self.bundle_name,
+                                       "print 9*9\n")
+        self.assertTrue("81" in output, output)
+        
+
     def test_start_serving_bundle(self):
         """
         Test actually serving a deployed bundle, then taking it down.

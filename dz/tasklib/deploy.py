@@ -119,13 +119,13 @@ def managepy_shell(app_id, bundle_name, some_python_code):
     procargs = [os.path.join(bundle_dir, "thisbundle.py"),
                 "shell", "--plain"]
 
-    stdout, stderr, proc = utils.subproc(procargs,
-                                         stdin_string=some_python_code,
-                                         redir_stderr_to_stdout=True)
-
-    assert stderr is None, "Expected nothing on stderr due to redirect"
+    ue = userenv.UserEnv(app_id)
+    stdout, stderr, proc = ue.subproc(procargs,
+                                      stdin_string=some_python_code)
 
     result = stdout
+    if stderr:
+        result += "\n" + stderr
 
     if proc.returncode != 0:
         raise RuntimeError(

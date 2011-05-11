@@ -145,7 +145,7 @@ class UserEnv(object):
                                 self.container_dir])
         shutil.rmtree(self.container_dir)
 
-    def subproc(self, command_list, nonzero_exit_ok=False):
+    def subproc(self, command_list, nonzero_exit_ok=False, stdin_string=None):
         """
         Run a subprocess under this userenv, and return the output.
         The command for the subprocess must be a list; the subprocess is not
@@ -153,10 +153,12 @@ class UserEnv(object):
         """
         assert type(command_list) == list, ("UserEnv.subproc's command_list "
                                             "argument must be a list.")
+
         (stdout, stderr, p) = utils.local_privileged([
             "run_in_container", self.username, self.container_dir,
             ] + command_list,
-            return_details=True)
+                                                     return_details=True,
+                                                     stdin_string=stdin_string)
 
         if p.returncode != 0 and not(nonzero_exit_ok):
             raise ErrorInsideEnvironment(("Command %r returned non-zero exit "

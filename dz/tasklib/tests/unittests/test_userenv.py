@@ -41,6 +41,13 @@ class UtilsTestCase(DZTestCase):
         with self.assertRaises(userenv.ErrorInsideEnvironment):
             self.ue.subproc(["cat", "/nonexistent"])
 
+    def test_subproc_stdin_string(self):
+        test_string = "Hello, world!"
+        stdout, stderr, p = self.ue.subproc(["cat"], stdin_string=test_string)
+        self.assertEqual(stdout, test_string, stdout)
+        self.assertEqual(stderr, "", stderr)
+        self.assertEqual(p.returncode, 0)
+
     def test_chroot_isolation(self):
         """Test that only a limited set of directories are available thanks
         to chroot."""

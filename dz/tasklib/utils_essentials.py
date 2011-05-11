@@ -68,14 +68,18 @@ def privileged_program_cmd(cmdargs):
                                            "directory. Paths are not allowed.")
     privileged_program_path = os.path.join(taskconfig.PRIVILEGED_PROGRAMS_PATH,
                                            privileged_program)
+    assert os.path.isfile(privileged_program_path), (
+        ("Command %r is not available as a privileged program "
+         "(no privileged file found).") % privileged_program)
     fullcmd = ["sudo", privileged_program_path] + cmdargs
     return fullcmd
 
 
-def local_privileged(cmdargs, return_details=False):
+def local_privileged(cmdargs, return_details=False, stdin_string=None):
     fullcmd = privileged_program_cmd(cmdargs)
     #print "Running local_privileged command: %r" % fullcmd
-    stdout, stderr, p = subproc(fullcmd, null_stdin=True)
+    stdout, stderr, p = subproc(fullcmd, null_stdin=True,
+                                stdin_string=stdin_string)
     if return_details:
         return stdout, stderr, p
     else:
