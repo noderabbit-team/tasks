@@ -7,7 +7,8 @@ import subprocess
 from dz.tasklib import (taskconfig,
                         bundle_storage,
                         bundle_storage_local,
-                        utils)
+                        utils,
+                        userenv)
 
 
 def _ignore_vcs_files(srcdir, names):
@@ -139,23 +140,37 @@ def bundle_app(app_id, force_bundle_name=None):
     utils.install_requirements([django_req], bundle_dir,
                                logsuffix="-django")
 
-    # install requirements
+    # This is where we've finished running code we trust (virtualenv, django,
+    # etc) and switch to running code provided or pointed to by the user. So
+    # let's chown everything to the app user.
+    utils.local_privileged(["project_chown",
+                            app_id,
+                            bundle_dir])
+
+    # and let's create the userenv!
+    ue = userenv.UserEnv(app_id)
+
+    # install user-provided requirements
     reqs = utils.assemble_requirements(
         files=[l.strip() for l in
                buildconfig_info["requirements_files"].splitlines()],
         lines=[l.strip() for l in
                buildconfig_info["extra_requirements"].splitlines()],
         basedir=repo_link,
-        ignore_keys="django")
-    utils.install_requirements(reqs, bundle_dir)
+        ignore_keys="django",
+        env=ue)
+
+    utils.install_requirements(reqs, bundle_dir, env=ue)
 
     # Remove the python executable, we don't use it
-    os.remove(os.path.join(bundle_dir, "bin", "python"))
+    ue.remove(os.path.join(bundle_dir, "bin", "python"))
+    #os.remove(os.path.join(bundle_dir, "bin", "python"))
 
     # Add settings file
     utils.render_tpl_to_file(
         'bundle/settings.py.tmpl',
         os.path.join(bundle_dir, 'dz_settings.py'),
+        env=ue,
         dz_settings=buildconfig_info["django_settings_module"],
         admin_media_prefix=taskconfig.DZ_ADMIN_MEDIA["url_path"])
 
@@ -183,6 +198,10 @@ def zip_and_upload_bundle(app_id, bundle_name,
 
     try:
         current_dir = os.getcwd()
+
+        # change ownership in app_dir because it was built inside a container
+        utils.chown_to_me(app_dir)
+
         os.chdir(app_dir)
 
         try:

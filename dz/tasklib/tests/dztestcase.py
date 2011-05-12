@@ -1,9 +1,11 @@
 import sys
 from functools import update_wrapper
+from dz.tasklib import utils
 
 from mocker import MockerTestCase
 
 import os
+import pwd
 
 
 _missing = object()
@@ -26,6 +28,21 @@ class DZTestCase(MockerTestCase):
                 setattr(ob, attr, old_value)
 
         self.addCleanup(restore)
+
+    def assertFileOwnedBy(self, filename, username, msg=None):
+        """
+        Assert that the owner of <filename> is <username>.
+        """
+        file_owner_name = pwd.getpwuid(os.stat(filename).st_uid).pw_name
+        if not msg:
+            msg = ("File %s should be owned by %r, but is actually owned by "
+                   "%r.") % (filename,
+                             username,
+                             file_owner_name)
+        self.assertEqual(file_owner_name, username, msg)
+
+    def chown_to_me(self, path):
+        utils.chown_to_me(path)
 
 
 def requires_internet(test_func):

@@ -1,0 +1,52 @@
+#!/usr/bin/python
+
+"""
+Usage: sudo run_in_userenv <username> <command>
+
+Creates a UserEnv for the provided user, runs the command, then destroys the
+UserEnv and exits.
+"""
+
+import os
+import signal
+import sys
+
+# This script doesn't run under a virtualenv, but still needs some modules
+# out of dz.tasklib. So let's just manually put them on the python path.
+ROOT_PATH = os.path.abspath(os.path.dirname(__file__))
+DZ_PATH = os.path.join(ROOT_PATH, '..', '..', '..')
+#print "Adding to path: %s" % DZ_PATH
+sys.path.append(DZ_PATH)
+
+from dz.tasklib import userenv
+
+def main(args):
+    assert os.getuid() == 0, "run_in_userenv must be run as root"
+    assert len(args) >= 2, ("Usage: "
+                            "run_in_userenv <username> <command> [cmdargs]")
+    username = args[0]
+    cmdlist = args[1:]
+
+    ue = userenv.UserEnv(username)
+
+    print "UserEnv manager running, pid %d." % os.getpid()
+
+    def signal_handler(signum, stackframe):
+        print "signal_handler got signal: %d" % signum
+        ue.cleanup_subprocs()
+        print "signal_handler cleaned subprocs"
+        ue.destroy()
+        print "signal_handler done"
+
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    try:
+        result = ue.call(cmdlist)
+        sys.exit(result)
+    finally:
+        ue.cleanup_subprocs()
+        if not ue.destroyed:
+            ue.destroy()
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

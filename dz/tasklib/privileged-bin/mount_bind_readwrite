@@ -1,0 +1,9 @@
+#!/bin/sh
+if [ ! -d $1 ]; then
+    echo Error: cannot bind anything to $1 because it is not a directory.
+    exit 1
+fi
+
+mkdir -p $2
+mount --bind $1 $2
+# no remount-ro here!

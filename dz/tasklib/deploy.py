@@ -11,12 +11,14 @@
 """
 import datetime
 import os
+import pwd
 import shutil
 import socket
 
 from dz.tasklib import (bundle_storage,
                         taskconfig,
-                        utils)
+                        utils,
+                        userenv)
 
 
 def _write_deployment_config(outfilename, bundle_name, dbinfo):
@@ -56,8 +58,13 @@ def install_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
                                      bundle_storage_engine)
 
     if not static_only:
+        utils.chown_to_me(bundle_dir)
         _write_deployment_config(os.path.join(bundle_dir, "thisbundle.py"),
                                  bundle_name, dbinfo)
+        utils.local_privileged(["project_chown", app_id, bundle_dir])
+        # bundle_owner_name = pwd.getpwuid(os.stat(bundle_dir).st_uid).pw_name
+        # if bundle_owner_name != app_id:
+        #     utils.local_privileged(["project_chown", app_id, bundle_dir])
 
 
 def install_app_bundle_static(app_id, bundle_name,
@@ -82,7 +89,10 @@ def managepy_command(app_id, bundle_name, command, nonzero_exit_ok=False,
         procargs += command
     else:
         procargs.append(command)
-    stdout, stderr, proc = utils.subproc(procargs)
+
+    ue = userenv.UserEnv(app_id)
+    stdout, stderr, proc = ue.subproc(procargs, nonzero_exit_ok=True)
+    ue.destroy()
 
     result = stdout + "\n" + stderr
 
@@ -109,13 +119,13 @@ def managepy_shell(app_id, bundle_name, some_python_code):
     procargs = [os.path.join(bundle_dir, "thisbundle.py"),
                 "shell", "--plain"]
 
-    stdout, stderr, proc = utils.subproc(procargs,
-                                         stdin_string=some_python_code,
-                                         redir_stderr_to_stdout=True)
-
-    assert stderr is None, "Expected nothing on stderr due to redirect"
+    ue = userenv.UserEnv(app_id)
+    stdout, stderr, proc = ue.subproc(procargs,
+                                      stdin_string=some_python_code)
 
     result = stdout
+    if stderr:
+        result += "\n" + stderr
 
     if proc.returncode != 0:
         raise RuntimeError(
@@ -149,8 +159,11 @@ def _kick_supervisor():
     utils.local('echo -e "reread\nupdate" | sudo /usr/bin/supervisorctl')
 
 
-def _get_active_bundles():
-    for filename in  os.listdir(taskconfig.SUPERVISOR_APP_CONF_DIR):
+def get_active_bundles():
+    if not os.path.isdir(taskconfig.SUPERVISOR_APP_CONF_DIR):
+        return
+
+    for filename in os.listdir(taskconfig.SUPERVISOR_APP_CONF_DIR):
         if ".port." in filename and filename.endswith(".conf"):
             app_and_bundle_name, bundle_port = \
                 filename[:-len(".conf")].rsplit(".port.", 1)
@@ -171,7 +184,7 @@ def _get_a_free_port():
     """Select a port for serving a new bundle."""
     max_used_port = taskconfig.APP_SERVICE_START_PORT
 
-    for active_bundle in _get_active_bundles():
+    for active_bundle in get_active_bundles():
         if active_bundle["port"] > max_used_port:
             max_used_port = active_bundle["port"]
 
@@ -189,10 +202,10 @@ def start_serving_bundle(app_id, bundle_name):
     """
     Serve the given bundle under supervisor, and return the appserver info
     for where the service is running.
-    
-    If you are running locally as dev, you need to make sure the user 
+
+    If you are running locally as dev, you need to make sure the user
     running Celery has permissions to write to the /etc/supervisor/conf.d dir.
-    
+
     $ sudo chgrp nateaune /etc/supervisor/conf.d/
     $ sudo chmod g+w /etc/supervisor/conf.d/
 
@@ -201,7 +214,7 @@ def start_serving_bundle(app_id, bundle_name):
 
     # check that this bundle isn't already being served here - otherwise
     # supervisor will silently ignore the redundant config files!
-    for bun in _get_active_bundles():
+    for bun in get_active_bundles():
         if bun["app_id"] == app_id and bun["bundle_name"] == bundle_name:
             raise utils.InfrastructureException((
                     "Redundant bundle service request: server %s (hostname=%s)"
@@ -219,13 +232,16 @@ def start_serving_bundle(app_id, bundle_name):
                                                            port_to_use))
 
     app_dir, bundle_dir = utils.app_and_bundle_dirs(app_id, bundle_name)
+
     utils.render_tpl_to_file(
         'deploy/supervisor_entry.conf',
         config_filename,
+        run_in_userenv=os.path.join(taskconfig.PRIVILEGED_PROGRAMS_PATH,
+                                    "run_in_userenv"),
         bundle_name=bundle_name,
         bundle_runner=os.path.join(bundle_dir, "thisbundle.py"),
         bundle_dir=bundle_dir,
-        bundle_user="dztasks",  # TODO: app_id users
+        app_user=app_id,
         port=port_to_use)
 
     _kick_supervisor()
@@ -246,7 +262,7 @@ def stop_serving_bundle(app_id, bundle_name):
     """
     num_stopped = 0
 
-    for bundle in _get_active_bundles():
+    for bundle in get_active_bundles():
         if bundle["app_id"] == app_id and bundle["bundle_name"] == bundle_name:
             config_filename = os.path.join(taskconfig.SUPERVISOR_APP_CONF_DIR,
                                            bundle["filename"])
@@ -353,6 +369,7 @@ def undeploy_from_appserver(zoomdb, app_id, bundle_id,
                                                      appserver_instance_id))
 
     bundle = zoomdb.get_bundle(bundle_id)
+    
     num_stopped = stop_serving_bundle(app_id, bundle.bundle_name)
 
     if num_stopped != 1:
@@ -367,4 +384,5 @@ def undeploy_from_appserver(zoomdb, app_id, bundle_id,
                                                     bundle.bundle_name)
     if os.path.isdir(bundle_dir):
         zoomdb.log("Removing old bundle from %s." % bundle_dir)
+        utils.chown_to_me(bundle_dir)
         shutil.rmtree(bundle_dir)

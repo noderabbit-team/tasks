@@ -1,0 +1,58 @@
+Notes from Code review - Fri Feb 25 11:06:54 EST 2011
+
+- use setproctitle to set worker process names to app_id
+- use django's wsgi server with cherrypy or some other lightweight server
+- monitoring: track when apps live/die
+  supervisor? or simple shell script to watch a process and restart it?
+
+- distributed logging of app logs (request) and python logging? really request logs should come
+   straight from the front end proxy. IT would be nice to aggregate and show these in a web console.
+   or perhaps do some visualization for a user.
+
+  http://www.rsyslog.com/
+  cloudera flume - https://github.com/cloudera/flume
+  
+- separate static media from bundle
+
+- Critical features for beta:
+  - finish deploy & frontend tasks
+  - provide a way for end users to run custom manage.py commands
+  - maybe a way to get a log dump
+
+- Nice but maybe not critical
+  - custom domains (not free)
+  - payment
+  - version rollback (with South integration to track South's versioning changes)
+  - varnish cache in front of nginx
+
+
+
+DEPLOYMENT STUFF:
+- celery user on appserver needs to:
+  - need to be able to run supervisorctl as root 
+  - need to be able to read/write into /etc/supervisor/conf.d (should be
+    writable by the celeryd user)
+
+shimon ALL = NOPASSWD: /usr/bin/supervisorctl
+
+
+
+TODO:
+- provide db creds to non-initial deployments (store in DB and get later)
+- store deployment info in DB
+- run syncdb & migrate after app installed (but before launched)
+- run stuff as app users
+
+
+
+
+====
+
+DEPLOYMENT NOTES from 3/19/11:
+- need to run DB permissions tightening in production (put into fab!)
+- need to create /cust/django/ and put django tarballs there.
+
+TODO:
+- guess requirements file names during setup
+- undeploy!
+- break out an "advanced" and "super advanced" section in settings page

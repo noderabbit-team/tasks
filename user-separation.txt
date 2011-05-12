@@ -1,0 +1,88 @@
+User Separation in DZ
+
+Goals:
+- Isolate build and appserver environments:
+  - customer-supplied code should run in a limited environment
+  - no access to DZ code on same box
+  - no access to other customers' code on same box
+  - (nice to have) access only to selected python version
+  - (nice to have) limited access to system binaries & libs
+  - (nice to have) CPU, disk, network, and wallclock time limits (ulimit)
+  - (nice to have) limited ability to do things like listen on network ports
+- Take typical precautions to reduce chances of compromise, DoS, etc.
+- Be assured that if we let in a malicious and smart user, he won't be able to
+  irreparably harm our other users beyond, at worst, causing some downtime
+  on a limited set of servers.
+- Optimize for us to receive prompt notification of any unusual/suspicious
+  behavior in user code, so that we can discover unanticipated
+  vulnerabilities as well as assist users who are unintentionally doing
+  things in a hyper-inefficient way (e.g. they have an accidental infinite
+  loop).
+
+Components to consider:
+- build and appserver processes should run as project user (basic unix perms)
+- per-project files (everything under /cust/whatever) should be owned by the
+  project user
+- each project user should have reasonable defaults for ulimits -- do we get
+  these by default in ubuntu or do we need to customize?
+- chroot: is it worth it? Seems like a nice precaution, not sure how much
+  extra work it might be to set up (plus we'd need to mount --bind a bunch
+  of stuff)
+- cgroups: best way to get cpu & network throttling? would it allow us to do
+  resource accounting (i.e. track how much cpu & network an app is using) so
+  that we can enforce service tiers & bill for overuse?
+- LXC: probably chroot & cgroups are sufficient, but are there other
+  components in LXC we should consider?
+
+So, what can we build when?
+- What's a reasonable first version that would allow us to feel comfortable
+  inviting more people?
+- What's the ideal?
+- When do we need to move past the first version?
+
+====
+
+Kapil's Gold standard: LXC + grsecurity + custom ec2-enabled kernel
+Other good but complex options: freebsd jails or solaris containers
+
+Simpler: LXC as-is; consider upgrading to natty because there are number of
+LXC fixes coming out in natty.
+
+In context of ensemble, Kapil is looking at integrating with LXC via
+libvirt; the integration is kinda limited.
+
+Chroot + cgroups is probably simpler for now.
+- example of LXC use: arkose demo
+  bzr branch lp:arkose
+
+VERY COOL! Runs a container.
+
+- How do network namespaces work?
+
+  -Options:
+  - Shared global network namespace
+  - New network namespace but on the same device
+  - New network namespace with new virtual device
+
+  -Articles:
+  - http://blog.flameeyes.eu/2010/09/04/linux-containes-and-networking
+  - http://www.delicious.com/kapilt/lxc
+
+- One downside: we wouldn't really be able to monitor all the user
+  containers separately.
+
+VERSION 1:
+- adapted from arkose to run from base container + customer bundle
+- LXC process container with new network namespace, new pid namespace, 
+- gives good isolation
+
+About starting with arkose: any networking is enabled - you can access stuff
+on the main machine.
+
+QUESTIONS:
+- how do we do networking; do we just assume you listen on the proper port?
+- how do we do builds; can we snapshot the FS after the build is done? Is
+  this something where the container itself has to do the upload because it's
+  the only thing with visibility into the tmpfs?
+- does this have implications for how we do the bundle packaging /
+  virtualenv creation / etc?

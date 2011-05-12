@@ -1,3 +1,4 @@
+import random
 import re
 import shutil
 import tempfile
@@ -152,6 +153,22 @@ class UtilsTestCase(DZTestCase):
         """
         result = utils.local_privileged(["whoami"])
         self.assertEqual("root\n", result)
+
+    def test_local_privileged_nonexistent(self):
+        """
+        Test trying to run a program that doesn't actually exist in the
+        privileged-bin directory.
+        """
+        with self.assertRaises(AssertionError):
+            utils.local_privileged(["cat"])
+
+    def test_local_privileged_stdin_string(self):
+        """
+        Runs a privileged external program with a string passed in on stdin.
+        """
+        test_string = "Hello, privileged world!"
+        result = utils.local_privileged(["test_cat"], stdin_string=test_string)
+        self.assertEqual(test_string, result, result)
 
     def tearDown(self):
         shutil.rmtree(self.dir)
@@ -317,3 +334,21 @@ class UtilsTestCase(DZTestCase):
             self.assertTrue(line in req_lines)
 
         self.assertTrue(len(lines_to_check) == len(req_lines))
+
+    def test_chown_to_me(self):
+        """
+        Test function to chown any file to the current user.
+        """
+        test_file = path.join(self.dir, "test%d" % random.randint(9999, 19999))
+        utils.local("touch %s" % test_file)
+        me = utils.local("whoami").strip()
+        self.assertFileOwnedBy(test_file, me)
+
+        utils.local_privileged(["project_chown", "root", test_file])
+
+        self.assertFileOwnedBy(test_file, "root")
+        utils.chown_to_me(test_file)
+
+        self.assertFileOwnedBy(test_file, me)
+
+        utils.local("rm %s" % test_file)

@@ -98,4 +98,5 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.admin',
     'polls',
+    'securitytest',
 )

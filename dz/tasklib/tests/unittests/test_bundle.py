@@ -16,7 +16,8 @@ from dz.tasklib import (taskconfig,
                         utils,
                         bundle,
                         check_repo,
-                        bundle_storage)
+                        bundle_storage,
+                        bundle_storage_local)
 from dz.tasklib.tests.stub_zoomdb import StubZoomDB
 from dz.tasklib.tests.dztestcase import DZTestCase, requires_internet
 
@@ -28,6 +29,11 @@ class TasksTestCase(DZTestCase):
         self.app_dir = self.makeDir(dirname=self.customer_directory)
         self.dir = self.makeDir(dirname=self.app_dir)
 
+    def tearDown(self):
+        # chown everything under self.customer_directory to me
+        # so i can delete it
+        self.chown_to_me(self.customer_directory)
+
     def capture_logging(self, log_name, level=logging.ERROR):
         output = StringIO()
         logger = logging.getLogger(log_name)
@@ -37,6 +43,26 @@ class TasksTestCase(DZTestCase):
         logger.addHandler(handler)
         logger.setLevel(level)
         return output
+
+    def _prep_build_test_bundle(self):
+        self.patch(taskconfig, "NR_CUSTOMER_DIR", self.dir)
+
+        # install_requirements = self.mocker.replace(
+        #     "dz.tasklib.utils.install_requirements")
+        # install_requirements(["Django==1.2.5"], MATCH(os.path.isdir),
+        #                      logsuffix="-django")
+        # install_requirements(ANY, MATCH(os.path.isdir))
+        # self.mocker.replay()
+
+        here = path.abspath(path.split(__file__)[0])
+        src = path.join(here, '../fixtures', 'app')
+        dest = path.join(self.dir, 'app')
+        shutil.copytree(src, dest)
+        utils.local('(cd %s; git init; git add -A; git commit -m test)' %
+                    path.join(dest, 'src'))
+
+        (bundle_name, code_revision) = bundle.bundle_app('app')
+        return (bundle_name, code_revision)
 
     @requires_internet
     def test_upload_bundle(self):
@@ -91,23 +117,7 @@ class TasksTestCase(DZTestCase):
         """
         Build a bundle!
         """
-        self.patch(taskconfig, "NR_CUSTOMER_DIR", self.dir)
-
-        # install_requirements = self.mocker.replace(
-        #     "dz.tasklib.utils.install_requirements")
-        # install_requirements(["Django==1.2.5"], MATCH(os.path.isdir),
-        #                      logsuffix="-django")
-        # install_requirements(ANY, MATCH(os.path.isdir))
-        # self.mocker.replay()
-
-        here = path.abspath(path.split(__file__)[0])
-        src = path.join(here, '../fixtures', 'app')
-        dest = path.join(self.dir, 'app')
-        shutil.copytree(src, dest)
-        utils.local('(cd %s; git init; git add -A; git commit -m test)' %
-                    path.join(dest, 'src'))
-
-        (bundle_name, code_revision) = bundle.bundle_app('app')
+        (bundle_name, code_revision) = self._prep_build_test_bundle()
         bundle_dir = path.join(self.dir, 'app', bundle_name)
         now = datetime.utcnow()
         # Made a datestamp'd bundle app directory
@@ -135,7 +145,10 @@ class TasksTestCase(DZTestCase):
         self.assertFalse(path.isfile(path.join(bundle_dir, "bin", "python")))
 
         # Moved the app src/ directory into user-src, respecting base package
+        here = path.abspath(path.split(__file__)[0])
+        src = path.join(here, '../fixtures', 'app')
         listdir_fixture = os.listdir(path.join(src, 'src'))
+        
         # except special ignored files:
         if ".git" in listdir_fixture:
             listdir_fixture.remove(".git")
@@ -163,6 +176,10 @@ class TasksTestCase(DZTestCase):
         self.assertTrue(path.join(bundle_dir, 'user-src') in pth_contents)
         self.assertTrue(user_src_base_dir in pth_contents)
         self.assertEqual(len(pth_contents), 3)
+
+        ### UPDATE PERMS
+        # This is just so we can look into all the files that just got created.
+        self.chown_to_me(bundle_dir)
 
         # Added our settings file
         settings = path.join(bundle_dir, 'dz_settings.py')
@@ -192,7 +209,24 @@ class TasksTestCase(DZTestCase):
 
         self.assertTrue(first_settings < first_import < last_settings)
 
+    def test_build_and_upload(self):
+        """
+        Test that I can do a build and then upload the result. This test that
+        ownership settings are workable to get the bundle saved into storage
+        even when built within a userenv.
+        """
+        (bundle_name, code_revision) = self._prep_build_test_bundle()
 
+        bundle_storage_file = path.join(taskconfig.NR_CUSTOMER_DIR,
+                                        "bundle_storage_local",
+                                        bundle_name + ".tgz")
+
+        self.assertFalse(path.isfile(bundle_storage_file))
+        bundle_file_name = bundle.zip_and_upload_bundle(
+            'app', bundle_name, bundle_storage_engine=bundle_storage_local)
+        self.assertTrue(path.isfile(bundle_storage_file))
+        bundle_storage_local.delete(bundle_file_name)
+        self.assertFalse(path.isfile(bundle_storage_file))
 
     def test_check_repo(self):
         """

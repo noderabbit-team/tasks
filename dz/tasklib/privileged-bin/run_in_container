@@ -1,0 +1,35 @@
+#!/bin/sh
+
+USERNAME=$1
+CONTAINER_DIR=$2
+shift
+shift 
+
+if [ -z "$USERNAME" ]; then
+    echo Error: a username parameter is required.
+    exit 1
+fi
+
+if [ -z "$CONTAINER_DIR" ]; then
+    echo Error: a container directory parameter is required.
+    exit 1
+fi
+
+USER_ID=`id -u $USERNAME 2>/dev/null`
+
+if [ -z $USER_ID ]; then
+    echo Error: user named $USERNAME does not exist.
+    exit 1
+fi
+
+if [ -z "$*" ]; then
+    echo Error: no commands passed.
+    exit 1
+fi
+
+if [ `whoami` != 'root' ]; then
+    echo Error: run_in_container must be invoked by root.
+    exit 1
+fi
+
+exec chroot --userspec=`id -u $USERNAME`:`id -g $USERNAME` $CONTAINER_DIR $@
