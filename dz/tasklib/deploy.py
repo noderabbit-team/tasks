@@ -238,6 +238,7 @@ def start_serving_bundle(app_id, bundle_name):
         config_filename,
         run_in_userenv=os.path.join(taskconfig.PRIVILEGED_PROGRAMS_PATH,
                                     "run_in_userenv"),
+        custdir=taskconfig.NR_CUSTOMER_DIR,
         bundle_name=bundle_name,
         bundle_runner=os.path.join(bundle_dir, "thisbundle.py"),
         bundle_dir=bundle_dir,

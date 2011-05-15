@@ -20,7 +20,7 @@ class BuildAndDeployTestcase(DZTestCase):
     """
 
     def setUp(self):
-        self.dir = self.makeDir()
+        self.dir = self.makeDir(prefix="test_build_dep_cust_")
         self.patch(taskconfig, "NR_CUSTOMER_DIR", self.dir)
         self.app_id = "test001"
 
@@ -33,6 +33,9 @@ class BuildAndDeployTestcase(DZTestCase):
             database.drop_user(self.app_id)
         except ProgrammingError:  # probably indicates DB/user doesn't exist
             pass
+
+        # chown cust dir to me so we can delete it
+        utils.chown_to_me(self.dir)
 
     @requires_internet
     def test_build_and_deploy(self):
@@ -61,6 +64,8 @@ class BuildAndDeployTestcase(DZTestCase):
             use_subtasks=False,
             bundle_storage_engine=bundle_storage_local,
             )
+
+        print "build_and_deploy returned: %r" % deployed_addresses
 
         # # call the tasks module directly instead, so we get that tested too.
         # # actually this doesn't work because of the decorator; doh!
@@ -99,6 +104,7 @@ class BuildAndDeployTestcase(DZTestCase):
         for (instance_id, node_name, host_ip, host_port) in deployed_addresses:
             polls_url = "http://%s:%d/polls/" % (host_ip,
                                                  host_port)
+            print "Testing Polls URL: %s" % polls_url
             polls_src = urllib.urlopen(polls_url).read()
             self.assertTrue("No polls are available." in polls_src)
 

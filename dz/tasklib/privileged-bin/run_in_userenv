@@ -10,6 +10,7 @@ UserEnv and exits.
 import os
 import signal
 import sys
+import argparse
 
 # This script doesn't run under a virtualenv, but still needs some modules
 # out of dz.tasklib. So let's just manually put them on the python path.
@@ -22,10 +23,25 @@ from dz.tasklib import userenv
 
 def main(args):
     assert os.getuid() == 0, "run_in_userenv must be run as root"
-    assert len(args) >= 2, ("Usage: "
-                            "run_in_userenv <username> <command> [cmdargs]")
-    username = args[0]
-    cmdlist = args[1:]
+
+    parser = argparse.ArgumentParser(
+        description='Create a UserEnv for the provided user and run a command.')
+    parser.add_argument(
+        '--custdir', default=None, help='Overrides NR_CUSTOMER_DIR setting.')
+
+    parser.add_argument(
+        'username', metavar='username', help='Username to run as.')
+    parser.add_argument(
+        'command', metavar='command', nargs='+', help='Command and options.')
+    args = parser.parse_args()
+
+    username = args.username
+    cmdlist = args.command
+    custdir_override = args.custdir
+
+    if custdir_override:
+        from dz.tasklib import taskconfig
+        taskconfig.NR_CUSTOMER_DIR = custdir_override
 
     ue = userenv.UserEnv(username)
 
