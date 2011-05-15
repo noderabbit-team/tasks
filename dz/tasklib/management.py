@@ -1,6 +1,10 @@
 from dz.tasklib import (taskconfig,
                         utils)
 import os
+import psi
+import psi.process
+import pwd
+import re
 
 
 def get_installed_bundles():
@@ -68,3 +72,61 @@ def get_nginx_sites_enabled():
         result.append(siteinfo)
 
     return result
+
+
+def get_uptime():
+    return psi.uptime().timestamp()
+
+
+def get_loadavg():
+    return psi.loadavg()
+
+# gunicorn: master ['bundle_p00000002_2011-05-11-02.50.14 on :10004']
+# gunicorn: master ['bundle_p00000002_2011-04-08-16.40.42 on :10001']
+GUNICORN_CMD_RE = re.compile(
+    r"^gunicorn: (master|worker) \['(\S+) on :(\d+)'\]\s*$")
+
+
+def get_unicorns():
+
+    unicorns_by_bundle = {}
+
+    for pid, proc in psi.process.ProcessTable().items():
+        m = GUNICORN_CMD_RE.match(proc.command)
+        if not m:
+            continue
+
+        proc_type = m.group(1)
+        bundle_name = m.group(2)
+        port = int(m.group(3))
+
+        d = unicorns_by_bundle.setdefault(
+            bundle_name,
+            dict(bundle_name=bundle_name,
+                 port=port,
+                 user=pwd.getpwuid(proc.euid).pw_name))
+        if proc_type == "master":
+            d["master_pid"] = pid
+        else:
+            d.setdefault("worker_pids", []).append(pid)
+
+    return sorted(unicorns_by_bundle.values(), key=lambda x: x["bundle_name"])
+
+
+def gunicorn_signal(gunicorn_master_pid, signal_name, appserver_name):
+    my_hostname = utils.node_meta("name")
+
+    if appserver_name not in (my_hostname, "localhost"):
+        raise utils.InfrastructureException(
+            "Incorrect appserver received gunicorn_signal task; " +
+            "I am %s but the task is requesting %s." % (my_hostname,
+                                                        appserver_name))
+
+    if signal_name not in ("TTIN", "TTOU"):
+        raise utils.InfrastructureException(
+            "Unexpected gunicorn_signal %s: only TTIN & TTOU allowed."
+            % signal_name)
+
+    utils.local_privileged(["gunicorn_signal",
+                            signal_name,
+                            gunicorn_master_pid])

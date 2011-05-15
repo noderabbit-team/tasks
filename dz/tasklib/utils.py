@@ -323,6 +323,8 @@ def node_meta(field):
         else:
             # we're running on a test system.
             print "(Not on a VM; faking metadata for %s...)" % field
+            if field == "name":
+                return socket.gethostname()
             return "localhost"
 
 

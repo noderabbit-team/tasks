@@ -1,0 +1,5 @@
+#!/bin/sh
+SIGNAL=$1
+GPID=$2
+
+kill -$SIGNAL $GPID

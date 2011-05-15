@@ -5,3 +5,4 @@ sqlalchemy
 Celery
 boto
 Jinja2
+PSI
