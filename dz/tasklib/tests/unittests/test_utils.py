@@ -179,7 +179,7 @@ class UtilsTestCase(DZTestCase):
         node_role = utils.node_meta("role")
 
         self.assertEqual(instance_id, "localhost")
-        self.assertEqual(node_name, "localhost")
+        self.assertEqual(node_name, utils.local("hostname").strip())
         self.assertEqual(node_role, "localhost")
 
         here = path.abspath(path.split(__file__)[0])
