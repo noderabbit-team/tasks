@@ -195,12 +195,14 @@ def zip_and_upload_bundle(app_id, bundle_name,
     archive_file_path = tempfile.mktemp(suffix=".tgz")
 
     app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
+    bundle_dir = os.path.join(app_dir, bundle_name)
 
     try:
         current_dir = os.getcwd()
 
-        # change ownership in app_dir because it was built inside a container
-        utils.chown_to_me(app_dir)
+        # change ownership in app_dir before upload
+        # because it was built inside a container
+        utils.chown_to_me(bundle_dir)
 
         os.chdir(app_dir)
 
