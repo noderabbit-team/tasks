@@ -27,4 +27,5 @@ def build_and_deploy(job_id, zoomdb, job_params):
         zoomdb,
         job_params["app_id"],
         job_params["src_url"],
-        job_params["zoombuild_cfg_content"])
+        job_params["zoombuild_cfg_content"],
+        num_workers=job_params["num_workers"])

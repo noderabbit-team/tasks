@@ -42,7 +42,7 @@ if __name__ == "__main__":
         gunicorn = "/usr/bin/gunicorn"
         sys.argv = [gunicorn,
                     "--name='{{bundle_name}} on :%d'" % port,
-                    "--workers=1",
+                    "--workers={{num_workers}}",
                     "--bind=0.0.0.0:%d" % port,
                     this_filename[:-len(".py")] + ":run_wsgi"]
 

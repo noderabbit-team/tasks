@@ -9,9 +9,10 @@ from dz.tasks.decorators import task_inject_zoomdb
 
 @task(name="deploy_to_appserver",
       queue="__QUEUE_MUST_BE_SPECIFIED_DYNAMICALLY__")
-def deploy_to_appserver(app_id, bundle_name, appserver_name, dbinfo):
+def deploy_to_appserver(app_id, bundle_name, appserver_name, dbinfo,
+                        num_workers=1):
     return deploy.deploy_app_bundle(app_id, bundle_name, appserver_name,
-                                    dbinfo)
+                                    dbinfo, num_workers=num_workers)
 
 
 @task(name="managepy_command",

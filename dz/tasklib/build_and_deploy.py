@@ -101,6 +101,14 @@ def select_app_server_for_deployment(zoomdb, opts):
 def deploy_project_to_appserver(zoomdb, opts):
     deployed_addresses = []  # in (hostname,port) format
 
+    appserver_placeholder = object()
+
+    dep_args = [opts["APP_ID"],
+                opts["BUNDLE_NAME"],
+                appserver_placeholder,
+                opts["DB"],
+                opts["NUM_WORKERS"]]
+
     if opts["USE_SUBTASKS"]:
         # send concurrent deploy commands to all placed servers.
         deployment_tasks = []
@@ -108,11 +116,11 @@ def deploy_project_to_appserver(zoomdb, opts):
         for appserver in opts["PLACEMENT"]:
             zoomdb.log("Deploying to %s..." % appserver)
 
+            my_args = list(dep_args)
+            my_args[my_args.index(appserver_placeholder)] = appserver
+
             async_result = deploy.deploy_to_appserver.apply_async(
-                args=[opts["APP_ID"],
-                      opts["BUNDLE_NAME"],
-                      appserver,
-                      opts["DB"]],
+                args=my_args,
                 queue="appserver:" + appserver)
             deployment_tasks.append(async_result)
 
@@ -125,12 +133,12 @@ def deploy_project_to_appserver(zoomdb, opts):
     else:
         for appserver in opts["PLACEMENT"]:
             zoomdb.log("Deploying to %s..." % appserver)
+
+            my_args = list(dep_args)
+            my_args[my_args.index(appserver_placeholder)] = appserver
+
             (instance_id, node_name, host_ip, host_port) = \
-                deploy.deploy_to_appserver(
-                opts["APP_ID"],
-                opts["BUNDLE_NAME"],
-                appserver,
-                opts["DB"])
+                deploy.deploy_to_appserver(*my_args)
             zoomdb.log("Serving on %s:%d" % (host_ip, host_port))
             deployed_addresses.append((instance_id, node_name,
                                        host_ip, host_port))
@@ -187,6 +195,9 @@ def run_post_build_hooks(zoomdb, opts):
                                                        1)[1].splitlines()]
             if "migrate" in available_commands:
                 post_build_hooks.append("migrate")
+
+            # TODO: add something with collectstatic here
+
         except IndexError:
             zoomdb.log(("Warning: Couldn't determine whether you have a "
                         "'migrate' command because 'manage.py help' didn't "
@@ -244,6 +255,7 @@ def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
                      use_subtasks=True,
                      bundle_storage_engine=None,
                      post_build_hooks=None,
+                     num_workers=1,
                      ):
     app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
 
@@ -262,6 +274,7 @@ def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
         "USE_SUBTASKS": use_subtasks,
         "BUNDLE_STORAGE": bundle_storage_engine,
         "POST_BUILD_HOOKS": post_build_hooks,
+        "NUM_WORKERS": num_workers,
         }
 
     utils.run_steps(zoomdb, opts, (

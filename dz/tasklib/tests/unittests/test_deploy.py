@@ -132,7 +132,7 @@ class AbstractDeployTestCase(DZTestCase):
                     load_attempts, url, str(e))
                 time.sleep(0.25)
 
-    def install_my_bundle(self):
+    def install_my_bundle(self, **kwargs):
         """
         Convenience function used in several tests.
         """
@@ -141,7 +141,7 @@ class AbstractDeployTestCase(DZTestCase):
             self.bundle_name,
             self.appserver_name,
             self.dbinfo,
-            bundle_storage_engine=bundle_storage_local)
+            bundle_storage_engine=bundle_storage_local, **kwargs)
 
 
 class DeployTestCase(AbstractDeployTestCase):
@@ -343,3 +343,23 @@ class DeployTestCase(AbstractDeployTestCase):
         with self.assertRaises(utils.InfrastructureException):
             deploy.undeploy_from_appserver(StubZoomDB(), 1, 1,
                                            "localhost", 10001)
+
+    def test_install_num_workers(self):
+        """
+        Test installing with varying numbers of workers.
+        """
+        bundle_dir = os.path.join(self.customer_directory,
+                                  self.app_id,
+                                  self.bundle_name)
+        thisbundle = os.path.join(bundle_dir, "thisbundle.py")
+
+        for num_workers in (1, 3, 17, 104):
+            self.install_my_bundle(num_workers=num_workers)
+
+            # for testing purposes only, let me read this file:
+            utils.chown_to_me(thisbundle)
+
+            thisbundle_content = [x.strip() for x in
+                                  open(thisbundle).readlines()]
+            self.assertIn('"--workers=%d",' %  num_workers,
+                          thisbundle_content)

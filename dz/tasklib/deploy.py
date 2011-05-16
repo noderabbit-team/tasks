@@ -21,17 +21,19 @@ from dz.tasklib import (bundle_storage,
                         userenv)
 
 
-def _write_deployment_config(outfilename, bundle_name, dbinfo):
+def _write_deployment_config(outfilename, bundle_name, dbinfo, num_workers=1):
     utils.render_tpl_to_file(
         'deploy/thisbundle.py.tmpl',
         outfilename,
         bundle_name=bundle_name,
-        dbinfo=dbinfo)
+        dbinfo=dbinfo,
+        num_workers=num_workers)
     os.chmod(outfilename, 0700)
 
 
 def deploy_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
-                      bundle_storage_engine=bundle_storage):
+                      bundle_storage_engine=bundle_storage,
+                      num_workers=1):
 
     my_hostname = utils.node_meta("name")
 
@@ -42,7 +44,8 @@ def deploy_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
                                                           appserver_name))
 
     install_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
-                       bundle_storage_engine=bundle_storage)
+                       bundle_storage_engine=bundle_storage,
+                       num_workers=num_workers)
 
     # result is a (instance_id, node_name, host_ip, port_to_use)
     return start_serving_bundle(app_id, bundle_name)
@@ -50,7 +53,7 @@ def deploy_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
 
 def install_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
                        bundle_storage_engine=bundle_storage,
-                       static_only=False):
+                       static_only=False, num_workers=1):
     app_dir, bundle_dir = utils.app_and_bundle_dirs(app_id, bundle_name)
 
     if not os.path.exists(bundle_dir):
@@ -60,7 +63,7 @@ def install_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
     if not static_only:
         utils.chown_to_me(bundle_dir)
         _write_deployment_config(os.path.join(bundle_dir, "thisbundle.py"),
-                                 bundle_name, dbinfo)
+                                 bundle_name, dbinfo, num_workers=num_workers)
         utils.local_privileged(["project_chown", app_id, bundle_dir])
         # bundle_owner_name = pwd.getpwuid(os.stat(bundle_dir).st_uid).pw_name
         # if bundle_owner_name != app_id:
