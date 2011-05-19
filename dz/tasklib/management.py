@@ -27,7 +27,8 @@ def get_installed_bundles():
                 continue
 
             result.append(dict(app_id=custdir,
-                               bundle_name=bundledir))
+                               bundle_name=bundledir,
+                               bundle_path=fullbundledir))
     return result
 
 
