@@ -37,6 +37,10 @@ class BuildAndDeployTestcase(DZTestCase):
         # chown cust dir to me so we can delete it
         utils.chown_to_me(self.dir)
 
+        # delete any lingering supervisor conf files
+        utils.local("rm -f %s/%s*" % (taskconfig.SUPERVISOR_APP_CONF_DIR,
+                                      self.app_id))
+
     @requires_internet
     def test_build_and_deploy(self):
         """Invoke the build and deploy task."""
