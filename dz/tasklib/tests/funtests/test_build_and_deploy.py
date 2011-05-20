@@ -140,7 +140,19 @@ class BuildAndDeployTestcase(DZTestCase):
         image_src = get_via_nginx(hosts[0], "/static/img/polls.jpg")
         local_image_file = os.path.join(app_fixture,
                                         "src", "static", "polls.jpg")
-        self.assertEqual(image_src, file(local_image_file).read())
+        self.assertEqual(image_src, open(local_image_file).read())
+
+        # try a collectstatic-handled file
+        collectstatic_src = get_via_nginx(hosts[0],
+                                          "/staticfiles/polls/Lineup.jpg")
+        local_collectstatic_file = os.path.join(app_fixture,
+                                                "src",
+                                                "polls",
+                                                "static",
+                                                "polls",
+                                                "Lineup.jpg")
+        self.assertEqual(collectstatic_src,
+                         open(local_collectstatic_file).read())
 
         # OK, now undeploy.
         deploy.undeploy(zoomdb, self.app_id, bundle_ids=None,

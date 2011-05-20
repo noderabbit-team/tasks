@@ -17,7 +17,7 @@ def _ignore_vcs_files(srcdir, names):
     return [n for n in names if n in (".git", ".svn")]
 
 
-def bundle_app(app_id, force_bundle_name=None):
+def bundle_app(app_id, force_bundle_name=None, return_ue=False):
     """
     Task: Bundle an app with ``app_id`` found in ``custdir``
 
@@ -26,6 +26,11 @@ def bundle_app(app_id, force_bundle_name=None):
         valid directory.
     :param force_bundle_name: Optional name for the bundle. If absent, name
         will be auto-generated based on the app name and current date/time.
+    :param return_ue: If true, returns the UserEnv object used to build
+        the bundle.
+
+    :returns: (bundle_name, code_revision, userenv) if ``return_ue`` is True
+        otherwise returns (bundle_name, code_revision)
     """
 
     appdir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
@@ -174,7 +179,10 @@ def bundle_app(app_id, force_bundle_name=None):
         dz_settings=buildconfig_info["django_settings_module"],
         admin_media_prefix=taskconfig.DZ_ADMIN_MEDIA["url_path"])
 
-    return bundle_name, code_revision
+    if return_ue:
+        return bundle_name, code_revision, ue
+    else:
+        return bundle_name, code_revision
 
 
 def zip_and_upload_bundle(app_id, bundle_name,

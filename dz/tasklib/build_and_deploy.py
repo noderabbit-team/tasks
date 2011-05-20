@@ -19,11 +19,70 @@ def write_build_configuration(zoomdb, opts):
 def build_project_bundle(zoomdb, opts):
     zoomdb.log("We're getting your project's dependencies and packaging "
                "everything up. This might take a couple of minutes.")
-    bundle_name, code_revision = bundle.bundle_app(opts["APP_ID"])
+    bundle_name, code_revision, ue = bundle.bundle_app(opts["APP_ID"],
+                                                       return_ue=True)
     zoomdb.log("Built project into bundle: %s" % bundle_name)
     opts["BUNDLE_NAME"] = bundle_name
     # and log this bundle into zoomdb
     opts["BUNDLE_INFO"] = zoomdb.add_bundle(bundle_name, code_revision)
+
+    post_build_hooks = opts["POST_BUILD_HOOKS"]
+
+    bundle_runner = os.path.join(opts["APP_DIR"],
+                                 bundle_name,
+                                 "thisbundle_build.py")
+    # write out a temporary build-time bundle runner
+    utils.render_tpl_to_file('deploy/thisbundle.py.tmpl',
+                             bundle_runner,
+                             dbinfo=None,  # no database access yet
+                             num_workers=0,
+                             env=ue)
+    ue.call(["chmod", "700", bundle_runner])
+
+    def run_buildtime_managepy_cmd(cmdlist, nonzero_exit_ok=False):
+        stdout, stderr, p = ue.subproc([bundle_runner] + cmdlist,
+                                       nonzero_exit_ok=nonzero_exit_ok)
+        return stdout, stderr, p
+
+    if post_build_hooks is None:
+        post_build_hooks = []
+
+        _stdout, managepy_help, _p = run_buildtime_managepy_cmd(
+            ["help"], nonzero_exit_ok=True)
+        try:
+            available_commands = [x.strip() for x in
+                                  managepy_help.rsplit(
+                                      "Available subcommands:",
+                                      1)[1].splitlines()]
+
+            if "collectstatic" in available_commands:
+                zoomdb.log("Found that your project offers a 'collectstatic' "
+                           "management command; adding that to post-build "
+                           "hooks.")
+                post_build_hooks.append(["collectstatic", "--noinput"])
+
+        except IndexError:
+            zoomdb.log(("Warning: Couldn't determine whether you have a "
+                     "'collectstatic' command because 'manage.py help' didn't "
+                     "provide a list of available subcommands as expected. "
+                     "Full manage.py help output was:\n%s") % managepy_help)
+
+    if not post_build_hooks:
+        zoomdb.log("No post-build hooks found.")
+    else:
+        try:
+            for cmdlist in post_build_hooks:
+                cmdtext = " ".join(cmdlist)
+                zoomdb.log("Running post-build 'manage.py %s': " % cmdtext)
+                cmd_output, cmd_err, cmd_p = run_buildtime_managepy_cmd(
+                    cmdlist)
+                zoomdb.log("Executed: " + cmd_output + cmd_err)
+        except RuntimeError, e:
+            zoomdb.log("Warning: there was an error running a post-build "
+                       "command. Detail:\n" + e.message,
+                       zoomdb.LOG_WARN)
+
+    ue.call(["rm", bundle_runner])
 
 
 def request_database_setup(zoomdb, opts):
@@ -160,9 +219,9 @@ def deploy_project_to_appserver(zoomdb, opts):
                           host_port)
 
 
-def run_post_build_hooks(zoomdb, opts):
+def run_post_deploy_hooks(zoomdb, opts):
     """
-    Intended for post build application initialization/update commands.
+    Intended for post deploy application initialization/update commands.
     """
     appserver = opts["PLACEMENT"][0]
 
@@ -183,20 +242,19 @@ def run_post_build_hooks(zoomdb, opts):
 
         return cmd_output
 
-    post_build_hooks = opts["POST_BUILD_HOOKS"]
+    post_deploy_hooks = opts["POST_DEPLOY_HOOKS"]
 
-    if post_build_hooks is None:
-        post_build_hooks = [["syncdb", "--noinput"]]
+    if post_deploy_hooks is None:
+        post_deploy_hooks = [["syncdb", "--noinput"]]
         managepy_help = run_managepy_cmd("help", nonzero_exit_ok=True)
 
         try:
             available_commands = [x.strip() for x in
-                                  managepy_help.rsplit("Available subcommands:",
-                                                       1)[1].splitlines()]
+                                  managepy_help.rsplit(
+                                      "Available subcommands:",
+                                      1)[1].splitlines()]
             if "migrate" in available_commands:
-                post_build_hooks.append("migrate")
-
-            # TODO: add something with collectstatic here
+                post_deploy_hooks.append("migrate")
 
         except IndexError:
             zoomdb.log(("Warning: Couldn't determine whether you have a "
@@ -205,13 +263,13 @@ def run_post_build_hooks(zoomdb, opts):
                         "Full manage.py help output was:\n%s") % managepy_help)
 
     try:
-        for cmd in post_build_hooks:
+        for cmd in post_deploy_hooks:
             cmdtext = " ".join(cmd) if isinstance(cmd, list) else cmd
             zoomdb.log("Running 'manage.py %s': " % cmdtext)
             cmd_output = run_managepy_cmd(cmd)
             zoomdb.log("Executed: " + cmd_output)
     except RuntimeError, e:
-        zoomdb.log("Warning: there was an error running a post-build "
+        zoomdb.log("Warning: there was an error running a post-deploy "
                    "command. Detail:\n" + e.message,
                    zoomdb.LOG_WARN)
 
@@ -255,6 +313,7 @@ def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
                      use_subtasks=True,
                      bundle_storage_engine=None,
                      post_build_hooks=None,
+                     post_deploy_hooks=None,
                      num_workers=1,
                      ):
     app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
@@ -274,6 +333,7 @@ def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
         "USE_SUBTASKS": use_subtasks,
         "BUNDLE_STORAGE": bundle_storage_engine,
         "POST_BUILD_HOOKS": post_build_hooks,
+        "POST_DEPLOY_HOOKS": post_deploy_hooks,
         "NUM_WORKERS": num_workers,
         }
 
@@ -286,7 +346,7 @@ def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
             wait_for_database_setup_to_complete,
             select_app_server_for_deployment,
             deploy_project_to_appserver,
-            run_post_build_hooks,
+            run_post_deploy_hooks,
             update_front_end_proxy,
             ))
 

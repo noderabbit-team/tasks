@@ -17,7 +17,8 @@ from dz.tasklib import (taskconfig,
                         bundle,
                         check_repo,
                         bundle_storage,
-                        bundle_storage_local)
+                        bundle_storage_local,
+                        userenv)
 from dz.tasklib.tests.stub_zoomdb import StubZoomDB
 from dz.tasklib.tests.dztestcase import DZTestCase, requires_internet
 
@@ -44,7 +45,7 @@ class TasksTestCase(DZTestCase):
         logger.setLevel(level)
         return output
 
-    def _prep_build_test_bundle(self):
+    def _prep_build_test_bundle(self, **kwargs):
         self.patch(taskconfig, "NR_CUSTOMER_DIR", self.dir)
 
         # install_requirements = self.mocker.replace(
@@ -57,12 +58,23 @@ class TasksTestCase(DZTestCase):
         here = path.abspath(path.split(__file__)[0])
         src = path.join(here, '../fixtures', 'app')
         dest = path.join(self.dir, 'app')
-        shutil.copytree(src, dest)
-        utils.local('(cd %s; git init; git add -A; git commit -m test)' %
-                    path.join(dest, 'src'))
 
-        (bundle_name, code_revision) = bundle.bundle_app('app')
-        return (bundle_name, code_revision)
+        if not os.path.isdir(dest):
+            shutil.copytree(src, dest)
+            utils.local('(cd %s; git init; git add -A; git commit -m test)' %
+                        path.join(dest, 'src'))
+
+        return bundle.bundle_app('app', **kwargs)
+
+    def test_bundle_app_return_ue(self):
+        """
+        Test that bundle.bundle_app's return_ue parameter works.
+        """
+        (bundle_name, code_revision) = self._prep_build_test_bundle()
+        (bundle_name, code_revision, ue) = self._prep_build_test_bundle(
+            return_ue=True)
+
+        self.assertTrue(isinstance(ue, userenv.UserEnv))
 
     @requires_internet
     def test_upload_bundle(self):
