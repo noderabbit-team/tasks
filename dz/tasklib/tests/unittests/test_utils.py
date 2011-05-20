@@ -225,8 +225,9 @@ class UtilsTestCase(DZTestCase):
 
         input_text = zcfg["site_media_map"]
 
-        self.assertEqual(len(input_text.splitlines()), 2)
+        self.assertEqual(len(input_text.splitlines()), 3)
         self.assertTrue("static static" in input_text)
+        self.assertTrue("staticfiles staticfiles" in input_text)
         self.assertTrue("foo {SITE_PACKAGES}/foo" in input_text)
 
         smm = utils.parse_site_media_map(input_text)
@@ -241,7 +242,8 @@ class UtilsTestCase(DZTestCase):
 
         self.assertEqual(smm["/foo/"], "{SITE_PACKAGES}/foo")
         self.assertEqual(smm["/static/"], "static")
-        self.assertEqual(len(smm), 2)
+        self.assertEqual(smm["/staticfiles/"], "staticfiles")
+        self.assertEqual(len(smm), 3)
 
     def test_assemble_requirements(self):
         req_lines = utils.assemble_requirements()

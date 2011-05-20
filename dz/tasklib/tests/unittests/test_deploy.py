@@ -184,9 +184,11 @@ class DeployTestCase(AbstractDeployTestCase):
         run_in_userenv = os.path.join(taskconfig.PRIVILEGED_PROGRAMS_PATH,
                                       "run_in_userenv")
         thisbundle = os.path.join(bundle_dir, "thisbundle.py")
-        main_runner = "sudo %s -- %s %s" % (run_in_userenv,
-                                         self.app_id,
-                                         thisbundle)
+        main_runner = "sudo %s --custdir=%s -- %s %s" % (
+            run_in_userenv,
+            taskconfig.NR_CUSTOMER_DIR,
+            self.app_id,
+            thisbundle)
 
         #print "---> RUNNABLE! %s <---" % main_runner
 

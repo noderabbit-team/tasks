@@ -54,9 +54,10 @@ class UtilsTestCase(DZTestCase):
         wd, _1, _2 = self.ue.subproc(["pwd"])
         self.assertEqual(wd.strip(), "/")
         ls, _1, _2 = self.ue.subproc(["ls"])
-        self.assertEqual(sorted(ls.splitlines()),
-                         sorted(['bin', 'dev', 'etc', 'lib', 'lib64', 'usr',
-                                 taskconfig.NR_CUSTOMER_DIR.strip("/")]))
+        self.assertEqual(
+            sorted(ls.splitlines()),
+            sorted(['bin', 'dev', 'etc', 'lib', 'lib64', 'usr',
+                    taskconfig.NR_CUSTOMER_DIR.strip("/").split("/")[0]]))
 
     def test_subproc_requires_list(self):
         """Test that subproc verifies that its command argument must be in
