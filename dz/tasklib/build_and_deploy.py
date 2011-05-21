@@ -59,7 +59,9 @@ def build_project_bundle(zoomdb, opts):
                 zoomdb.log("Found that your project offers a 'collectstatic' "
                            "management command; adding that to post-build "
                            "hooks.")
-                post_build_hooks.append(["collectstatic", "--noinput"])
+                post_build_hooks.append(["collectstatic",
+                                         "--link",
+                                         "--noinput"])
 
         except IndexError:
             zoomdb.log(("Warning: Couldn't determine whether you have a "
