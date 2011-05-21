@@ -132,13 +132,20 @@ def update_proxy_configuration(zoomdb, opts):
                        "pointing hostnames at bundle %d (%s)." % (
                            bundle.id, bundle.bundle_name),
                        log_type=zoomdb.LOG_WARN)
+        ### TODO: ACTUALLY DEPLOY bundle, not full list of deployments!!!!!!
 
         # deployments must be in (instance_id, node_name, host_ip, host_port)
         # format, but node_name is not actually used so it's OK we ignore it.
+
+        # deployments = [(d.server_instance_id,
+        #                 "NODE_NAME_IGNORED",
+        #                 d.server_ip, d.server_port)
+        #                for d in opts["APPSERVERS"]]
         deployments = [(d.server_instance_id,
                         "NODE_NAME_IGNORED",
                         d.server_ip, d.server_port)
-                       for d in opts["APPSERVERS"]]
+                       for d in opts["APPSERVERS"]
+                       if d.bundle_id == max_bundle_id]
 
         args = [zoomdb._job_id, opts["APP_ID"], bundle.bundle_name,
                 deployments,
