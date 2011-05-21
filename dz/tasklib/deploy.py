@@ -11,11 +11,12 @@
 """
 import datetime
 import os
-import pwd
+#import pwd
 import shutil
 import socket
 
 from dz.tasklib import (bundle_storage,
+                        bundle_storage_local,
                         taskconfig,
                         utils,
                         userenv)
@@ -32,8 +33,14 @@ def _write_deployment_config(outfilename, bundle_name, dbinfo, num_workers=1):
 
 
 def deploy_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
-                      bundle_storage_engine=bundle_storage,
+                      bundle_storage_engine=None,
                       num_workers=1):
+
+    if bundle_storage_engine is None:
+        if taskconfig.DEFAULT_BUNDLE_STORAGE_ENGINE == "bundle_storage_local":
+            bundle_storage_engine = bundle_storage_local
+        else:
+            bundle_storage_engine = bundle_storage
 
     my_hostname = utils.node_meta("name")
 
@@ -44,7 +51,7 @@ def deploy_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
                                                           appserver_name))
 
     install_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
-                       bundle_storage_engine=bundle_storage,
+                       bundle_storage_engine=bundle_storage_engine,
                        num_workers=num_workers)
 
     # result is a (instance_id, node_name, host_ip, port_to_use)
@@ -373,7 +380,7 @@ def undeploy_from_appserver(zoomdb, app_id, bundle_id,
                                                      appserver_instance_id))
 
     bundle = zoomdb.get_bundle(bundle_id)
-    
+
     num_stopped = stop_serving_bundle(app_id, bundle.bundle_name)
 
     if num_stopped != 1:

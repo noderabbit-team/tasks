@@ -240,6 +240,32 @@ class TasksTestCase(DZTestCase):
         bundle_storage_local.delete(bundle_file_name)
         self.assertFalse(path.isfile(bundle_storage_file))
 
+    def test_build_and_upload_with_delete(self):
+        """
+        Test that I can pass delete_after_upload to
+        bundle.zip_and_upload_bundle and have it delete the bundle directory
+        after a successful upload.
+        """
+        (bundle_name, code_revision) = self._prep_build_test_bundle()
+        bundle_dir = path.join(self.dir, 'app', bundle_name)
+        self.assertTrue(path.isdir(bundle_dir))
+        bundle_file_name = bundle.zip_and_upload_bundle(
+            'app', bundle_name, bundle_storage_engine=bundle_storage_local)
+        # still there
+        self.assertTrue(path.isdir(bundle_dir))
+        # delete uploaded bundle
+        bundle_storage_local.delete(bundle_file_name)
+        # still there
+        self.assertTrue(path.isdir(bundle_dir))
+        # ok now upload with delete
+        bundle_file_name = bundle.zip_and_upload_bundle(
+            'app', bundle_name, bundle_storage_engine=bundle_storage_local,
+            delete_after_upload=True)
+        # Now it's gone!
+        self.assertFalse(path.isdir(bundle_dir))
+        # delete uploaded bundle
+        bundle_storage_local.delete(bundle_file_name)
+
     def test_check_repo(self):
         """
         Check repo and make guesses!

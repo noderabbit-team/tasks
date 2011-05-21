@@ -186,12 +186,15 @@ def bundle_app(app_id, force_bundle_name=None, return_ue=False):
 
 
 def zip_and_upload_bundle(app_id, bundle_name,
-                          bundle_storage_engine=None):
+                          bundle_storage_engine=None,
+                          delete_after_upload=False):
     """
     Task: Zip up the bundle and upload it to S3
     :param custdir: Absolute path to the base customer directory
     :param app_id: A path such that ``os.path.join(custdir, app_id)`` is a
                    valid directory.
+    :param delete_after_upload: If true, delete the bundle directory after
+                                it is uploaded.
     """
 
     if bundle_storage_engine is None:
@@ -225,6 +228,9 @@ def zip_and_upload_bundle(app_id, bundle_name,
 
         bundle_storage_engine.put(bundle_name + ".tgz",
                                   archive_file_path)
+
+        if delete_after_upload:
+            shutil.rmtree(bundle_dir)
 
     finally:
         if os.path.exists(archive_file_path):

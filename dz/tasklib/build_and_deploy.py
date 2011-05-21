@@ -98,7 +98,8 @@ def upload_project_bundle(zoomdb, opts):
     zoomdb.log("Uploading application bundle %s." % opts["BUNDLE_NAME"])
     bundle.zip_and_upload_bundle(
         opts["APP_ID"], opts["BUNDLE_NAME"],
-        bundle_storage_engine=opts["BUNDLE_STORAGE"])
+        bundle_storage_engine=opts["BUNDLE_STORAGE"],
+        delete_after_upload=True)
     zoomdb.log("Bundle %s uploaded OK." % opts["BUNDLE_NAME"])
 
 
