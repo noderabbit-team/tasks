@@ -286,42 +286,69 @@ def stop_serving_bundle(app_id, bundle_name):
     return num_stopped
 
 
-def undeploy(zoomdb, app_id, bundle_ids, use_subtasks=True,
-             also_update_proxies=True):
+def undeploy(zoomdb, app_id, bundle_ids=None, use_subtasks=True,
+             also_update_proxies=True, dep_ids=None,
+             zero_undeploys_ok=False,
+             zoombuild_cfg_content=None):
     """Given an app_id and list of bundle names, undeploy those bundles.
 
     :param bundle_ids: Database IDs of bundles to undeploy. If None, all
-    bundles for this app will be undeployed.
+      bundles for this app will be undeployed.
+    :param dep_ids: AppServerDeployment IDs to undeploy. This may be optionally
+      specified instead of specifying bundle_ids.
+    :param also_update_proxies: Update proxy configuration to point at
+      remaining deployments. Requires the zoombuild_cfg_content parameter
+      as well.
+    :param zoombuild_cfg_content: Content of zoombuild.cfg, used only if
+      also_update_proxies is true.
     """
-    matching_deployments = zoomdb.search_workers(bundle_ids, active=True)
+
+    if also_update_proxies and (bundle_ids or dep_ids):
+        assert zoombuild_cfg_content, ("tasklib.deploy.undeploy requires "
+                                       "zoombuild_cfg_content parameter if "
+                                       "also_update_proxies is true and "
+                                       "any instances will remain up.")
+
+    step_title = "Deactivating instances"
+    zoomdb.log(step_title, zoomdb.LOG_STEP_BEGIN)
+
+    if not dep_ids:
+        matching_deployments = zoomdb.search_workers(bundle_ids, active=True)
+    else:
+        all_workers = zoomdb.get_project_workers()
+        matching_deployments = [w for w in all_workers if w.id in dep_ids]
 
     if len(matching_deployments) == 0:
-        raise utils.InfrastructureException(
-            "No active deployments found for app_id=%s, bundle_ids=%r." %
-            app_id, bundle_ids)
+        if not zero_undeploys_ok:
+            raise utils.InfrastructureException(
+                "No active deployments found for app_id=%s, bundle_ids=%r." %
+                (app_id, bundle_ids))
+
+    for dep in matching_deployments:
+        if dep.deactivation_date:
+            zoomdb.log("Deployment %s appears to be already deactivated."
+                       % dep, zoomdb.LOG_WARN)
 
     droptasks = []
 
     import dz.tasks.deploy  # do this non-globally due to dependencies
 
     for dep in matching_deployments:
-        args = [zoomdb,
-                app_id,
+        args = [app_id,
                 dep.bundle_id,
                 dep.server_instance_id,
                 dep.server_port]
+        kwargs = {"zero_undeploys_ok": zero_undeploys_ok}
 
         if use_subtasks:
-            # TODO: this looks like it needs an apply_async in here -
-            # might be untested; bugs may reveal themselves once invoked
-            # via web app.
             droptasks.append(
-                dz.tasks.deploy.undeploy_from_appserver(
-                        args=args,
-                        queue="appserver:" + dep.server_instance_id))
+                dz.tasks.deploy.undeploy_from_appserver.apply_async(
+                    args=[zoomdb.get_job_id()] + args,
+                    kwargs=kwargs,
+                    queue="appserver:" + dep.server_instance_id))
 
         else:
-            result = undeploy_from_appserver(*args)
+            result = undeploy_from_appserver(zoomdb, *args, **kwargs)
             zoomdb.log("Dropped %s - %s" % (dep, result))
             dep.deactivation_date = datetime.datetime.utcnow()
             zoomdb.flush()
@@ -330,25 +357,41 @@ def undeploy(zoomdb, app_id, bundle_ids, use_subtasks=True,
     if use_subtasks:
         for dep, dt in zip(matching_deployments, droptasks):
             result = dt.wait()
-            zoomdb.log("Dropped %s - %s" % (dep, result))
             dep.deactivation_date = datetime.datetime.utcnow()
             zoomdb.flush()
+            zoomdb.log(("Dropped bundle #%d from server %s (%s:%d). "
+                        "Deactivated: %s.") % (
+                           dep.bundle_id, dep.server_instance_id,
+                           dep.server_ip, dep.server_port,
+                           dep.deactivation_date,
+                           ))
 
     # now update frontend proxies
     if also_update_proxies:
+        active_workers = [w for w in zoomdb.get_project_workers()
+                          if not(w.deactivation_date)]
         remaining_appservers = [(w.server_instance_id, w.server_port)
-                                for w in zoomdb.get_project_workers()
-                                if not(w.deactivation_date)]
+                                for w in active_workers]
         if len(remaining_appservers):
+            newest_worker = max(active_workers, key=lambda x: x.creation_date)
+            newest_bundle = zoomdb.get_bundle(newest_worker.bundle_id)
+
             zoomdb.log("Updating front-end proxy to use remaining appservers "
                        "(%r)" % (remaining_appservers,))
             if use_subtasks:
+                zcfg = utils.parse_zoombuild_string(zoombuild_cfg_content)
+                site_media_map = utils.parse_site_media_map(
+                    zcfg.get("site_media_map", ""))
+
                 import dz.tasks.nginx
                 dz.tasks.nginx.update_proxy_conf(
-                    zoomdb._job_id,
+                    zoomdb.get_job_id(),
                     app_id,
+                    newest_bundle.bundle_name,  # to serve static assets
                     remaining_appservers,
-                    zoomdb.get_project_virtual_hosts())
+                    zoomdb.get_project_virtual_hosts(),
+                    site_media_map,
+                    )
             else:
                 import dz.tasklib.nginx
                 dz.tasklib.nginx.update_local_proxy_config(
@@ -363,14 +406,17 @@ def undeploy(zoomdb, app_id, bundle_ids, use_subtasks=True,
 
             if use_subtasks:
                 import dz.tasks.nginx
-                dz.tasks.nginx.remove_local_proxy_conf(zoomdb._job_id, app_id)
+                dz.tasks.nginx.remove_proxy_conf(zoomdb.get_job_id(), app_id)
             else:
                 import dz.tasklib.nginx
                 dz.tasklib.nginx.remove_local_proxy_config(app_id)
 
+    zoomdb.log(step_title, zoomdb.LOG_STEP_END)
+
 
 def undeploy_from_appserver(zoomdb, app_id, bundle_id,
-                            appserver_instance_id, appserver_port):
+                            appserver_instance_id, appserver_port,
+                            zero_undeploys_ok=False):
     my_hostname = utils.node_meta("name")
 
     if appserver_instance_id not in (my_hostname, "localhost"):
@@ -383,7 +429,11 @@ def undeploy_from_appserver(zoomdb, app_id, bundle_id,
 
     num_stopped = stop_serving_bundle(app_id, bundle.bundle_name)
 
-    if num_stopped != 1:
+    if num_stopped == 0 and zero_undeploys_ok:
+        zoomdb.log("Note: no matching bundles were running on %s." %
+                   my_hostname)
+
+    elif num_stopped != 1:
         raise utils.InfrastructureException(
             ("Attempting to undeploy one bundle (app_id %s, bundle_id %s, "
              "bundle_name %s) from appserver %s:%d, but %d bundles were "

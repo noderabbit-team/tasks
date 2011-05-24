@@ -188,6 +188,15 @@ class ZoomDatabaseTest(MockerTestCase):
         j = self.zoom_db.get_job()
         self.assertEqual(j.id, self.zoom_db._job_id)
 
+    def test_get_job_id(self):
+        """
+        Get the job ID associated with current zoomdb instance.
+        """
+        j = self.zoom_db.get_job()
+        j_id = self.zoom_db.get_job_id()
+        self.assertEqual(j.id, j_id)
+        self.assertEqual(j_id, self.zoom_db._job_id)
+
     def test_add_config_guess(self):
         """
         Add a project configuration guess to the DB.

@@ -165,6 +165,10 @@ class ZoomDatabase(object):
                 self._soup.dz2_job.id == self._job_id).one()
         return self._job
 
+    def get_job_id(self):
+        """Get my job ID."""
+        return self._job_id
+
     def get_project(self):
         """Get the project row."""
         if not hasattr(self, "_project"):

@@ -99,7 +99,6 @@ def user_manage_py_shell(job_id, zoomdb, job_params):
                zoomdb.LOG_STEP_END)
 
 
-
 @task_inject_zoomdb(name="undeploy", queue="build")
 def undeploy(job_id, zoomdb, job_params):
     """
@@ -120,10 +119,14 @@ def undeploy(job_id, zoomdb, job_params):
                            use_subtasks=use_subtasks)
 
 
-@task(name="undeploy_from_appserver",
-      queue="__QUEUE_MUST_BE_SPECIFIED_DYNAMICALLY__")
-def undeploy_from_appserver(zoomdb, app_id, bundle_id,
-                            appserver_instance_id, appserver_port):
+@task_inject_zoomdb(name="undeploy_from_appserver",
+                   queue="__QUEUE_MUST_BE_SPECIFIED_DYNAMICALLY__")
+def undeploy_from_appserver(job_id, zoomdb, app_id, bundle_id,
+                            appserver_instance_id, appserver_port,
+                            zero_undeploys_ok=False,
+                            ):
     return deploy.undeploy_from_appserver(zoomdb, app_id, bundle_id,
                                           appserver_instance_id,
-                                          appserver_port)
+                                          appserver_port,
+                                          zero_undeploys_ok=zero_undeploys_ok,
+                                          )

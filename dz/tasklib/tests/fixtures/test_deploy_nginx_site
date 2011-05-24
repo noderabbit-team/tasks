@@ -1,0 +1,33 @@
+upstream app_server_p00000002 {
+    
+    server 127.0.0.1:10007 max_fails=2  fail_timeout=10s;
+}
+
+server {
+    listen 80;
+    client_max_body_size 1G;
+    server_name p00000002.djangozoom.net poop.djangozoom.net ;
+    access_log /tmp/p00000002.access.log combined;
+
+    keepalive_timeout 5;
+
+    
+    location /static/ {
+        alias /cust/p00000002/bundle_p00000002_2011-05-16-03.30.48/user-repo/static/;
+    }
+    
+    location /_dz/admin_media/ {
+        alias /cust/p00000002/bundle_p00000002_2011-05-16-03.30.48/lib/python2.6/site-packages/django/contrib/admin/media/;
+    }
+    
+
+    location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $http_host;
+        proxy_redirect off;
+        if (!-f $request_filename) {
+            proxy_pass http://app_server_p00000002;
+            break;
+        }
+    }
+}

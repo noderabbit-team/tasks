@@ -6,6 +6,7 @@ from dz.tasks.decorators import task_inject_zoomdb
 import dz.tasklib.check_repo
 import dz.tasklib.bundle
 import dz.tasklib.build_and_deploy
+import dz.tasklib.deploy
 
 
 @task_inject_zoomdb(name="check_repo", queue="build")
@@ -29,3 +30,17 @@ def build_and_deploy(job_id, zoomdb, job_params):
         job_params["src_url"],
         job_params["zoombuild_cfg_content"],
         num_workers=job_params["num_workers"])
+
+
+@task_inject_zoomdb(name="deactivate_instances", queue="build")
+def deactivate_instances(job_id, zoomdb, job_params):
+    """
+    Deactivate a set of instances for the project, based on ID.
+    """
+    dz.tasklib.deploy.undeploy(
+        zoomdb,
+        job_params["app_id"],
+        dep_ids=job_params["dep_ids"],
+        also_update_proxies=True,
+        zoombuild_cfg_content=job_params["zoombuild_cfg_content"],
+        zero_undeploys_ok=True)

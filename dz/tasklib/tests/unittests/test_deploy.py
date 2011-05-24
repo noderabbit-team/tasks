@@ -338,6 +338,88 @@ class DeployTestCase(AbstractDeployTestCase):
         #self.assertFalse(os.path.isdir(app_dir))
         self.assertFalse(os.path.isdir(bundle_dir))
 
+    def test_undeploy_by_dep_ids(self):
+        """
+        Test taking down a deployed bundle based on the appserverdeployment id.
+        """
+        app_dir, bundle_dir = utils.app_and_bundle_dirs(self.app_id,
+                                                        self.bundle_name)
+        self.install_my_bundle()
+        (instance_id, node_name, host_ip, host_port) = \
+            deploy.start_serving_bundle(self.app_id, self.bundle_name)
+
+        self.assertTrue(os.path.isdir(bundle_dir))
+
+        self.check_can_eventually_load(
+            "http://%s:%s" % (host_ip, host_port),
+            "Welcome to the Django tutorial polls app")
+
+        zoomdb = StubZoomDB()
+        mydep = zoomdb.add_worker(1, "localhost", "127.0.0.1", host_port)
+
+        self.assertFalse(deploy._is_port_open(host_port))
+
+        deploy.undeploy(zoomdb,
+                        self.app_id,
+                        dep_ids=[mydep.id],
+                        use_subtasks=False,
+                        also_update_proxies=False)
+
+        self.assertTrue(deploy._is_port_open(host_port))
+        #self.assertFalse(os.path.isdir(app_dir))
+        self.assertFalse(os.path.isdir(bundle_dir))
+
+    def test_undeploy_with_proxy_update(self):
+        """
+        Test taking down a deployed bundle and updating the proxy config too.
+        """
+        app_dir, bundle_dir = utils.app_and_bundle_dirs(self.app_id,
+                                                        self.bundle_name)
+        self.install_my_bundle()
+        (instance_id, node_name, host_ip, host_port) = \
+            deploy.start_serving_bundle(self.app_id, self.bundle_name)
+
+        # also add to nginx - fake it for this test
+        here = os.path.abspath(os.path.split(__file__)[0])
+        fixture_dir = os.path.join(here, '../fixtures')
+        nginx_site_file = os.path.join(taskconfig.NGINX_SITES_ENABLED_DIR,
+                                       self.app_id)
+        shutil.copyfile(os.path.join(fixture_dir, 'test_deploy_nginx_site'),
+                        nginx_site_file)
+
+        self.check_can_eventually_load(
+            "http://%s:%s" % (host_ip, host_port),
+            "Welcome to the Django tutorial polls app")
+
+        zoomdb = StubZoomDB()
+        mydep = zoomdb.add_worker(1, "localhost", "127.0.0.1", host_port)
+
+        self.assertFalse(deploy._is_port_open(host_port))
+
+        zcfg_path = os.path.join(fixture_dir, "app", "zoombuild.cfg")
+        zcfg_content = open(zcfg_path).read()
+
+        # make sure we require proper parameters - skip zoombuild_cfg_content
+        with self.assertRaises(AssertionError):
+            deploy.undeploy(zoomdb,
+                            self.app_id,
+                            dep_ids=[mydep.id],
+                            use_subtasks=False,
+                            also_update_proxies=True)
+
+        deploy.undeploy(zoomdb,
+                        self.app_id,
+                        dep_ids=[mydep.id],
+                        use_subtasks=False,
+                        also_update_proxies=True,
+                        zoombuild_cfg_content=zcfg_content)
+
+        self.assertTrue(deploy._is_port_open(host_port))
+        self.assertFalse(os.path.isdir(bundle_dir))
+        self.assertFalse(os.path.isfile(nginx_site_file),
+                         "Expected nginx site file %s to be gone, but it isn't"
+                         % nginx_site_file)
+
     def test_undeploy_nonexistent(self):
         """
         Test undeploying something that doesn't actually exist.

@@ -1,5 +1,8 @@
-from builder import check_repo, build_and_deploy
-from deploy import user_manage_py_command, user_manage_py_shell
+from builder import (check_repo,
+                     build_and_deploy,
+                     deactivate_instances)
+from deploy import (user_manage_py_command,
+                    user_manage_py_shell)
 from nginx import update_hostnames
 import dz.tasks.management
 
