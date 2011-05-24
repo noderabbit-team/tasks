@@ -1,6 +1,8 @@
 from dz.tasklib.zoomdb import ZoomDatabase
 from dz.tasklib import taskconfig
 
+import datetime
+
 class MockProject(object):
     owner = 0
     project_id = 1
@@ -34,6 +36,9 @@ class MockWorker(object):
         self.server_instance_id = instance_id
         self.server_ip = server_ip
         self.server_port = server_port
+        self.project_id = 1
+        self.creation_date = datetime.datetime.utcnow()
+        self.deactivation_date = None
 MockWorker.count = 0
 
 
@@ -80,8 +85,9 @@ class StubZoomDB(ZoomDatabase):
         return self.bundles
 
     def add_worker(self, bundle_id, instance_id, server_ip, server_port):
-        self.workers.append(MockWorker(
-                bundle_id, instance_id, server_ip, server_port))
+        mw = MockWorker(bundle_id, instance_id, server_ip, server_port)
+        self.workers.append(mw)
+        return mw
 
     def get_project_workers(self):
         return self.workers
