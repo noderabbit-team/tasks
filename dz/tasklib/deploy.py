@@ -370,7 +370,10 @@ def undeploy(zoomdb, app_id, bundle_ids=None, use_subtasks=True,
     if also_update_proxies:
         active_workers = [w for w in zoomdb.get_project_workers()
                           if not(w.deactivation_date)]
-        remaining_appservers = [(w.server_instance_id, w.server_port)
+        remaining_appservers = [(w.server_instance_id,
+                                 w.server_instance_id, # should be node name
+                                 w.server_ip,
+                                 w.server_port)
                                 for w in active_workers]
         if len(remaining_appservers):
             newest_worker = max(active_workers, key=lambda x: x.creation_date)
