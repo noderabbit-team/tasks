@@ -305,3 +305,24 @@ class TasksTestCase(DZTestCase):
             "requirements_file_names",
             "\n".join(["requirements.txt",
                        "version2/voo2do/requirements/base.txt"])))
+
+    def test_delete_bundles(self):
+        """
+        Test the job to delete a specific bundle.
+        """
+        zoomdb = StubZoomDB()
+        (bundle_name, code_revision) = self._prep_build_test_bundle()
+        db_bundle = zoomdb.add_bundle(bundle_name, code_revision)
+
+        bundle_storage_file = path.join(taskconfig.NR_CUSTOMER_DIR,
+                                        "bundle_storage_local",
+                                        bundle_name + ".tgz")
+
+        bundle_file_name = bundle.zip_and_upload_bundle(
+            'app', bundle_name, bundle_storage_engine=bundle_storage_local)
+        self.assertTrue(path.isfile(bundle_storage_file))
+
+        bundle.delete_bundles(zoomdb, "app", [db_bundle.id],
+                              bundle_storage_engine=bundle_storage_local)
+
+        self.assertFalse(path.isfile(bundle_storage_file))

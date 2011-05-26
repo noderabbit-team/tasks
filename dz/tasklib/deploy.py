@@ -17,6 +17,7 @@ import socket
 
 from dz.tasklib import (bundle_storage,
                         bundle_storage_local,
+                        bundle,
                         taskconfig,
                         utils,
                         userenv)
@@ -36,11 +37,8 @@ def deploy_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
                       bundle_storage_engine=None,
                       num_workers=1):
 
-    if bundle_storage_engine is None:
-        if taskconfig.DEFAULT_BUNDLE_STORAGE_ENGINE == "bundle_storage_local":
-            bundle_storage_engine = bundle_storage_local
-        else:
-            bundle_storage_engine = bundle_storage
+    bundle_storage_engine = bundle.get_bundle_storage_engine(
+        bundle_storage_engine)
 
     my_hostname = utils.node_meta("name")
 
@@ -60,12 +58,20 @@ def deploy_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
 
 def install_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
                        bundle_storage_engine=bundle_storage,
-                       static_only=False, num_workers=1):
+                       static_only=False, num_workers=1,
+                       remove_other_bundles=False):
     app_dir, bundle_dir = utils.app_and_bundle_dirs(app_id, bundle_name)
 
     if not os.path.exists(bundle_dir):
         utils.get_and_extract_bundle(bundle_name, app_dir,
                                      bundle_storage_engine)
+
+    if remove_other_bundles:
+        for fname in os.listdir(app_dir):
+            if (fname.startswith("bundle_")
+                and os.path.isdir(fname)
+                and fname != bundle_name):
+                shutil.rmtree(fname)
 
     if not static_only:
         utils.chown_to_me(bundle_dir)
@@ -78,11 +84,13 @@ def install_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
 
 
 def install_app_bundle_static(app_id, bundle_name,
-                              bundle_storage_engine=bundle_storage):
+                              bundle_storage_engine=bundle_storage,
+                              remove_other_bundles=False):
     return install_app_bundle(app_id, bundle_name,
                               None, None,
                               bundle_storage_engine,
-                              static_only=True)
+                              static_only=True,
+                              remove_other_bundles=remove_other_bundles)
 
 
 def managepy_command(app_id, bundle_name, command, nonzero_exit_ok=False,
@@ -289,7 +297,8 @@ def stop_serving_bundle(app_id, bundle_name):
 def undeploy(zoomdb, app_id, bundle_ids=None, use_subtasks=True,
              also_update_proxies=True, dep_ids=None,
              zero_undeploys_ok=False,
-             zoombuild_cfg_content=None):
+             zoombuild_cfg_content=None,
+             log_step_events=True):
     """Given an app_id and list of bundle names, undeploy those bundles.
 
     :param bundle_ids: Database IDs of bundles to undeploy. If None, all
@@ -310,7 +319,8 @@ def undeploy(zoomdb, app_id, bundle_ids=None, use_subtasks=True,
                                        "any instances will remain up.")
 
     step_title = "Deactivating instances"
-    zoomdb.log(step_title, zoomdb.LOG_STEP_BEGIN)
+    if log_step_events:
+        zoomdb.log(step_title, zoomdb.LOG_STEP_BEGIN)
 
     if not dep_ids:
         matching_deployments = zoomdb.search_workers(bundle_ids, active=True)
@@ -333,6 +343,16 @@ def undeploy(zoomdb, app_id, bundle_ids=None, use_subtasks=True,
 
     import dz.tasks.deploy  # do this non-globally due to dependencies
 
+    def save_undeployment(dep):
+        dep.deactivation_date = datetime.datetime.utcnow()
+        zoomdb.flush()
+        zoomdb.log(("Dropped bundle #%d from server %s (%s:%d). "
+                    "Deactivated: %s.") % (
+                       dep.bundle_id, dep.server_instance_id,
+                       dep.server_ip, dep.server_port,
+                       dep.deactivation_date,
+                       ))
+
     for dep in matching_deployments:
         args = [app_id,
                 dep.bundle_id,
@@ -349,22 +369,13 @@ def undeploy(zoomdb, app_id, bundle_ids=None, use_subtasks=True,
 
         else:
             result = undeploy_from_appserver(zoomdb, *args, **kwargs)
-            zoomdb.log("Dropped %s - %s" % (dep, result))
-            dep.deactivation_date = datetime.datetime.utcnow()
-            zoomdb.flush()
+            save_undeployment(dep)
 
     # if using subtasks, wait for the async tasks to finish
     if use_subtasks:
         for dep, dt in zip(matching_deployments, droptasks):
             result = dt.wait()
-            dep.deactivation_date = datetime.datetime.utcnow()
-            zoomdb.flush()
-            zoomdb.log(("Dropped bundle #%d from server %s (%s:%d). "
-                        "Deactivated: %s.") % (
-                           dep.bundle_id, dep.server_instance_id,
-                           dep.server_ip, dep.server_port,
-                           dep.deactivation_date,
-                           ))
+            save_undeployment(dep)
 
     # now update frontend proxies
     if also_update_proxies:
@@ -414,7 +425,8 @@ def undeploy(zoomdb, app_id, bundle_ids=None, use_subtasks=True,
                 import dz.tasklib.nginx
                 dz.tasklib.nginx.remove_local_proxy_config(app_id)
 
-    zoomdb.log(step_title, zoomdb.LOG_STEP_END)
+    if log_step_events:
+        zoomdb.log(step_title, zoomdb.LOG_STEP_END)
 
 
 def undeploy_from_appserver(zoomdb, app_id, bundle_id,

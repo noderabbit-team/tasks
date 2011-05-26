@@ -7,8 +7,7 @@ import os
 import shutil
 
 from dz.tasklib import (taskconfig,
-                        bundle_storage,
-                        bundle_storage_local,
+                        bundle,
                         deploy,
                         utils)
 
@@ -22,13 +21,11 @@ def _get_nginx_conffile(app_id):
 
 def update_local_proxy_config(app_id, bundle_name,
                               appservers, virtual_hostnames, site_media_map,
-                              bundle_storage_engine=None):
+                              bundle_storage_engine=None,
+                              remove_other_bundles=True):
 
-    if bundle_storage_engine is None:
-        if taskconfig.DEFAULT_BUNDLE_STORAGE_ENGINE == "bundle_storage_local":
-            bundle_storage_engine = bundle_storage_local
-        else:
-            bundle_storage_engine = bundle_storage
+    bundle_storage_engine = bundle.get_bundle_storage_engine(
+        bundle_storage_engine)
 
     site_conf_filename = _get_nginx_conffile(app_id)
 
@@ -42,8 +39,10 @@ def update_local_proxy_config(app_id, bundle_name,
     # We need to make sure this bundle's static is installed locally, so we
     # can serve its static media.
     if bundle_storage_engine is not SKIP_BUNDLE_INSTALL:
-        deploy.install_app_bundle_static(app_id, bundle_name,
-                                         bundle_storage_engine)
+        deploy.install_app_bundle_static(
+            app_id, bundle_name,
+            bundle_storage_engine,
+            remove_other_bundles=remove_other_bundles)
     file_path_vars = {
         "{SITE_PACKAGES}": os.path.join(bundle_dir,
                                         "lib/python2.6/site-packages"),

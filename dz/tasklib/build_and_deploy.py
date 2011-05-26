@@ -4,9 +4,8 @@ import os
 from dz.tasklib import (utils,
                         common_steps,
                         bundle,
-                        bundle_storage,
-                        bundle_storage_local,
                         placement)
+from dz.tasklib import deploy as tasklib_deploy
 from dz.tasks import database, deploy, nginx
 
 
@@ -208,6 +207,8 @@ def deploy_project_to_appserver(zoomdb, opts):
     opts["DEPLOYED_ADDRESSES"] = deployed_addresses
 
     bundle_id = opts["BUNDLE_INFO"].id
+
+    deployed_workers = []
     for (instance_id, node_name, host_ip, host_port) in deployed_addresses:
         #instance_id = hostname  # TODO: this is a hack :(
 
@@ -216,10 +217,12 @@ def deploy_project_to_appserver(zoomdb, opts):
         # hostname)
         #host_ip = socket.gethostbyname(hostname)
 
-        zoomdb.add_worker(bundle_id,
-                          instance_id,
-                          host_ip,
-                          host_port)
+        deployed_workers.append(
+            zoomdb.add_worker(bundle_id,
+                              instance_id,
+                              host_ip,
+                              host_port))
+    opts["DEPLOYED_WORKERS"] = deployed_workers
 
 
 def run_post_deploy_hooks(zoomdb, opts):
@@ -301,15 +304,51 @@ def update_front_end_proxy(zoomdb, opts):
     args = [zoomdb._job_id, opts["APP_ID"], opts["BUNDLE_NAME"],
             appservers, virtual_hostnames, site_media_map]
 
+    remove_other_bundles = False
+    
     if opts["USE_SUBTASKS"]:
-        res = nginx.update_proxy_conf.apply_async(args=args)
+        res = nginx.update_proxy_conf.apply_async(args=args,
+                                                  kwargs={
+                                                      "remove_other_bundles":
+                                                      remove_other_bundles})
         res.wait()
     else:
-        nginx.update_proxy_conf(*args)
+        # if not using subtasks, we're not on a dedicated nginx box.
+        # so the other bundles may be in use for other app instances.
+        # keep them.
+        nginx.update_proxy_conf(*args,
+                                remove_other_bundles=remove_other_bundles)
 
     zoomdb.log("Updated proxy server configuration. Your project is now "
                "available from the following URLs: " +
                ", ".join(virtual_hostnames))
+
+
+def remove_previous_versions(zoomdb, opts):
+    """
+    Find and remove old instances.
+    """
+    new_instances = opts["DEPLOYED_WORKERS"]
+    new_instances_by_id = dict((i.id, i) for i in new_instances)
+    active_instances = zoomdb.search_workers(active=True)
+    old_instances = []
+    for i in active_instances:
+        if i.id not in new_instances_by_id:
+            old_instances.append(i)
+
+    #zoomdb.log("Removing old instance %s." % i)
+    if old_instances:
+        tasklib_deploy.undeploy(
+            zoomdb,
+            opts["APP_ID"],
+            dep_ids=[i.id for i in old_instances],
+            also_update_proxies=False,  # proxy already updated in prev step
+            zoombuild_cfg_content=opts["ZOOMBUILD_CFG_CONTENT"],
+            zero_undeploys_ok=True,
+            log_step_events=False)
+    else:
+        zoomdb.log("No old instances found.")
+
 
 
 def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
@@ -321,11 +360,8 @@ def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
                      ):
     app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
 
-    if bundle_storage_engine is None:
-        if taskconfig.DEFAULT_BUNDLE_STORAGE_ENGINE == "bundle_storage_local":
-            bundle_storage_engine = bundle_storage_local
-        else:
-            bundle_storage_engine = bundle_storage
+    bundle_storage_engine = bundle.get_bundle_storage_engine(
+        bundle_storage_engine)
 
     opts = {
         "APP_ID": app_id,
@@ -351,6 +387,7 @@ def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
             deploy_project_to_appserver,
             run_post_deploy_hooks,
             update_front_end_proxy,
+            remove_previous_versions,
             ))
 
     return opts["DEPLOYED_ADDRESSES"]

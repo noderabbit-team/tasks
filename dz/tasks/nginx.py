@@ -12,10 +12,12 @@ from dz.tasklib import nginx
 
 @task_inject_zoomdb(name="update_proxy_conf", queue="frontend_proxy")
 def update_proxy_conf(job_id, zoomdb, app_id, bundle_name,
-                      appservers, virtual_hostnames, site_media_map):
+                      appservers, virtual_hostnames, site_media_map,
+                      remove_other_bundles=True):
     nginx.update_local_proxy_config(
         app_id, bundle_name,
-        appservers, virtual_hostnames, site_media_map)
+        appservers, virtual_hostnames, site_media_map,
+        remove_other_bundles=remove_other_bundles)
 
 
 @task_inject_zoomdb(name="remove_proxy_conf", queue="frontend_proxy")

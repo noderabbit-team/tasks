@@ -23,6 +23,8 @@ class MockProject(object):
 class MockBundle(object):
     def __init__(self, bundle_name="bundle_test_deploy_app_2011-fixture"):
         self.bundle_name = bundle_name
+        self.creation_date = datetime.datetime.utcnow()
+        self.deletion_date = None
         MockBundle.count += 1
         self.id = MockBundle.count
 MockBundle.count = 0
