@@ -44,3 +44,13 @@ def deactivate_instances(job_id, zoomdb, job_params):
         also_update_proxies=True,
         zoombuild_cfg_content=job_params["zoombuild_cfg_content"],
         zero_undeploys_ok=True)
+
+@task_inject_zoomdb(name="delete_versions", queue="build")
+def delete_versions(job_id, zoomdb, job_params):
+    """
+    Delete a set of versions (bundles) in the project, based on ID.
+    The versions are assumed to be inactive (i.e. not currently deployed).
+    """
+    dz.tasklib.bundle.delete_bundles(zoomdb,
+                                     job_params["app_id"],
+                                     job_params["bundle_ids"])

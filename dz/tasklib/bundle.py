@@ -185,6 +185,19 @@ def bundle_app(app_id, force_bundle_name=None, return_ue=False):
         return bundle_name, code_revision
 
 
+def get_bundle_storage_engine(default=None):
+    """
+    Get the appropriate bundle storage engine. If ``default`` is set,
+    returns that; if it is None, get the engine set as the global default.
+    """
+    if default is None:
+        if taskconfig.DEFAULT_BUNDLE_STORAGE_ENGINE == "bundle_storage_local":
+            return bundle_storage_local
+        else:
+            return bundle_storage
+    return default
+
+
 def zip_and_upload_bundle(app_id, bundle_name,
                           bundle_storage_engine=None,
                           delete_after_upload=False):
@@ -196,12 +209,7 @@ def zip_and_upload_bundle(app_id, bundle_name,
     :param delete_after_upload: If true, delete the bundle directory after
                                 it is uploaded.
     """
-
-    if bundle_storage_engine is None:
-        if taskconfig.DEFAULT_BUNDLE_STORAGE_ENGINE == "bundle_storage_local":
-            bundle_storage_engine = bundle_storage_local
-        else:
-            bundle_storage_engine = bundle_storage
+    bundle_storage_engine = get_bundle_storage_engine(bundle_storage_engine)
 
     archive_file_path = tempfile.mktemp(suffix=".tgz")
 
@@ -237,3 +245,30 @@ def zip_and_upload_bundle(app_id, bundle_name,
             os.remove(archive_file_path)
 
     return bundle_name + ".tgz"
+
+
+def delete_bundles(zoomdb, app_id, bundle_ids, bundle_storage_engine=None):
+    bundle_storage_engine = get_bundle_storage_engine(bundle_storage_engine)
+
+    step_title = "Deleting Versions"
+
+    zoomdb.log(step_title, zoomdb.LOG_STEP_BEGIN)
+
+    for bundle_id in bundle_ids:
+        bundle = zoomdb.get_bundle(bundle_id)
+        try:
+            bundle_storage_engine.delete(bundle.bundle_name + ".tgz")
+            zoomdb.log("Successfully deleted version '%s'." %
+                       bundle.bundle_name)
+        except OSError:  # TODO: catch the s3 error too
+            zoomdb.log("Warning: copy of version '%s' was not found." %
+                       bundle.bundle_name)
+        if not bundle.deletion_date:
+            bundle.deletion_date = datetime.datetime.utcnow()
+            zoomdb.flush()
+        else:
+            zoomdb.log("Warning: version %s was previously deleted at %s."
+                       % (bundle.bundle_name,
+                          bundle.deletion_date))
+
+    zoomdb.log(step_title, zoomdb.LOG_STEP_END)
