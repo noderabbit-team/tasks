@@ -410,10 +410,11 @@ def undeploy(zoomdb, app_id, bundle_ids=None, use_subtasks=True,
                 proxy_task.wait()
             else:
                 import dz.tasklib.nginx
-                dz.tasklib.nginx.update_local_proxy_config(
+                proxy_task = dz.tasklib.nginx.update_local_proxy_config.apply_async(
                     app_id,
                     remaining_appservers,
                     zoomdb.get_project_virtual_hosts())
+                proxy_task.wait()
         else:
             # there are no more appservers; remove from proxy
             zoomdb.log(("This undeployment removes the last active appservers "
