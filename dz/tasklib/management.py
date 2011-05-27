@@ -131,3 +131,32 @@ def gunicorn_signal(gunicorn_master_pid, signal_name, appserver_name):
     utils.local_privileged(["gunicorn_signal",
                             signal_name,
                             gunicorn_master_pid])
+
+
+def server_health():
+    def _maxdisk():
+        maxdisk = dict(pct=0)
+
+        # parse df output to find max disk use indicator
+        header_line = ""
+        for cmd, usetype in (("df -h", "space"),
+                             ("df -i", "inode")):
+            output = utils.local(cmd)
+            for i, line in enumerate(output.splitlines()):
+                if i == 0:
+                    header_line = line
+                if line.startswith("/dev"):
+                    pct_use = line.split()[-2]
+                    if pct_use.endswith("%"):
+                        pct = pct_use[:-1]
+                        if pct > maxdisk["pct"]:
+                            maxdisk = dict(pct=pct,
+                                           type=usetype,
+                                           detail="\n".join((header_line,
+                                                             line)))
+        return maxdisk
+
+    return dict(maxdisk=_maxdisk(),
+                uptime=get_uptime(),
+                loadavg_curr=psi.loadavg()[0],
+                num_active_tasks=666)  # TODO: get real active tasks #

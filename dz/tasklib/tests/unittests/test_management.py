@@ -2,6 +2,8 @@ from dz.tasklib import (utils,
                         management)
 from dz.tasklib.tests.dztestcase import DZTestCase
 
+import datetime
+
 
 class ManagementTestCase(DZTestCase):
 
@@ -53,7 +55,29 @@ class ManagementTestCase(DZTestCase):
             self.assertTrue(isinstance(u["worker_pids"], list))
             self.assertTrue(isinstance(u["user"], str), u["user"])
 
-
     def test_gunicorn_signal(self):
         with self.assertRaises(utils.InfrastructureException):
             management.gunicorn_signal(-1, "TTIN", "NOT_AN_APPSERVER")
+
+    def test_server_health(self):
+        h = management.server_health()
+        self.assertTrue(isinstance(h, dict))
+
+        # max disk use
+        maxdisk = h["maxdisk"]
+        self.assertTrue(isinstance(maxdisk, dict), maxdisk)
+        self.assertTrue(isinstance(maxdisk["pct"], str))
+        self.assertTrue(maxdisk["type"] in ("space", "inode"))
+        self.assertTrue(isinstance(maxdisk["detail"], str))
+
+        # uptime (seconds)
+        uptime = h["uptime"]
+        self.assertTrue(isinstance(uptime, float), uptime)
+
+        # current loadavg
+        loadavg = h["loadavg_curr"]
+        self.assertTrue(isinstance(loadavg, float), loadavg)
+
+        # num active celery tasks
+        num_active_tasks = h["num_active_tasks"]
+        self.assertTrue(isinstance(num_active_tasks, int), num_active_tasks)
