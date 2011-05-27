@@ -399,22 +399,20 @@ def undeploy(zoomdb, app_id, bundle_ids=None, use_subtasks=True,
                     zcfg.get("site_media_map", ""))
 
                 import dz.tasks.nginx
-                proxy_task = dz.tasks.nginx.update_proxy_conf.apply_async(
+                proxy_task = dz.tasks.nginx.update_proxy_conf.apply_async(args=[
                     zoomdb.get_job_id(),
                     app_id,
                     newest_bundle.bundle_name,  # to serve static assets
                     remaining_appservers,
                     zoomdb.get_project_virtual_hosts(),
-                    site_media_map,
-                    )
+                    site_media_map])
                 proxy_task.wait()
             else:
                 import dz.tasklib.nginx
-                proxy_task = dz.tasklib.nginx.update_local_proxy_config.apply_async(
+                dz.tasklib.nginx.update_local_proxy_config(
                     app_id,
                     remaining_appservers,
                     zoomdb.get_project_virtual_hosts())
-                proxy_task.wait()
         else:
             # there are no more appservers; remove from proxy
             zoomdb.log(("This undeployment removes the last active appservers "
@@ -423,7 +421,9 @@ def undeploy(zoomdb, app_id, bundle_ids=None, use_subtasks=True,
 
             if use_subtasks:
                 import dz.tasks.nginx
-                dz.tasks.nginx.remove_proxy_conf(zoomdb.get_job_id(), app_id)
+                subtask = dz.tasks.nginx.remove_proxy_conf.apply_async(
+                    args=[zoomdb.get_job_id(), app_id])
+                subtask.wait()
             else:
                 import dz.tasklib.nginx
                 dz.tasklib.nginx.remove_local_proxy_config(app_id)
