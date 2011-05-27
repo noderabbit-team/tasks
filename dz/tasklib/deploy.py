@@ -41,8 +41,9 @@ def deploy_app_bundle(app_id, bundle_name, appserver_name, dbinfo,
         bundle_storage_engine)
 
     my_hostname = utils.node_meta("name")
+    my_instance_id = utils.node_meta("instance_id")
 
-    if appserver_name not in (my_hostname, "localhost"):
+    if appserver_name not in (my_hostname, my_instance_id, "localhost"):
         raise utils.InfrastructureException(
             "Incorrect appserver received deploy_app_bundle task; " +
             "I am %s but the deploy is requesting %s." % (my_hostname,
@@ -432,9 +433,11 @@ def undeploy(zoomdb, app_id, bundle_ids=None, use_subtasks=True,
 def undeploy_from_appserver(zoomdb, app_id, bundle_id,
                             appserver_instance_id, appserver_port,
                             zero_undeploys_ok=False):
-    my_hostname = utils.node_meta("name")
 
-    if appserver_instance_id not in (my_hostname, "localhost"):
+    my_hostname = utils.node_meta("name")
+    my_instance_id = utils.node_meta("instance_id")
+
+    if appserver_instance_id not in (my_hostname, my_instance_id, "localhost"):
         raise utils.InfrastructureException(
             "Incorrect appserver received undeploy_from_appserver task; " +
             "I am %s but the undeploy is for %s." % (my_hostname,
