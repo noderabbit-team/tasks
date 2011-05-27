@@ -399,7 +399,7 @@ def undeploy(zoomdb, app_id, bundle_ids=None, use_subtasks=True,
                     zcfg.get("site_media_map", ""))
 
                 import dz.tasks.nginx
-                dz.tasks.nginx.update_proxy_conf(
+                proxy_task = dz.tasks.nginx.update_proxy_conf.apply_async(
                     zoomdb.get_job_id(),
                     app_id,
                     newest_bundle.bundle_name,  # to serve static assets
@@ -407,6 +407,7 @@ def undeploy(zoomdb, app_id, bundle_ids=None, use_subtasks=True,
                     zoomdb.get_project_virtual_hosts(),
                     site_media_map,
                     )
+                proxy_task.wait()
             else:
                 import dz.tasklib.nginx
                 dz.tasklib.nginx.update_local_proxy_config(
