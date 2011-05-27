@@ -95,9 +95,12 @@ def remove_local_proxy_config(app_id):
 
     if not os.path.isfile(site_conf_filename):
         raise utils.InfrastructureException((
-                "Requested remove_local_proxy_config for app %s, but that "
-                "app is not currently proxied from this nginx instance.")
-                                            % app_id)
+            "Requested remove_local_proxy_config for app %s, but that "
+            "app is not currently proxied from this nginx instance (%s). "
+            "No site configuration file in %s.")
+                                            % (app_id,
+                                               utils.node_meta("name"),
+                                               site_conf_filename))
 
     app_dir, _ = utils.app_and_bundle_dirs(app_id)
     shutil.rmtree(app_dir, ignore_errors=True)
