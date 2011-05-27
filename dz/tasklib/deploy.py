@@ -361,6 +361,9 @@ def undeploy(zoomdb, app_id, bundle_ids=None, use_subtasks=True,
                 dep.server_port]
         kwargs = {"zero_undeploys_ok": zero_undeploys_ok}
 
+        zoomdb.log("Dropping bundle #%d from server %s (%s:%d)..." % (
+            dep.bundle_id, dep.server_instance_id,
+            dep.server_ip, dep.server_port))
         if use_subtasks:
             droptasks.append(
                 dz.tasks.deploy.undeploy_from_appserver.apply_async(
