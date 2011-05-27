@@ -313,9 +313,6 @@ def update_front_end_proxy(zoomdb, opts):
                                                       remove_other_bundles})
         res.wait()
     else:
-        # if not using subtasks, we're not on a dedicated nginx box.
-        # so the other bundles may be in use for other app instances.
-        # keep them.
         nginx.update_proxy_conf(*args,
                                 remove_other_bundles=remove_other_bundles)
 
