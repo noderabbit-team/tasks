@@ -65,7 +65,7 @@ def checkout_code(zoomdb, opts):
                 os.chdir(d)
 
             zoomdb.log("Cloning your repository.")
-            cmd = ["git", "clone", repourl, "."]
+            cmd = ["git", "clone", "--recursive", repourl, "."]
 
         zoomdb.log("Running %s..." % " ".join(cmd))
         output, stderr, p = utils.subproc(cmd)
