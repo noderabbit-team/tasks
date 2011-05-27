@@ -48,6 +48,7 @@ APP_SERVICE_START_PORT = 10000
 APP_SERVICE_MAX_PORT = 25000
 
 NGINX_SITES_ENABLED_DIR = "/etc/nginx/sites-enabled"
+NGINX_REMOVE_OLD_BUNDLES_ON_UPDATE = True
 
 PRIVILEGED_PROGRAMS_PATH = os.path.join(
     os.path.abspath(os.path.dirname(__file__)),

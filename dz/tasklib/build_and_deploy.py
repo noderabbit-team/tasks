@@ -304,8 +304,8 @@ def update_front_end_proxy(zoomdb, opts):
     args = [zoomdb._job_id, opts["APP_ID"], opts["BUNDLE_NAME"],
             appservers, virtual_hostnames, site_media_map]
 
-    remove_other_bundles = False
-    
+    remove_other_bundles = taskconfig.NGINX_REMOVE_OLD_BUNDLES_ON_UPDATE
+
     if opts["USE_SUBTASKS"]:
         res = nginx.update_proxy_conf.apply_async(args=args,
                                                   kwargs={
