@@ -148,7 +148,7 @@ def server_health():
                 if line.startswith("/dev"):
                     pct_use = line.split()[-2]
                     if pct_use.endswith("%"):
-                        pct = pct_use[:-1]
+                        pct = int(pct_use[:-1])
                         if pct > maxdisk["pct"]:
                             maxdisk = dict(pct=pct,
                                            type=usetype,
