@@ -46,9 +46,13 @@ def make_mgmt_fun(mgmt_fun_name, wrapper=None):
     return mgmtf
 
 
-for mgmt_fun in ("get_df", "get_nginx_sites_enabled",
-                 "get_loadavg", "get_uptime", "get_unicorns",
-                 "server_health"):
+for mgmt_fun in ("get_df",
+                 "get_nginx_sites_enabled",
+                 "get_loadavg",
+                 "get_uptime",
+                 "get_unicorns",
+                 "server_health",
+                 ):
     Panel.register(make_mgmt_fun(mgmt_fun))
 
 for mgmt_list_fun in ("get_installed_bundles",):

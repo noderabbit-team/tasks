@@ -60,13 +60,14 @@ class ManagementTestCase(DZTestCase):
             management.gunicorn_signal(-1, "TTIN", "NOT_AN_APPSERVER")
 
     def test_server_health(self):
+
         h = management.server_health()
         self.assertTrue(isinstance(h, dict))
 
         # max disk use
         maxdisk = h["maxdisk"]
         self.assertTrue(isinstance(maxdisk, dict), maxdisk)
-        self.assertTrue(isinstance(maxdisk["pct"], str))
+        self.assertTrue(isinstance(maxdisk["pct"], int))
         self.assertTrue(maxdisk["type"] in ("space", "inode"))
         self.assertTrue(isinstance(maxdisk["detail"], str))
 

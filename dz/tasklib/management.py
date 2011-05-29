@@ -134,6 +134,9 @@ def gunicorn_signal(gunicorn_master_pid, signal_name, appserver_name):
 
 
 def server_health():
+    """
+    Get a bunch of stats pertaining to current server health.
+    """
     def _maxdisk():
         maxdisk = dict(pct=0)
 
@@ -156,7 +159,11 @@ def server_health():
                                                              line)))
         return maxdisk
 
+    # get num active tasks
+    from celery.worker.control.builtins import dump_active
+    num_active_tasks = len(dump_active(None)) # no panel needed
+
     return dict(maxdisk=_maxdisk(),
                 uptime=get_uptime(),
                 loadavg_curr=psi.loadavg()[0],
-                num_active_tasks=666)  # TODO: get real active tasks #
+                num_active_tasks=num_active_tasks)
