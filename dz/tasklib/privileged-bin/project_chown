@@ -7,4 +7,4 @@ DIR=$2
 # create projuser (and a group of the same name) if doesn't exist
 id $USERNAME > /dev/null 2>&1 || useradd --home-dir /nonexistent --no-create-home --no-log-init --user-group --shell /bin/false $USERNAME
 
-chown -R $USERNAME:$USERNAME $DIR
+chown -f -R $USERNAME:$USERNAME $DIR
