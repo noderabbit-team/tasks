@@ -62,7 +62,8 @@ def subproc(command, null_stdin=True, stdin_string=None,
 
 def privileged_program_cmd(cmdargs):
     assert isinstance(cmdargs, list)
-    privileged_program = cmdargs.pop(0)
+    privileged_program = cmdargs[0]
+    cmdargs = cmdargs[1:]
     assert "/" not in privileged_program, ("Privileged programs can only "
                                            "be run from the designated "
                                            "directory. Paths are not allowed.")
