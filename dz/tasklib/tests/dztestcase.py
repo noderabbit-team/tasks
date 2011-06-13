@@ -6,6 +6,9 @@ from mocker import MockerTestCase
 
 import os
 import pwd
+import time
+import urllib
+import httplib
 
 
 _missing = object()
@@ -43,6 +46,61 @@ class DZTestCase(MockerTestCase):
 
     def chown_to_me(self, path):
         utils.chown_to_me(path)
+
+    def _eventually_load(self, loader, desc, pagetext_fragment=None):
+        load_attempts = 0
+
+        while True:
+            if load_attempts >= 10:
+                self.fail("Could not load %s after %d attempts." % (
+                        desc, load_attempts))
+            try:
+                pagetext = loader()
+                if pagetext_fragment is None:
+                    return pagetext
+
+                self.assertTrue(pagetext_fragment in pagetext)
+                break
+
+            except Exception, e:
+                load_attempts += 1
+                print "[attempt %d] Couldn't load %s: %s" % (
+                    load_attempts, desc, str(e))
+                time.sleep(0.25)
+
+    def check_can_eventually_load(self, url, pagetext_fragment=None):
+        """
+        Check that the given URL can be loaded, within a reasonable number
+        of attempts, and that pagetext_fragment appears in the response.
+
+        If pagetext_fragment is None, then instead of testing that the
+        fragment exists in the page, we simply return the page contents once
+        loaded. (We fail only if the page does not load within the allowed
+        number of attempts.)
+        """
+
+        def loader():
+            return urllib.urlopen(url).read()
+
+        return self._eventually_load(loader, "URL %s" % url, pagetext_fragment)
+
+    def check_can_eventually_load_custom(self, connection_host, urlpath,
+                                         http_host, pagetext_fragment=None):
+        def loader():
+            conn = httplib.HTTPConnection(connection_host)
+            conn.putrequest("GET", urlpath, skip_host=True)
+            conn.putheader("Host", http_host)
+            conn.endheaders()
+            res = conn.getresponse()
+            res_src = res.read()
+            return res_src
+
+        return self._eventually_load(
+            loader,
+            "URL %s from host %s on %s" % (urlpath,
+                                           http_host,
+                                           connection_host),
+            pagetext_fragment)
 
 
 def requires_internet(test_func):

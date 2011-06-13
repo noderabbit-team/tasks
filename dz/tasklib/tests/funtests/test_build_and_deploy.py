@@ -1,7 +1,6 @@
 from os import path
 import os
 import urllib
-import httplib
 from psycopg2 import ProgrammingError
 
 from dz.tasklib import (build_and_deploy,
@@ -115,36 +114,31 @@ class BuildAndDeployTestcase(DZTestCase):
         # now check the nginx service
         hosts = zoomdb.get_project_virtual_hosts()
 
-        def get_via_nginx(host, urlpath):
-            conn = httplib.HTTPConnection("127.0.0.1")
-            conn.putrequest("GET", urlpath, skip_host=True)
-            conn.putheader("Host", host)
-            conn.endheaders()
-            res = conn.getresponse()
-            res_src = res.read()
-            return res_src
-
         # ensure each hostname works!
         for host in hosts:
-            page_src = get_via_nginx(host, "/polls/")
-            self.assertTrue("No polls are available." in page_src,
-                            "Couldn't find polls text in "
-                            "page src (%r) on host %s." % (
-                                page_src, host))
+            self.check_can_eventually_load_custom("127.0.0.1",
+                                                  "/polls/",
+                                                  host,
+                                                  "No polls are available.")
 
         # for nginx to serve static files, the cust dir has to be
         # world-read/executable. This should be the default on the
         # proxy server ONLY.
         os.chmod(self.dir, 0755)
 
-        image_src = get_via_nginx(hosts[0], "/static/img/polls.jpg")
+        image_src = self.check_can_eventually_load_custom(
+            "127.0.0.1",
+            "/static/img/polls.jpg",
+            hosts[0])
         local_image_file = os.path.join(app_fixture,
                                         "src", "static", "polls.jpg")
         self.assertEqual(image_src, open(local_image_file).read())
 
         # try a collectstatic-handled file
-        collectstatic_src = get_via_nginx(hosts[0],
-                                          "/staticfiles/polls/Lineup.jpg")
+        collectstatic_src = self.check_can_eventually_load_custom(
+            "127.0.0.1",
+            "/staticfiles/polls/Lineup.jpg",
+            hosts[0])
         local_collectstatic_file = os.path.join(app_fixture,
                                                 "src",
                                                 "polls",

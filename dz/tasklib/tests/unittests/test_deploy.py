@@ -10,7 +10,6 @@ from dz.tasklib.tests.stub_zoomdb import StubZoomDB
 
 import os
 import shutil
-import time
 import urllib
 
 
@@ -100,37 +99,6 @@ class AbstractDeployTestCase(DZTestCase):
 
         if not os.path.isfile(cls.bundle_fixture):
             create_test_bundle_in_local_storage()
-
-    def check_can_eventually_load(self, url, pagetext_fragment=None):
-        """
-        Check that the given URL can be loaded, within a reasonable number
-        of attempts, and that pagetext_fragment appears in the response.
-
-        If pagetext_fragment is None, then instead of testing that the
-        fragment exists in the page, we simply return the page contents once
-        loaded. (We fail only if the page does not load within the allowed
-        number of attempts.)
-        """
-        load_attempts = 0
-
-        while True:
-            if load_attempts >= 10:
-                self.fail("Could not load URL %s after %d attempts." % (
-                        url,
-                        load_attempts))
-            try:
-                pagetext = urllib.urlopen(url).read()
-                if pagetext_fragment is None:
-                    return pagetext
-
-                self.assertTrue(pagetext_fragment in pagetext)
-                break
-
-            except Exception, e:
-                load_attempts += 1
-                print "[attempt %d] Couldn't load %s: %s" % (
-                    load_attempts, url, str(e))
-                time.sleep(0.25)
 
     def install_my_bundle(self, **kwargs):
         """
@@ -259,7 +227,6 @@ class DeployTestCase(AbstractDeployTestCase):
                                        self.bundle_name,
                                        "print 9*9\n")
         self.assertTrue("81" in output, output)
-        
 
     def test_start_serving_bundle(self):
         """
