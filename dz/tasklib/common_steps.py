@@ -52,6 +52,11 @@ def checkout_code(zoomdb, opts):
     try:
         os.chdir(d)
 
+        # if opts.get("SRC_REPO_TYPE", "git") == "hg":
+        #     _hg_clone_or_pull(source_code_url)
+        # else:
+        #     _git_clone_or_pull(source_code_url)
+
         if os.path.exists(".git") and \
                _get_remote_origin_url(d) == source_code_url:
             zoomdb.log("Updating code from repository.")

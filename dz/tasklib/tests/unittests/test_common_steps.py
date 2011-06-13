@@ -2,7 +2,8 @@ from dz.tasklib import (taskconfig,
                         utils,
                         common_steps)
 
-from dz.tasklib.tests.dztestcase import DZTestCase
+from dz.tasklib.tests.dztestcase import (DZTestCase,
+                                         requires_internet)
 from dz.tasklib.tests.stub_zoomdb import StubZoomDB
 
 import os
@@ -60,3 +61,17 @@ class CommonStepsTestCase(DZTestCase):
         self.assertFalse(("Running git pull...", "i") in self.zoomdb.logs)
         common_steps.checkout_code(self.zoomdb, opts)
         self.assertTrue(("Running git pull...", "i") in self.zoomdb.logs)
+
+    @requires_internet
+    def test_checkout_git(self):
+        """
+        Test checking out a git repo.
+        """
+        pass
+
+    @requires_internet
+    def test_checkout_hg(self):
+        """
+        Test checking out a mercurial repo.
+        """
+        pass
