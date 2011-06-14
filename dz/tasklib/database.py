@@ -134,7 +134,7 @@ def get_or_create_database(app_id):
                        NOCREATEROLE PASSWORD '%s';
                     """ % (
                 db_username, db_password))
-                
+
         # Change database owner to app's username
         cur.execute("ALTER DATABASE %s OWNER TO %s;" % (db_name, db_username))
 
@@ -170,8 +170,7 @@ def lock_down_public_permissions():
 
     _sql_as_superuser("\n".join([
                 "REVOKE ALL ON DATABASE template1 FROM public;",
-
-                "GRANT ALL ON SCHEMA public TO PUBLIC;", 
+                "GRANT ALL ON SCHEMA public TO PUBLIC;",
                 # actually we want each user to be able to create tables in
                 # the public schema for any DB they can connect to.
 
