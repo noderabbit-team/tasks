@@ -95,56 +95,31 @@ class DatabaseTasksTestCase(DZTestCase):
         self.assertTrue(not _can_access_db(dbinfo),
                         "Ensure dropped database can no longer be accessed.")
 
-    '''
-    Shoot - I don't think we need this anymore.
 
-    def test_create_twice(self):
-        """
-        Test creating a database and then immediately creating another in a
-        separate module space, to ensure that there aren't lingering
-        connections to the template1 db preventing progress.
-        """
-        here = os.path.abspath(os.path.split(__file__)[0])
-        database_src = os.path.join(here, "..", "database.py")
+class PostGisTestCase(DZTestCase):
 
-        test_modules_dir = self.makeDir()
-        database_1_file = os.path.join(test_modules_dir, "database_1.py")
-        database_2_file = os.path.join(test_modules_dir, "database_2.py")
+    def setUp(self):
+        super(PostGisTestCase, self).setUp()
+        self.app_id = "test_pgis_%d" % random.randint(100, 1000)
+        self.dbinfo = database.get_or_create_database(self.app_id)
+        conn_string = (("dbname=%(db_name)s user=%(username)s "
+                        "password=%(password)s host=%(host)s") %
+                       self.dbinfo)
+        self.conn = psycopg2.connect(conn_string)
+        self.conn.set_isolation_level(
+            psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
-        shutil.copyfile(database_src, database_1_file)
-        shutil.copyfile(database_src, database_2_file)
+    def tearDown(self):
+        super(PostGisTestCase, self).tearDown()
+        self.conn.close()
+        database.drop_database(self.dbinfo.db_name)
+        database.drop_user(self.dbinfo.username)
 
-        sys.path.insert(0, test_modules_dir)
+    def test_create_postgis(self):
+        database.enable_postgis(self.app_id)
+        cur = self.conn.cursor()
+        cur.execute("select 3+3;")
+        self.assertEqual(cur.fetchone()[0], 6)
 
-        import database_1
-        import database_2
-
-        self.assertTrue(database_1 is not database_2)
-        self.assertTrue(database_1._get_conn is not database_2._get_conn)
-
-        app_id_1 = "test_twice_1_%d" % random.randint(100, 1000)
-        app_id_2 = "test_twice_2_%d" % random.randint(100, 1000)
-
-        database_1.get_or_create_database(app_id_1)
-
-        with self.assertRaises(psycopg2.OperationalError):
-            database_2.get_or_create_database(app_id_2)
-
-        for app_id in (app_id_1, app_id_2):
-            try:
-                database.drop_database(app_id)
-                database.drop_user(app_id)
-            except psycopg2.ProgrammingError:
-                pass
-
-        # now "fix" it
-        orig_initial_db = taskconfig.DATABASE_SUPERUSER["initial_db"]
-        taskconfig.DATABASE_SUPERUSER["initial_db"] = "nrweb"
-
-        ### TODO: reload doesn't seem sufficient; try manually clearing conn
-        database_1._get_conn().close()
-        database_2._get_conn().close()
-
-        database_1.get_or_create_database(app_id_1)
-        database_2.get_or_create_database(app_id_2)
-        '''
+        cur.execute("select postgis_lib_version();")
+        self.assertEqual(cur.fetchone()[0], "1.5.1")

@@ -197,3 +197,10 @@ def drop_user(username):
     """
     print "Dropping user: %s" % username
     _sql_as_superuser("DROP USER %s;" % username)
+
+
+def enable_postgis(database):
+    """
+    Enable PostGIS on the given database.
+    """
+    utils.local_privileged(["psql_enable_postgis", database])
