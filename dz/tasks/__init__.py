@@ -4,8 +4,10 @@ from builder import (check_repo,
                      delete_versions)
 from deploy import (user_manage_py_command,
                     user_manage_py_shell)
+from database import enable_postgis
 from nginx import update_hostnames
 import dz.tasks.management
+
 
 def monkey_patch_celery_db_models_Task():
     """

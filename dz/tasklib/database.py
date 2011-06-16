@@ -201,5 +201,17 @@ def drop_user(username):
 def enable_postgis(database):
     """
     Enable PostGIS on the given database.
+
+    :returns: Output of postgis install script (lots of SQL confirmations).
     """
-    utils.local_privileged(["psql_enable_postgis", database])
+    (stdout, stderr, p) = utils.local_privileged(
+        ["psql_enable_postgis", database],
+        return_details=True)
+
+    if p.returncode != 0:
+        raise utils.InfrastructureException(
+            ("Error (return code %d) while attempting to run PostGIS "
+             "installation: \n%s\n%s") % (p.returncode, stdout, stderr))
+    else:
+        return "%s\n%s" % (stdout, stderr)
+

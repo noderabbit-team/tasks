@@ -216,3 +216,8 @@ class ZoomDatabase(object):
             result.append(vh.hostname)
 
         return result
+
+    def mark_postgis_enabled(self):
+        project = self.get_project()
+        project.database_type = "postgresql-gis"
+        self._soup.session.commit()

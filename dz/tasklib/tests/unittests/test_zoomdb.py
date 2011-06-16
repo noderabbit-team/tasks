@@ -311,3 +311,15 @@ class ZoomDatabaseTest(MockerTestCase):
         expected = ["*.foo.com", "foo.com", "%s.djangozoom.net" % proj_id]
         self.assertEqual(get_vh, expected, "expecting %r but got %r" % (
             expected, get_vh))
+
+    def test_mark_postgis_enabled(self):
+        """
+        Test that zoomdb.mark_postgis_enabled(app_id) works.
+        """
+        pid = self.zoom_db.get_project_id()
+        p = self.soup.dz2_project.filter(self.soup.dz2_project.id == pid).one()
+        self.assertEqual(p.database_type, "postgresql-8.4")
+        self.zoom_db.mark_postgis_enabled()
+        p2 = self.soup.dz2_project.filter(
+            self.soup.dz2_project.id == pid).one()
+        self.assertEqual(p2.database_type, "postgresql-gis")
