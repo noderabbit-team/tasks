@@ -8,7 +8,11 @@ DATABASE_PORT = ''
 
 DATABASES = {
     'default': {
+    {% if database_type == 'postgresql-gis' %}
+        'ENGINE': 'django.contrib.gis.db.backends.postgis' if os.environ['CONFIG_PG_DBNAME'] else 'django.db.backends.postgresql_psycopg2',{# we use vanilla postgres instead of postgis when no CONFIG_PG_DBNAME env var is set because that setting indicates we don't have a DB accessible right now. It seems this freaks out the PostGIS backend -- it seems to try and connect even if there isn't anything databasey to do. Maybe it is just checking that the DB actually has PostGIS set up. In any case, if we leave this at postgis then running collectstatic during the build doesn't work. #}
+    {% else %}
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+    {% endif %}
         'NAME': os.environ['CONFIG_PG_DBNAME'],
         'USER': os.environ['CONFIG_PG_USER'],
         'PASSWORD': os.environ['CONFIG_PG_PASSWORD'],
@@ -16,3 +20,5 @@ DATABASES = {
         'PORT': '',
     }
 }
+
+GEOS_LIBRARY_PATH = '/usr/lib/libgeos_c.so.1' {# for PostGIS #}

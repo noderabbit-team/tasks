@@ -207,6 +207,7 @@ class UtilsTestCase(DZTestCase):
         result = utils.parse_zoombuild(test_fixture_cfg)
 
         self.assertEqual(result["base_python_package"], "mysite")
+        self.assertEqual(result["database_type"], "postgresql-8.4")
 
     def test_parse_zoombuild_string(self):
         here = path.abspath(path.split(__file__)[0])

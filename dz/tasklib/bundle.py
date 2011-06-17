@@ -177,7 +177,8 @@ def bundle_app(app_id, force_bundle_name=None, return_ue=False):
         os.path.join(bundle_dir, 'dz_settings.py'),
         env=ue,
         dz_settings=buildconfig_info["django_settings_module"],
-        admin_media_prefix=taskconfig.DZ_ADMIN_MEDIA["url_path"])
+        admin_media_prefix=taskconfig.DZ_ADMIN_MEDIA["url_path"],
+        database_type=buildconfig_info["database_type"])
 
     if return_ue:
         return bundle_name, code_revision, ue

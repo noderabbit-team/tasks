@@ -352,6 +352,7 @@ def _parse_zoombuild_from_configparser(config):
         'requirements_files',
         'extra_requirements',
         'django_version',
+        'database_type',
         ]
 
     result = {}

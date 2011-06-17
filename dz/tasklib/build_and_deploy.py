@@ -124,6 +124,21 @@ def wait_for_database_setup_to_complete(zoomdb, opts):
         p.db_password = dbinfo.password
         zoomdb.flush()
 
+        if opts["REQUIRES_POSTGIS"]:
+            zoomdb.log("Your project requires PostGIS, "
+                       "we're enabling that now.")
+            args = [zoomdb._job_id, {"app_id": opts["APP_ID"]}]
+            kwargs = {"log_step_events": False}
+
+            if opts["USE_SUBTASKS"]:
+                res = database.enable_postgis.apply_async(args=args,
+                                                          kwargs=kwargs)
+                res.wait()
+            else:
+                database.enable_postgis.apply_async(*args, **kwargs)
+
+            zoomdb.log("PostGIS enabled.")
+
     else:
         zoomdb.log("Database %s was previously created. " % dbinfo.db_name +
                    "Congratulations on a new release!")
@@ -146,8 +161,6 @@ def wait_for_database_setup_to_complete(zoomdb, opts):
             else:
                 dbinfo[dbiattr] = val
 
-    # DON'T SHOW THIS TO END USERS - it includes the DB password!
-    #zoomdb.log(str(dbinfo))
     opts["DB"] = dbinfo
 
 
@@ -354,6 +367,7 @@ def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
                      post_build_hooks=None,
                      post_deploy_hooks=None,
                      num_workers=1,
+                     requires_postgis=False,
                      ):
     app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
 
@@ -371,6 +385,7 @@ def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
         "POST_BUILD_HOOKS": post_build_hooks,
         "POST_DEPLOY_HOOKS": post_deploy_hooks,
         "NUM_WORKERS": num_workers,
+        "REQUIRES_POSTGIS": requires_postgis,
         }
 
     utils.run_steps(zoomdb, opts, (
