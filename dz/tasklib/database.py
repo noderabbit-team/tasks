@@ -105,7 +105,8 @@ def get_or_create_database(app_id):
     :returns: A tuple (created, db_host, db_name, db_username, db_password).
               If created is False, db_password will be None.
     """
-    db_host = utils.get_internal_ip()
+    db_host = utils.node_meta("elastic_hostname")
+    # utils.get_internal_ip()  # TODO: should be elastic hostname
     db_name = app_id
     db_username = app_id
     db_password = None
