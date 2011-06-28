@@ -2,6 +2,7 @@
 Settings to use celery in a debug environment.  To set this up:
 
 sudo apt-get install rabbitmq-server
+sudo rabbitmqctl delete_user guest   # so as to remove the default login
 sudo rabbitmqctl add_user zoom zoom
 sudo rabbitmqctl add_vhost djangozoom
 sudo rabbitmqctl set_permissions -p djangozoom zoom ".*" ".*" ".*"
