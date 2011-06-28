@@ -198,7 +198,7 @@ def assemble_requirements(lines=None, files=None, basedir=None,
 
     for r in monolithic_reqs:
         if r.req:
-            if r.req.key in ignore_set:
+            if r.req.key.lower() in ignore_set:
                 continue
 
             if r.editable:
