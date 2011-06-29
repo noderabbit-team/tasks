@@ -3,7 +3,9 @@ import os
 from dz.tasklib.taskconfig_django import (DJANGO_VERSIONS,
                                           DJANGO_VERSION_DEFAULT,
                                           DJANGO_VERSIONS_CHOICES,
-                                          DJANGO_TARBALLS_DIR)
+                                          DJANGO_TARBALLS_DIR,
+                                          PYTHON_VERSIONS,
+                                          PYTHON_VERSION_DEFAULT)
 
 NR_PIP_REQUIREMENTS_FILENAME = 'noderabbit_requirements.txt'
 NR_PTH_FILENAME = 'noderabbit.pth'
