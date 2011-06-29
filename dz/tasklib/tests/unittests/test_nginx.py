@@ -232,9 +232,7 @@ class NginxTestCase(DZTestCase):
         """
 
         zoomdb = StubZoomDB()
-        here = os.path.abspath(os.path.split(__file__)[0])
-        test_fixture_cfg = os.path.join(here, '../fixtures',
-                                        'app', 'zoombuild.cfg')
+        test_fixture_cfg = self.get_fixture_path('app', 'zoombuild.cfg')
         zoombuild_cfg_content = file(test_fixture_cfg).read()
 
         expected_site_file = os.path.join(taskconfig.NGINX_SITES_ENABLED_DIR,

@@ -102,6 +102,13 @@ class DZTestCase(MockerTestCase):
                                            connection_host),
             pagetext_fragment)
 
+    def get_fixture_path(self, *fixturepaths):
+        """
+        Get the absolute path the supplied fixture file/dir path.
+        """
+        here = os.path.abspath(os.path.split(__file__)[0])
+        return os.path.join(here, "fixtures", *fixturepaths)
+
 
 def requires_internet(test_func):
     """
