@@ -32,7 +32,6 @@ def run_managepy():
     Run as if I were the manage.py script in the context of this bundle.
     """
     sys.argv[0] = "manage.py"
-    import dz_settings as settings
     from django.core import management
     management.execute_from_command_line()
 
