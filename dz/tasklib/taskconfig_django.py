@@ -23,16 +23,16 @@ DJANGO_TARBALLS_DIR = "/cust/django"
 # downloaded during a quick_deploy if you answer yes to the question about
 # checking for new Django versions.
 
-PYTHON_VERSIONS = {}
+# PYTHON_VERSIONS = {}
 
-for pyver in ("2.7", "2.6", "2.5"):
-    try:
-        exe = "/usr/bin/python%s" % pyver
-        caption = subprocess.check_output([exe, "--version"],
-                                          stderr=subprocess.STDOUT).strip()
-        PYTHON_VERSIONS[pyver] = dict(caption=caption,
-                                      exe=exe)
-    except OSError:
-        pass
+# for pyver in ("2.7", "2.6", "2.5"):
+#     try:
+#         exe = "/usr/bin/python%s" % pyver
+#         caption = subprocess.check_output([exe, "--version"],
+#                                           stderr=subprocess.STDOUT).strip()
+#         PYTHON_VERSIONS[pyver] = dict(caption=caption,
+#                                       exe=exe)
+#     except OSError:
+#         pass
 
-PYTHON_VERSION_DEFAULT = "2.7"
+# PYTHON_VERSION_DEFAULT = "2.7"
