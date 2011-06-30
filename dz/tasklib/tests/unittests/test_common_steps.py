@@ -2,8 +2,7 @@ from dz.tasklib import (taskconfig,
                         utils,
                         common_steps)
 
-from dz.tasklib.tests.dztestcase import (DZTestCase,
-                                         requires_internet)
+from dz.tasklib.tests.dztestcase import DZTestCase
 from dz.tasklib.tests.stub_zoomdb import StubZoomDB
 
 import os
@@ -62,16 +61,56 @@ class CommonStepsTestCase(DZTestCase):
         common_steps.checkout_code(self.zoomdb, opts)
         self.assertTrue(("Running git pull...", "i") in self.zoomdb.logs)
 
-    @requires_internet
-    def test_checkout_git(self):
-        """
-        Test checking out a git repo.
-        """
-        pass
 
-    @requires_internet
+VCSes = ("git", "hg")
+
+
+class RepoCheckoutTestCase(DZTestCase):
+    def setUp(self):
+        self.zoomdb = StubZoomDB()
+
+        self.work_dir = self.makeDir()
+        self.opts = {
+            "CO_DIR": self.work_dir,
+            }
+        self.repo_dirs = {}
+
+        for vcs in VCSes:
+            self.repo_dirs[vcs] = self.makeDir()
+            repo_archive = self.get_fixture_path("test-repo-%s.tar.gz" % vcs)
+            utils.local("cd %s; tar xvzf %s" % (self.repo_dirs[vcs],
+                                                repo_archive))
+        super(RepoCheckoutTestCase, self).setUp()
+
+    def _set_to_use_repo(self, repo_type):
+        self.opts["SRC_URL"] = "file://%s/test-repo-%s" % (
+            self.repo_dirs[repo_type],
+            repo_type)
+        self.opts["SRC_REPO_TYPE"] = repo_type
+
+    def _test_checkout_repo(self, repo_type):
+        """
+        Test checking out a repo of the given type.
+        """
+        self._set_to_use_repo(repo_type)
+        test_file = os.path.join(self.opts["CO_DIR"], "test.txt")
+        self.assertFalse(os.path.isfile(test_file))
+        self.assertFalse(("Cloning your repository.", "i") in self.zoomdb.logs)
+
+        common_steps.checkout_code(self.zoomdb, self.opts)
+
+        self.assertTrue(os.path.isfile(test_file))
+        self.assertEqual(open(test_file).read(), "Hello world\n")
+        self.assertTrue(("Cloning your repository.", "i") in self.zoomdb.logs)
+
     def test_checkout_hg(self):
         """
         Test checking out a mercurial repo.
         """
-        pass
+        return self._test_checkout_repo("hg")
+
+    def test_checkout_git(self):
+        """
+        Test checking out a git repo.
+        """
+        return self._test_checkout_repo("git")
