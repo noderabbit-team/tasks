@@ -17,6 +17,10 @@ def get_handler(vcs_type):
     return REGISTERED_HANDLERS[vcs_type]
 
 
+def get_all_handlers():
+    return REGISTERED_HANDLERS.values()
+
+
 class BaseVCSHandler(object):
     """
     Base class for a VCS-specific handler.
@@ -60,6 +64,14 @@ class BaseVCSHandler(object):
                                   "should be changed to return None in all "
                                   "cases, to force a fresh checkout.")
 
+    def get_revision_info(self, checkout_path):
+        """
+        Get a human-readable message about the revision currently stored in
+        `checkout_path`.
+        """
+        raise NotImplementedError("This VCS handlers doesn't support "
+                                  "getting the current revision info.")
+
     def canonicalize_url(self, url):
         """
         Given a URL string, canonicalize it such that if two URLs a and b
@@ -67,13 +79,12 @@ class BaseVCSHandler(object):
         canonicalize_url(b).
 
         If you can't make heads or tails of url, just return url.
-        
+
         Default implementation makes sense for most HTTP-based repo URLs.
         """
         if not hasattr(url, "rstrip"):
             return url
         return url.rstrip("/")
-
 
     def checkout_latest_matching_version(self,
                                          source_code_url,
@@ -146,7 +157,7 @@ class BaseVCSHandler(object):
 
         # tweak env to avoid Git prompting for passwords
         os.environ['GIT_ASKPASS'] = '/bin/echo'
-        
+
         log_func("Running %s..." % " ".join(cmd))
         output, stderr, p = utils.subproc(cmd, null_stdin=True)
         if p.returncode != 0:
@@ -194,6 +205,9 @@ class GitHandler(BaseVCSHandler):
     def update_checkout(self, log_func):
         self.run_cmd(["git", "pull"], log_func)
 
+    def get_revision_info(self, checkout_path):
+        return utils.local("(cd %s; git log -n 1)" % checkout_path)
+
 
 @register_handler
 class HgHandler(BaseVCSHandler):
@@ -203,7 +217,7 @@ class HgHandler(BaseVCSHandler):
     def get_current_checkout_source_url(self):
         if not os.path.exists(".hg"):
             return None
-        
+
         output, stderr, p = utils.subproc(["hg", "showconfig",
                                            "paths.default"])
         return output.strip()
@@ -213,6 +227,10 @@ class HgHandler(BaseVCSHandler):
 
     def update_checkout(self, log_func):
         self.run_cmd(["hg", "pull"], log_func)
+
+    def get_revision_info(self, checkout_path):
+        return utils.local("(cd %s; hg log -l 1)" % checkout_path)
+
 
 
 @register_handler
@@ -231,9 +249,12 @@ class SvnHandler(BaseVCSHandler):
             if m:
                 return m.group(1)
         return None
-        
+
     def fresh_clone(self, source_code_url, log_func):
         self.run_cmd(["svn", "checkout", source_code_url, "."], log_func)
 
     def update_checkout(self, log_func):
         self.run_cmd(["svn", "up"], log_func)
+
+    def get_revision_info(self, checkout_path):
+        return utils.local("svn info %s" % checkout_path)
