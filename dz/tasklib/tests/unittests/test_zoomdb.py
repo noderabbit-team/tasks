@@ -256,7 +256,7 @@ class ZoomDatabaseTest(MockerTestCase):
         long_msg = "x" * 5000
         bun = self.zoom_db.add_bundle(bundle_name="abundle",
                                       code_revision=long_msg)
-        self.assertEqual(len(bun.code_revision), 255)
+        self.assertEqual(len(bun.code_revision), 512)
 
     def test_get_vhosts(self):
         """Test getting project virtual host names."""

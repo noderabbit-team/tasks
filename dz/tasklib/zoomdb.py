@@ -59,8 +59,10 @@ class ZoomDatabase(object):
         if code_revision is None:
             code_revision = ""
 
-        if len(code_revision) > 255:
-            code_revision = code_revision[0:252] + "..."
+        CODE_REVISION_FIELD_LENGTH = 512
+        if len(code_revision) > CODE_REVISION_FIELD_LENGTH:
+            code_revision = (code_revision[0:(CODE_REVISION_FIELD_LENGTH - 3)]
+                             + "...")
 
         bundle = self._soup.dz2_appbundle.insert(
             project_id=self.get_project_id(),
