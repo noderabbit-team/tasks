@@ -8,16 +8,18 @@ from dz.tasklib import (taskconfig,
                         bundle_storage,
                         bundle_storage_local,
                         utils,
-                        userenv)
+                        userenv,
+                        vcs_handlers)
 
 
 def _ignore_vcs_files(srcdir, names):
     """Ignore function for shutil.copytree, which ensures we don't copy
     version control system files - these don't need to be in the bundles."""
-    return [n for n in names if n in (".git", ".svn")]
+    return [n for n in names if n in (".git", ".svn", ".hg")]
 
 
-def bundle_app(app_id, force_bundle_name=None, return_ue=False):
+def bundle_app(app_id, force_bundle_name=None, return_ue=False,
+               src_repo_type="git"):
     """
     Task: Bundle an app with ``app_id`` found in ``custdir``
 
@@ -74,8 +76,8 @@ def bundle_app(app_id, force_bundle_name=None, return_ue=False):
                                  "zoombuild.cfg"))
 
     # Check what version of the code we've got
-    code_revision, stderr, p = utils.subproc("(cd %s; git log -n 1)" %
-                                             appsrcdir)
+    vcs_h = vcs_handlers.get_handler(src_repo_type)
+    code_revision = unicode(vcs_h.get_revision_info(appsrcdir), "ascii")
 
     # Copy in user code and add to pth
     to_src = os.path.join(bundle_dir, 'user-src')

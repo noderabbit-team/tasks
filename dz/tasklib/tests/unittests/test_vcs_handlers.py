@@ -49,10 +49,17 @@ class VCSHandlersRemoteTests(DZTestCase):
                          handler.canonicalize_url(repo_url))
         handler.update_checkout(logger)
 
+        revision_info = handler.get_revision_info(".")
+        self.assertTrue(revision_info,
+                        "Revision info expected; got %r" % revision_info)
+        #print "GOT REV INFO: %r" % revision_info
+
     @requires_internet
     def test_remote_svn(self):
         return self._test_with_remote(
-            "svn", "http://django-atompub.googlecode.com/svn/trunk/")
+            "svn", "https://svn.github.com/shimon/djangotutorial.git")
+    # was http://django-atompub.googlecode.com/svn/trunk/ but it turns
+    # out github provides svn service conveniently
 
     @requires_internet
     def test_remote_hg_https(self):

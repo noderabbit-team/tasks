@@ -279,7 +279,7 @@ class TasksTestCase(DZTestCase):
         tmp_repo_dir = self.makeDir()
         utils.local("tar xvzf %s -C %s" % (tarball_path, tmp_repo_dir))
         src_url = path.join(tmp_repo_dir, "repo")
-        check_repo.check_repo(zoomdb, app_id, src_url)
+        check_repo.check_repo(zoomdb, app_id, "git", src_url)
 
         src_dir = path.join(self.dir, app_id, "src")
 

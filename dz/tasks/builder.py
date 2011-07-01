@@ -16,6 +16,7 @@ def check_repo(job_id, zoomdb, job_params):
     """
     dz.tasklib.check_repo.check_repo(zoomdb,
                                      job_params["app_id"],
+                                     job_params["src_repo_type"],
                                      job_params["src_url"])
 
 
@@ -27,6 +28,7 @@ def build_and_deploy(job_id, zoomdb, job_params):
     return dz.tasklib.build_and_deploy.build_and_deploy(
         zoomdb,
         job_params["app_id"],
+        job_params["src_repo_type"],
         job_params["src_url"],
         job_params["zoombuild_cfg_content"],
         num_workers=job_params["num_workers"],

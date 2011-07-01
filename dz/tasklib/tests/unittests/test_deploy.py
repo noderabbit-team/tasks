@@ -37,6 +37,14 @@ def create_test_bundle_in_local_storage():
 
     shutil.copytree(os.path.join(fixture_dir, "app"), app_dir)
 
+    # create a git repo in app_dir and do a commit so that we can get the
+    # most recent commit during bundle_app.
+    utils.local(";".join([
+        ("cd %s/src" % app_dir),
+        "git init .",
+        "git add __init__.py",
+        "git commit -m 'initial test_deploy commit'"]))
+
     zcfg_path = os.path.join(app_dir, "zoombuild.cfg")
     zcfg_content = file(zcfg_path).read()
     # django_tarball = os.path.join(fixture_dir, 'Django-1.2.5.tar.gz')

@@ -18,8 +18,10 @@ def write_build_configuration(zoomdb, opts):
 def build_project_bundle(zoomdb, opts):
     zoomdb.log("We're getting your project's dependencies and packaging "
                "everything up. This might take a couple of minutes.")
-    bundle_name, code_revision, ue = bundle.bundle_app(opts["APP_ID"],
-                                                       return_ue=True)
+    bundle_name, code_revision, ue = bundle.bundle_app(
+        opts["APP_ID"],
+        src_repo_type=opts["SRC_REPO_TYPE"],
+        return_ue=True)
     zoomdb.log("Built project into bundle: %s" % bundle_name)
     opts["BUNDLE_NAME"] = bundle_name
     # and log this bundle into zoomdb
@@ -361,7 +363,8 @@ def remove_previous_versions(zoomdb, opts):
 
 
 
-def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
+def build_and_deploy(zoomdb, app_id, src_repo_type, src_url,
+                     zoombuild_cfg_content,
                      use_subtasks=True,
                      bundle_storage_engine=None,
                      post_build_hooks=None,
@@ -378,6 +381,7 @@ def build_and_deploy(zoomdb, app_id, src_url, zoombuild_cfg_content,
         "APP_ID": app_id,
         "APP_DIR": app_dir,
         "CO_DIR": os.path.join(app_dir, "src"),
+        "SRC_REPO_TYPE": src_repo_type,
         "SRC_URL": src_url,
         "ZOOMBUILD_CFG_CONTENT": zoombuild_cfg_content,
         "USE_SUBTASKS": use_subtasks,

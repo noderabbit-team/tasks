@@ -240,10 +240,11 @@ def inspect_code_settings(zoomdb, opts):
                                 basis="")
 
 
-def check_repo(zoomdb, app_id, src_url):
+def check_repo(zoomdb, app_id, src_repo_type, src_url):
 
     opts = {"CO_DIR":
                 os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id, "src"),
+            "SRC_REPO_TYPE": src_repo_type,
             "SRC_URL": src_url,
             "APP_ID": app_id,
             }

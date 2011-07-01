@@ -45,6 +45,7 @@ class BuildAndDeployTestcase(DZTestCase):
         """Invoke the build and deploy task."""
         zoomdb = StubZoomDB()
 
+        src_repo_type = "git"
         src_url = "git://github.com/shimon/djangotutorial.git"
 
         here = path.abspath(path.split(__file__)[0])
@@ -62,7 +63,7 @@ class BuildAndDeployTestcase(DZTestCase):
         self.assertEqual(len(zoomdb.get_project_virtual_hosts()), 3)
 
         deployed_addresses = build_and_deploy.build_and_deploy(
-            zoomdb, self.app_id, src_url,
+            zoomdb, self.app_id, src_repo_type, src_url,
             zoombuild_cfg_content,
             use_subtasks=False,
             bundle_storage_engine=bundle_storage_local,
