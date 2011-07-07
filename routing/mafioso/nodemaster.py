@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+
+import subprocess
+
 import eventlet
 import eventlet.wsgi
 from eventlet.green import zmq
@@ -9,7 +12,8 @@ AWAKE = "AWAKE"
 
 import mafconfig
 
-POOL = eventlet.GreenPool(10000)
+context = zmq.Context()
+pool = eventlet.GreenPool(10000)
 
 
 class BundleWorker(object):
@@ -18,21 +22,49 @@ class BundleWorker(object):
     a particular bundle.
 
     This class starts the actual worker in a subprocess using
-    bundleworker.py, and communicates with that worker using zmq.
+    WORKER_EXE, and communicates with that worker using zmq.
+
+    That subprocess will start, bind to the appropriate zmq socket(s) so I
+    can control it, and then become available to respond to requests.
     """
     def __init__(self, bundle_name):
         self.bundle_name = bundle_name
-        self.started
+        self.addr = mafconfig.WORKER_ADDR_FORMAT % (self.bundle_name,
+                                                    str(id(self)))
+
+        print "LAUNCHING NM WORKER", self.addr, "...",
+        self.subproc = subprocess.Popen([mafconfig.WORKER_EXE, self.addr])
+        self.sock = context.socket(zmq.REQ)
+        self.sock.connect(self.addr)
+
+        # make the first request to the worker before returning
+        self.sock.send_pyobj(["ready?"])
+        rep = self.sock.recv_pyobj()
+        print "worker subprocess says: %r" % (rep,)
 
     def process_request(self, env, start_response):
         """Marshal this request to a running instance."""
-        # TODO:
-        # 1. run a subprocess
-        # 2. communicate with it
-        # 3. have it run my bundle's code
-        start_response('200 OK', [('Content-Type', 'text/plain')])
-        return ['Hello, bundle %s\r\n' % (
-            self.bundle_name)]
+
+        # we can't just send env directly because it has filehandles.
+        # so we screen those out.
+        safe_env = dict()
+
+        for k, v in env.iteritems():
+            # TODO: figure out how to make all this stuff work over IPC
+            if k not in ("eventlet.posthooks",
+                         "eventlet.input",
+                         "wsgi.input",
+                         "wsgi.errors"):
+                safe_env[k] = v
+
+        self.sock.send_pyobj(["r", safe_env])
+        (start_response_args, result) = self.sock.recv_pyobj()
+
+        #start_response('200 OK', [('Content-Type', 'text/plain')])
+        # return ['Hello, bundle %s\r\n' % (
+        #     self.bundle_name)]
+        start_response(*start_response_args)
+        return result
 
 
 class ServedBundle(object):
@@ -87,8 +119,7 @@ class NodeMaster(object):
         self.bundles_by_port = {}
         self.servers_by_port = {}
 
-        self.ctx = zmq.Context()
-        self.control_socket = self.ctx.socket(zmq.REP)
+        self.control_socket = context.socket(zmq.REP)
         self.control_socket.bind(mafconfig.CONTROL_ADDR)
 
     def num_bundles(self):
@@ -107,7 +138,7 @@ class NodeMaster(object):
         # call eventlet.listen() here so that the port is grabbed
         # before I return
         sock = eventlet.listen(('', port))
-        POOL.spawn_n(sb.listen_http, sock, port)
+        pool.spawn_n(sb.listen_http, sock, port)
 
     def control_loop(self):
         while 1:
@@ -137,7 +168,7 @@ class NodeMaster(object):
 
     def mainloop(self):
         print "Nodemaster starting... ",
-        control = POOL.spawn(self.control_loop)
+        control = pool.spawn(self.control_loop)
         # chat = eventlet.spawn(self.chatserver_loop)
         print "ready."
 
