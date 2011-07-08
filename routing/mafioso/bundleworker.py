@@ -9,13 +9,31 @@ context = zmq.Context()
 
 
 class WorkerProcess(object):
+
+    def __init__(self):
+        self.bind_addr = None
+
+    def get_wsgi_callable(self):
+        pass
+
+    def get_wsgi_response(self, env):
+        response = (
+            ('200 OK', [('Content-Type', 'text/plain')]),
+            ["Hello to %s from a worker at %s!" % (
+                str(env.keys()),
+                self.bind_addr)],
+            )
+        return response
+
     def run(self, bind_addr):
         socket = context.socket(zmq.REP)
         socket.bind(bind_addr)
 
-        print "Running a worker!"
+        print "Worker running!"
 
-        while 1:
+        # TODO: drop perms & enter userenv
+
+        while True:
             message = socket.recv_pyobj()
             cmd = message[0]
             params = message[1:]
@@ -23,12 +41,7 @@ class WorkerProcess(object):
                 response = "OK"
             elif cmd == "r":
                 env = params[0]
-                response = (
-                    ('200 OK', [('Content-Type', 'text/plain')]),
-                    ["Hello to %s from a worker at %s!" % (
-                        str(env.keys()),
-                        bind_addr)],
-                    )
+                response = self.get_wsgi_response(env)
             else:
                 response = "ERROR"
             socket.send_pyobj(response)

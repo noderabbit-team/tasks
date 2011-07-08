@@ -33,6 +33,8 @@ class BundleWorker(object):
                                                     str(id(self)))
 
         print "LAUNCHING NM WORKER", self.addr, "...",
+        # TODO: my parent bundle should have a userenv, and I should launch
+        # my subproc inside of that.
         self.subproc = subprocess.Popen([mafconfig.WORKER_EXE, self.addr])
         self.sock = context.socket(zmq.REQ)
         self.sock.connect(self.addr)
@@ -51,6 +53,13 @@ class BundleWorker(object):
 
         for k, v in env.iteritems():
             # TODO: figure out how to make all this stuff work over IPC
+            # In particular wsgi.input is a filehandle, need to pass it
+            # to the worker.
+            #
+            # According to eventlet.wsgi:
+            # - wsgi.errors defaults to sys.stderr
+            # - wsgi.input and eventlet.input are an eventlet.wsgi.Input
+            #   object, which wraps a file obj for async reads and writes.
             if k not in ("eventlet.posthooks",
                          "eventlet.input",
                          "wsgi.input",
