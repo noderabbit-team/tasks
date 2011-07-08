@@ -67,6 +67,8 @@ DZ_ADMIN_MEDIA = {
         "lib/python2.6/site-packages/django/contrib/admin/media",
     }
 
+LOG_DIR_SUPERVISOR = "/var/log/supervisor"
+
 try:
     from local_taskconfig import *
 except ImportError:
