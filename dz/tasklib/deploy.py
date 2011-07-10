@@ -157,7 +157,7 @@ def managepy_shell(app_id, bundle_name, some_python_code):
     return result
 
 
-def _is_port_open(port):
+def is_port_open(port):
     """Test whether the given port is open for listening."""
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -209,7 +209,7 @@ def _get_a_free_port():
 
     port_to_use = max_used_port + 1
 
-    while not(_is_port_open(port_to_use)):
+    while not(is_port_open(port_to_use)):
         port_to_use += 1
         if port_to_use > taskconfig.APP_SERVICE_MAX_PORT:
             raise utils.InfrastructureException("This appserver has run out " +

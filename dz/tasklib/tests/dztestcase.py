@@ -1,11 +1,13 @@
 import sys
 from functools import update_wrapper
 from dz.tasklib import utils
+from dz.tasklib.deploy import is_port_open as deploy_is_port_open
 
 from mocker import MockerTestCase
 
 import os
 import pwd
+import random
 import time
 import urllib
 import httplib
@@ -108,6 +110,20 @@ class DZTestCase(MockerTestCase):
         """
         here = os.path.abspath(os.path.split(__file__)[0])
         return os.path.join(here, "fixtures", *fixturepaths)
+
+    def is_port_open(self, port):
+        return deploy_is_port_open(port)
+
+    def get_random_free_port(self):
+        """
+        Get a port currently available for listening on localhost.
+        """
+        random_port = random.randint(12000, 13000)
+        for incr in xrange(100):
+            port = random_port + incr
+            if self.is_port_open(port):
+                return port
+        self.fail("Could not find a free port")
 
 
 def requires_internet(test_func):

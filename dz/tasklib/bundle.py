@@ -77,7 +77,7 @@ def bundle_app(app_id, force_bundle_name=None, return_ue=False,
 
     # Check what version of the code we've got
     vcs_h = vcs_handlers.get_handler(src_repo_type)
-    code_revision = unicode(vcs_h.get_revision_info(appsrcdir), "ascii")
+    code_revision = unicode(vcs_h.get_revision_info(appsrcdir), "utf8")
 
     # Copy in user code and add to pth
     to_src = os.path.join(bundle_dir, 'user-src')

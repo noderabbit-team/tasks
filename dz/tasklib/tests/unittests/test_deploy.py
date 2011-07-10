@@ -274,13 +274,13 @@ class DeployTestCase(AbstractDeployTestCase):
         print "Testing ports..."
         for p in xrange(taskconfig.APP_SERVICE_START_PORT + 100,
                         taskconfig.APP_SERVICE_START_PORT + 200):
-            is_open = deploy._is_port_open(p)
+            is_open = deploy.is_port_open(p)
             #print "testing port %d: %s\r" % (p, is_open),
             self.assertTrue(is_open)
 
         # anything below 1024 is root only, so it should fail.
         # port 22 is SSH, so it should almost certainly fail.
-        self.assertFalse(deploy._is_port_open(22))
+        self.assertFalse(deploy.is_port_open(22))
 
     def test_undeploy(self):
         """
@@ -301,7 +301,7 @@ class DeployTestCase(AbstractDeployTestCase):
         zoomdb = StubZoomDB()
         zoomdb.add_worker(1, "localhost", "127.0.0.1", host_port)
 
-        self.assertFalse(deploy._is_port_open(host_port))
+        self.assertFalse(deploy.is_port_open(host_port))
 
         deploy.undeploy(zoomdb,
                         self.app_id,
@@ -309,7 +309,7 @@ class DeployTestCase(AbstractDeployTestCase):
                         use_subtasks=False,
                         also_update_proxies=False)
 
-        self.assertTrue(deploy._is_port_open(host_port))
+        self.assertTrue(deploy.is_port_open(host_port))
         #self.assertFalse(os.path.isdir(app_dir))
         self.assertFalse(os.path.isdir(bundle_dir))
 
@@ -332,7 +332,7 @@ class DeployTestCase(AbstractDeployTestCase):
         zoomdb = StubZoomDB()
         mydep = zoomdb.add_worker(1, "localhost", "127.0.0.1", host_port)
 
-        self.assertFalse(deploy._is_port_open(host_port))
+        self.assertFalse(deploy.is_port_open(host_port))
 
         deploy.undeploy(zoomdb,
                         self.app_id,
@@ -340,7 +340,7 @@ class DeployTestCase(AbstractDeployTestCase):
                         use_subtasks=False,
                         also_update_proxies=False)
 
-        self.assertTrue(deploy._is_port_open(host_port))
+        self.assertTrue(deploy.is_port_open(host_port))
         #self.assertFalse(os.path.isdir(app_dir))
         self.assertFalse(os.path.isdir(bundle_dir))
 
@@ -369,7 +369,7 @@ class DeployTestCase(AbstractDeployTestCase):
         zoomdb = StubZoomDB()
         mydep = zoomdb.add_worker(1, "localhost", "127.0.0.1", host_port)
 
-        self.assertFalse(deploy._is_port_open(host_port))
+        self.assertFalse(deploy.is_port_open(host_port))
 
         zcfg_path = os.path.join(fixture_dir, "app", "zoombuild.cfg")
         zcfg_content = open(zcfg_path).read()
@@ -389,7 +389,7 @@ class DeployTestCase(AbstractDeployTestCase):
                         also_update_proxies=True,
                         zoombuild_cfg_content=zcfg_content)
 
-        self.assertTrue(deploy._is_port_open(host_port))
+        self.assertTrue(deploy.is_port_open(host_port))
         self.assertFalse(os.path.isdir(bundle_dir))
         self.assertFalse(os.path.isfile(nginx_site_file),
                          "Expected nginx site file %s to be gone, but it isn't"
