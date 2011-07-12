@@ -64,8 +64,13 @@ def find_available_logs(app_id):
         for node, logs_from_node in nodedict.items():
             if logs_from_node:
                 for loginfo in logs_from_node:
-                    loginfo["mod_dt"] = datetime.datetime.fromtimestamp(
-                        loginfo["mod_time"])
+                    if not isinstance(loginfo, dict):
+                        raise ValueError("Unexpected loginfo entry: "
+                                         "%r in found_logs %r" % (loginfo,
+                                                                  found_logs))
+                    if "mod_time" in loginfo:
+                        loginfo["mod_dt"] = datetime.datetime.fromtimestamp(
+                            loginfo["mod_time"])
                     result.append(loginfo)
     return result
 
