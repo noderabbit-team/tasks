@@ -6,7 +6,10 @@ from deploy import (user_manage_py_command,
                     user_manage_py_shell)
 from database import enable_postgis
 from nginx import update_hostnames
+
+# Just import these modules, so that their @Panel.register commands apply:
 import dz.tasks.management
+import dz.tasks.logs
 
 
 def monkey_patch_celery_db_models_Task():

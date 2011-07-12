@@ -69,6 +69,9 @@ DZ_ADMIN_MEDIA = {
 
 LOG_DIR_SUPERVISOR = "/var/log/supervisor"
 
+# How long should the celery broadcast timeout be for log requests?
+LOGS_CELERY_BCAST_TIMEOUT = 1
+
 try:
     from local_taskconfig import *
 except ImportError:
