@@ -64,7 +64,7 @@ def get_available_logs(app_id):
         yield dict(log_id=nginx_log_path,
                    caption="Web Server Access Log",
                    filesize=_filesize(nginx_log_path),
-                   mod_time=_mod_time(filename))
+                   mod_time=_mod_time(nginx_log_path))
 
 
 def get_log_content(app_id, log_id, lines=100):
