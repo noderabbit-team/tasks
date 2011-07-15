@@ -187,6 +187,18 @@ class UserEnv(object):
 
         return result
 
+    def popen(self, command_list):
+        """
+        Like the above, but does not wait for the process to exit.
+        """
+        fullcmd = utils.privileged_program_cmd([
+            "run_in_container", self.username, self.container_dir,
+            ] + command_list)
+
+        # print "Popening: %r" % fullcmd
+
+        return subprocess.Popen(fullcmd)
+
     def open(self, filename, mode="r"):
         """
         Work-alike function for the builtin python open(), but running
