@@ -164,8 +164,11 @@ def is_port_open(port):
     try:
         s.bind(("0.0.0.0", port))
     except socket.error, e:
-        print e
-        return False
+        if e.errno == 98:
+            # address in use -- what we wanted!
+            return False
+        else:
+            raise
     else:
         return True
 
