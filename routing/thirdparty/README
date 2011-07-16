@@ -1,0 +1,1 @@
+for compiling zeromq, do sudo apt-get install uuid-dev

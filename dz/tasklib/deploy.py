@@ -159,6 +159,10 @@ def managepy_shell(app_id, bundle_name, some_python_code):
 
 def is_port_open(port):
     """Test whether the given port is open for listening."""
+
+    if port <= 1024:
+        return False  # root-only sockets don't count
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
