@@ -145,6 +145,26 @@ class ZoomDatabase(object):
 
         return result
 
+    def search_allproject_workers(self, active=True, ip_address=None):
+        """
+        Get workers from any project, not just my get_project_id() project,
+        matching the provided criteria.
+        """
+        asd = self._soup.dz2_appserverdeployment
+
+        qs = asd
+
+        if active is not None:
+            if active:
+                qs = qs.filter(asd.deactivation_date == None)
+            else:
+                qs = qs.filter(asd.deactivation_date != None)
+
+        if ip_address is not None:
+            qs = qs.filter(asd.server_ip == ip_address)
+
+        return list(qs)
+
     def get_project_workers(self):
         """Get all AppServerDeployments for this job's project.
         Note that this includes inactive deployments."""
@@ -174,9 +194,8 @@ class ZoomDatabase(object):
     def get_project(self):
         """Get the project row."""
         if not hasattr(self, "_project"):
-            j = self.get_job()
             self._project = self._soup.dz2_project.filter(
-                self._soup.dz2_project.id == j.project_id).one()
+                self._soup.dz2_project.id == self.get_project_id()).one()
         return self._project
 
     def get_project_id(self):
@@ -196,13 +215,14 @@ class ZoomDatabase(object):
     def get_project_virtual_hosts(self):
         """Get virtual hostname strings for this project. Always includes at
         least the one canonical vhost name."""
+        project = self.get_project()
+
         canonical_vhost_name = \
             taskconfig.CANONICAL_VIRTUAL_HOST_FORMAT % (
-            taskconfig.PROJECT_SYSID_FORMAT % self.get_project_id())
+            taskconfig.PROJECT_SYSID_FORMAT % project.id)
 
         result = [canonical_vhost_name]
 
-        project = self.get_project()
         if project.hostname_slug:
             result.append("%s.%s" % (project.hostname_slug,
                                      taskconfig.CUSTOMER_DNS_ROOT_DOMAIN))
@@ -210,7 +230,7 @@ class ZoomDatabase(object):
         # query the DB for matching VirtualHostname records
         vhosts = self._soup.dz2_virtualhostname.filter(
             self._soup.dz2_virtualhostname.project_id ==
-            self.get_project_id())
+            project.id)
 
         for vh in vhosts:
             if vh.is_wildcard:

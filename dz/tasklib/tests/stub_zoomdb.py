@@ -41,6 +41,9 @@ class MockWorker(object):
         self.project_id = 1
         self.creation_date = datetime.datetime.utcnow()
         self.deactivation_date = None
+
+    def __str__(self):
+        return "Mockworker <id=%(id)s, bundle_id=%(bundle_id)s, server=%(server_ip)s:%(server_port)s>" % self.__dict__
 MockWorker.count = 0
 
 
@@ -96,6 +99,21 @@ class StubZoomDB(ZoomDatabase):
 
     def search_workers(self, bundle_ids=None, active=True):
         return self.workers
+
+    def search_allproject_workers(self, active=None, ip_address=None):
+        result = []
+        for w in self.workers:
+            if active is not None:
+                if (active and w.deactivation_date is not None) or (
+                    not(active) and w.deactivation_date is None):
+                    continue
+
+            if ip_address is not None:
+                if w.server_ip != ip_address:
+                    continue
+
+            result.append(w)
+        return result
 
     def get_project_virtual_hosts(self):
         """Use special identifiers for test vhost names so we don't conflict

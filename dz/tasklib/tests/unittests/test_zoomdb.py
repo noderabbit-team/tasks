@@ -181,6 +181,45 @@ class ZoomDatabaseTest(MockerTestCase):
         self.assertEqual(len(s5), 1)
         self.assertEqual(s5[0], wo1)
 
+    def test_search_allproject_workers(self):
+        """
+        Test querying across all projects.
+        """
+        z = self.zoom_db
+
+        instance_id = "i-t3st"
+        server_ip_1 = "123.231.123.111"
+        server_port_1 = 10256
+        server_ip_2 = "123.231.123.222"
+        server_port_2 = 10257
+
+        worker1 = self.soup.dz2_appserverdeployment.insert(
+            project_id=100,
+            bundle_id=100,
+            server_instance_id=instance_id,
+            server_ip=server_ip_1,
+            server_port=server_port_1,
+            creation_date=datetime.datetime.utcnow())
+        worker2 = self.soup.dz2_appserverdeployment.insert(
+            project_id=200,
+            bundle_id=200,
+            server_instance_id=instance_id,
+            server_ip=server_ip_2,
+            server_port=server_port_2,
+            creation_date=datetime.datetime.utcnow())
+        self.soup.session.commit()
+
+        results = z.search_allproject_workers()
+        self.assertEqual(len(results), 2)
+        self.assertTrue(worker1 in results)
+        self.assertTrue(worker2 in results)
+
+        results_2 = z.search_allproject_workers(active=False)
+        self.assertEqual(len(results_2), 0)
+
+        results_3 = z.search_allproject_workers(ip_address=server_ip_1)
+        self.assertEqual(results_3, [worker1])
+
     def test_get_job(self):
         """
         Get the job associated with current zoomdb instance.

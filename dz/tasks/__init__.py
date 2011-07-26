@@ -10,6 +10,7 @@ from nginx import update_hostnames
 # Just import these modules, so that their @Panel.register commands apply:
 import dz.tasks.management
 import dz.tasks.logs
+import recovery  # not used directly, but just to register tasks
 
 
 def monkey_patch_celery_db_models_Task():
