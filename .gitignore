@@ -4,7 +4,7 @@
 
 .coverage
 .installed.cfg
-bin
+/bin/
 develop-eggs
 
 *.egg-info
