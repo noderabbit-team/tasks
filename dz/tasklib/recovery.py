@@ -6,8 +6,8 @@ def restore_worker(zoomdb, w):
 
     from dz.tasklib import (taskconfig,
                             utils)
-    from dz.tasks import nginx
     from dz.tasklib.database import DatabaseInfo
+    from dz.tasks import nginx
 
     soup = zoomdb._soup
 
