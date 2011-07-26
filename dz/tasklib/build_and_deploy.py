@@ -341,6 +341,9 @@ def remove_previous_versions(zoomdb, opts):
     Find and remove old instances.
     """
     new_instances = opts["DEPLOYED_WORKERS"]
+
+    zoomdb.log("New instances: %r." % new_instances)
+
     new_instances_by_id = dict((i.id, i) for i in new_instances)
     active_instances = zoomdb.search_workers(active=True)
     old_instances = []
@@ -348,7 +351,9 @@ def remove_previous_versions(zoomdb, opts):
         if i.id not in new_instances_by_id:
             old_instances.append(i)
 
-    #zoomdb.log("Removing old instance %s." % i)
+    #DNC:#
+    zoomdb.log("Removing old instances %r." % old_instances)
+
     if old_instances:
         tasklib_deploy.undeploy(
             zoomdb,

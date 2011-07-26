@@ -20,7 +20,7 @@ def restore_worker(zoomdb, w):
     print w, project, bundle
 
     # force zoomdb to have the right project id - HIDEOUS HACK
-    zoomdb.get_project_id = lambda self: project.id
+    zoomdb.get_project_id = lambda: project.id
 
     def fake_log(msg):
         print "ZOOMDB:", msg
@@ -39,9 +39,17 @@ def restore_worker(zoomdb, w):
                            project.db_password),
         "NUM_WORKERS": project.num_workers,
         "USE_SUBTASKS": True,
+
+        # Fake ZOOMBUILD_CFG_CONTENT. bd.remove_previous_versions
+        # needs it in some cases, but doesn't actually use the value here.
+        "ZOOMBUILD_CFG_CONTENT": None,
         }
 
     bd.select_app_server_for_deployment(zoomdb, opts)
+
+    # undeploy all existing versions
+    opts["DEPLOYED_WORKERS"] = []  # trick the following into removing all
+    bd.remove_previous_versions(zoomdb, opts)
 
     bd.deploy_project_to_appserver(zoomdb, opts)
     # sets opts["DEPLOYED_ADDRESSES"] with
@@ -49,10 +57,12 @@ def restore_worker(zoomdb, w):
     # and opts["DEPLOYED_WORKERS"] with worker objects.
     new_w = opts["DEPLOYED_WORKERS"][0]
 
+    #from celery.contrib import rdb; rdb.set_trace()
+
     # # don't run_post_deploy_hooks
 
     # replace bd.update_front_end_proxy
-    fake_job_id = 0
+    fake_job_id = 1676  # TODO: fixme
     appservers = opts["DEPLOYED_ADDRESSES"]
     virtual_hostnames = zoomdb.get_project_virtual_hosts()
     site_media_map = utils.parse_site_media_map(project.site_media)
@@ -63,9 +73,6 @@ def restore_worker(zoomdb, w):
         args=args,
         kwargs={"remove_other_bundles": True})
     res.wait()
-
-    # skip undeploying old:
-    # bd.remove_previous_versions(zoomdb, opts)
 
     return new_w
 

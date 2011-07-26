@@ -10,6 +10,7 @@
 
 """
 import datetime
+import pytz
 import os
 #import pwd
 import shutil
@@ -352,18 +353,21 @@ def undeploy(zoomdb, app_id, bundle_ids=None, use_subtasks=True,
     import dz.tasks.deploy  # do this non-globally due to dependencies
 
     def save_undeployment(dep):
-        dep.deactivation_date = datetime.datetime.utcnow()
+        dep.deactivation_date = datetime.datetime.utcnow().replace(
+            tzinfo=pytz.utc)
         zoomdb.flush()
-        zoomdb.log(("Dropped bundle #%d from server %s (%s:%d). "
+        zoomdb.log(("Dropped bundle #%d (worker #%d) from server %s (%s:%d). "
                     "Deactivated: %s.") % (
-                       dep.bundle_id, dep.server_instance_id,
+                       dep.bundle_id,
+                       dep.id,
+                       dep.server_instance_id,
                        dep.server_ip, dep.server_port,
                        dep.deactivation_date,
                        ))
 
     for dep in matching_deployments:
         args = [app_id,
-                dep.bundle_id,
+                dep.bundle_id, ### DOH! Need to set dep.id here too!
                 dep.server_instance_id,
                 dep.server_port]
         kwargs = {"zero_undeploys_ok": zero_undeploys_ok}

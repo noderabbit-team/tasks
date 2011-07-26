@@ -9,7 +9,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     dead_ip = sys.argv[2]
-    args = [-1, dead_ip]
+    args = [1676, dead_ip] #TODO: set custom job id
     if len(sys.argv) > 3:
         project_id = int(sys.argv[3])
         args.append(project_id)

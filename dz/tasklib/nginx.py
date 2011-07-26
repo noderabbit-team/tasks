@@ -61,7 +61,7 @@ def update_local_proxy_config(app_id, bundle_name,
                             original_file_path)
 
     sme = [dict(url_path=url_path,
-                alias_dest=_make_full_path(file_path),
+                alias_dest=_make_full_path(file_path.strip('/')),
                 ) for url_path, file_path in site_media_map.items()]
     sme.append(dict(url_path=taskconfig.DZ_ADMIN_MEDIA["url_path"],
                     alias_dest=os.path.join(
@@ -149,17 +149,20 @@ def update_proxy_configuration(zoomdb, opts):
                        for d in opts["APPSERVERS"]
                        if d.bundle_id == max_bundle_id]
 
-        args = [zoomdb._job_id, opts["APP_ID"], bundle.bundle_name,
+        args = [opts["APP_ID"],
+                bundle.bundle_name,
                 deployments,
-                virtual_hostnames, opts["SITE_MEDIA_MAP"]]
+                virtual_hostnames,
+                opts["SITE_MEDIA_MAP"]]
 
         import dz.tasks.nginx  # local import to avoid circularity
 
         if opts["USE_SUBTASKS"]:
-            res = dz.tasks.nginx.update_proxy_conf.apply_async(args=args)
+            res = dz.tasks.nginx.update_proxy_conf.apply_async(
+                args=[zoomdb._job_id] + args)
             res.wait()
         else:
-            dz.tasks.nginx.update_proxy_conf(*args)
+            update_local_proxy_config(*args)
 
         zoomdb.log("Updated proxy server configuration. Your project is now "
                    "available from the following URLs: " +
