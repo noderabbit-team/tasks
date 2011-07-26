@@ -29,6 +29,7 @@ def restore_worker(zoomdb, w):
     app_id = taskconfig.PROJECT_SYSID_FORMAT % project.id
     app_dir = os.path.join(taskconfig.NR_CUSTOMER_DIR, app_id)
     opts = {
+        "BUNDLE_INFO": bundle,
         "APP_ID": app_id,
         "APP_DIR": app_dir,
         "BUNDLE_NAME": bundle.bundle_name,
