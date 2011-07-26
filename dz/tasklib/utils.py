@@ -145,8 +145,11 @@ def assemble_requirements(lines=None, files=None, basedir=None,
 
     class FakePipFinder(object):
         def __init__(self):
+            self.DEFAULT_INDEXES = object()
             self.find_links = []
-            self.index_urls = []
+            self.index_urls = [] # [self.DEFAULT_INDEXES]
+            # TODO: if self.DEFAULT_INDEXES is not in index_urls,
+            # treat the first entry as --index-url instead of --extra-index-url
     finder = FakePipFinder()
 
     monolithic_reqs = []

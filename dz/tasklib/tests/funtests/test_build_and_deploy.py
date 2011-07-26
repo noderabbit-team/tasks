@@ -117,6 +117,8 @@ class BuildAndDeployTestcase(DZTestCase):
 
         # ensure each hostname works!
         for host in hosts:
+            #GZIP DEBUG# import ipdb; ipdb.set_trace()
+            
             self.check_can_eventually_load_custom("127.0.0.1",
                                                   "/polls/",
                                                   host,
