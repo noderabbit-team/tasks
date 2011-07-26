@@ -74,7 +74,7 @@ def recover_appserver(zoomdb, appserver_ip, project_id=None):
                                                     ip_address=appserver_ip)
     updated = []
     for w in dead_workers:
-        if project_id and w.project_id == project_id:
+        if not(project_id) or w.project_id == project_id:
             updated.append(restore_worker(zoomdb, w))
 
     return [asd.id for asd in updated]
