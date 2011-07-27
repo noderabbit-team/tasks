@@ -9,6 +9,8 @@ def restore_worker(zoomdb, w):
     from dz.tasklib.database import DatabaseInfo
     from dz.tasks import nginx
 
+    print "restoring: %s" % w
+
     soup = zoomdb._soup
 
     project = soup.dz2_project.filter(
@@ -21,6 +23,7 @@ def restore_worker(zoomdb, w):
 
     # force zoomdb to have the right project id - HIDEOUS HACK
     zoomdb.get_project_id = lambda: project.id
+    zoomdb._project = project
 
     def fake_log(msg):
         print "ZOOMDB:", msg
