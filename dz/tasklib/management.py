@@ -148,7 +148,7 @@ def server_health():
             for i, line in enumerate(output.splitlines()):
                 if i == 0:
                     header_line = line
-                if line.startswith("/dev"):
+                if line.startswith("/dev") or line.startswith(".host"): # added for VMWare compatibility
                     pct_use = line.split()[-2]
                     if pct_use.endswith("%"):
                         pct = int(pct_use[:-1])
