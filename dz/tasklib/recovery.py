@@ -65,7 +65,7 @@ def restore_worker(zoomdb, w):
     # # don't run_post_deploy_hooks
 
     # replace bd.update_front_end_proxy
-    fake_job_id = 1676  # TODO: fixme
+    fake_job_id = 1676  # TODO: fixme. Must have jobid in both local db and remote db.
     appservers = opts["DEPLOYED_ADDRESSES"]
     virtual_hostnames = zoomdb.get_project_virtual_hosts()
     site_media_map = utils.parse_site_media_map(project.site_media)
