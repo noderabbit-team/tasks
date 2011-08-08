@@ -226,8 +226,8 @@ class HgHandler(BaseVCSHandler):
         self.run_cmd(["hg", "clone", source_code_url, "."], log_func)
 
     def update_checkout(self, log_func):
-        self.run_cmd(["hg", "pull"], log_func)
-
+        self.run_cmd(["hg", "pull", "-u"], log_func)
+        
     def get_revision_info(self, checkout_path):
         return utils.local("(cd %s; hg log -l 1)" % checkout_path)
 
