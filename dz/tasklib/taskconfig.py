@@ -11,7 +11,11 @@ from dz.tasklib.taskconfig_django import (DJANGO_VERSIONS,
 NR_PIP_REQUIREMENTS_FILENAME = 'noderabbit_requirements.txt'
 NR_PTH_FILENAME = 'noderabbit.pth'
 
-NR_BUNDLE_BUCKET = "nr-bundle-bucket"
+STAGING = True
+if STAGING:
+    NR_BUNDLE_BUCKET = "nr-bundle-bucket-staging"
+else:
+    NR_BUNDLE_BUCKET = "nr-bundle-bucket"
 
 NR_CUSTOMER_DIR = "/cust"
 
