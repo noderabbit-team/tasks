@@ -12,19 +12,22 @@ NR_PIP_REQUIREMENTS_FILENAME = 'noderabbit_requirements.txt'
 NR_PTH_FILENAME = 'noderabbit.pth'
 
 STAGING = True
+
 if STAGING:
     NR_BUNDLE_BUCKET = "nr-bundle-bucket-staging"
+    # format for the vhost entry that each project gets by default,
+    # based on the sysid string for that project.
+    CANONICAL_VIRTUAL_HOST_FORMAT = "%s.djangozoom.org"
+    CUSTOMER_DNS_ROOT_DOMAIN = "djangozoom.org"
 else:
     NR_BUNDLE_BUCKET = "nr-bundle-bucket"
+    CANONICAL_VIRTUAL_HOST_FORMAT = "%s.djangozoom.net"
+    CUSTOMER_DNS_ROOT_DOMAIN = "djangozoom.net"
 
 NR_CUSTOMER_DIR = "/cust"
 
 PROJECT_SYSID_FORMAT = "p%08d"
 
-# format for the vhost entry that each project gets by default,
-# based on the sysid string for that project.
-CANONICAL_VIRTUAL_HOST_FORMAT = "%s.djangozoom.net"
-CUSTOMER_DNS_ROOT_DOMAIN = "djangozoom.net"
 
 TEST_REPO_DIR = "/usr/local/noderabbit/test-repos"
 TEST_REPO_URL_PREFIX = "test://"
