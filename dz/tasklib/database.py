@@ -215,4 +215,3 @@ def enable_postgis(database):
              "installation: \n%s\n%s") % (p.returncode, stdout, stderr))
     else:
         return "%s\n%s" % (stdout, stderr)
-

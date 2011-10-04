@@ -1,2 +1,11 @@
 DEFAULT_BUNDLE_STORAGE_ENGINE = "bundle_storage_local"
 NGINX_REMOVE_OLD_BUNDLES_ON_UPDATE = False
+
+DATABASE_SUPERUSER = {
+    "username": "tasksuper",
+    "initial_db": "nrweb",
+    "password": "BVuJahwj0Yf03kJF",
+    # The initial_db mustn't be template1, because that is used internally
+    # by postgresql when creating a database. having an open connection to
+    # template1 therefore stops DB creation.
+}
