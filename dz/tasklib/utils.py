@@ -65,17 +65,20 @@ def get_site_packages(vpath):
                         'site-packages')
 
 
-def make_virtualenv(path):
+def make_virtualenv(envpath, pipversion='0.7.2'):
     """
     Generate a virtual env
 
     NOTE: installing distribute requires access to PyPI! That sucks.
 
     :param path: The full path to the virtualenv directory
+    :param pipversion: The required pip version. Default is 0.7.2
     """
+    distpath = '/usr/local/noderabbit/dists' 
     # specifying the system python means it's OK if we're running inside a
     # virtualenv ourselves.
-    local("virtualenv  --python=/usr/bin/python %s" % path)
+    local("virtualenv  --extra-search-dir=%s --python=/usr/bin/python %s" % 
+          (distpath, envpath))
 
 
 def install_requirements(reqs, path, logsuffix=None, env=None):

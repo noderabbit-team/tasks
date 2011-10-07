@@ -62,6 +62,12 @@ class UtilsTestCase(DZTestCase):
         utils.make_virtualenv(path.join(self.dir, 'vm'))
         self.assertTrue(path.exists(path.join(
                     self.dir, 'vm', 'bin', 'python')))
+        pfile = open(path.join(self.dir, 'vm', 'bin', 'pip'))
+        plines = pfile.readlines()
+        pversionline = plines[1]
+        #when we have various versions, we'll need to specify the expected version.
+        #right now we are interested in just one.
+        self.assertTrue('pip==%s' % '0.7.2' in pversionline)
 
     def test_install_requirements(self):
         """
