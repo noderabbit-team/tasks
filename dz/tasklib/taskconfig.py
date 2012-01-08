@@ -83,3 +83,8 @@ try:
     from local_taskconfig import *
 except ImportError:
     pass
+
+try:
+    DATABASE_SUPERUSER["password"] = DATABASE_SUPERUSER_PASSWORD
+except:
+    pass
