@@ -8,6 +8,9 @@ this application.
 import os
 import sys
 
+# import the Tracelytics tracing
+import oboeware.djangoware
+
 # prepare project environment
 os.environ['CONFIG_WRITABLE_ROOT'] = "/tmp"
 os.environ['CONFIG_PG_DBNAME'] = "{{dbinfo.db_name}}"
